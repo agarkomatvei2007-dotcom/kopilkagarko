@@ -142,15 +142,28 @@ export default function CreateMaterialPage() {
       // Generate a temporary ID for file uploads
       const tempId = `temp_${Date.now()}`
 
-      // Upload files
-      const uploadedFiles = await Promise.all(
-        files.map((file) => uploadMaterialFile(user.id, tempId, file))
-      )
+      // Upload files (skip if Storage not configured or no files)
+      let uploadedFiles: Awaited<ReturnType<typeof uploadMaterialFile>>[] = []
+      if (files.length > 0) {
+        try {
+          uploadedFiles = await Promise.all(
+            files.map((file) => uploadMaterialFile(user.id, tempId, file))
+          )
+        } catch (uploadError) {
+          console.warn('File upload failed (Storage may not be configured):', uploadError)
+          // Continue without files
+        }
+      }
 
-      // Upload thumbnail if exists
+      // Upload thumbnail if exists (skip if Storage not configured)
       let thumbnailUrl = null
       if (thumbnailFile) {
-        thumbnailUrl = await uploadThumbnail(tempId, thumbnailFile)
+        try {
+          thumbnailUrl = await uploadThumbnail(tempId, thumbnailFile)
+        } catch (uploadError) {
+          console.warn('Thumbnail upload failed:', uploadError)
+          // Continue without thumbnail
+        }
       }
 
       // Create material
@@ -159,8 +172,8 @@ export default function CreateMaterialPage() {
         description: data.description,
         type: data.type as MaterialType,
         content: {
-          text: data.type === 'text' ? content : undefined,
-          videoUrl: data.type === 'video' ? data.videoUrl : undefined,
+          text: data.type === 'text' ? content : null,
+          videoUrl: data.type === 'video' ? (data.videoUrl || null) : null,
           files: uploadedFiles,
         },
         subject: data.subject,
@@ -176,8 +189,8 @@ export default function CreateMaterialPage() {
         price: null,
         allowDownload: data.allowDownload,
         authorId: user.id,
-        authorName: user.displayName,
-        authorAvatar: user.avatar,
+        authorName: user.displayName || 'Пользователь',
+        authorAvatar: user.avatar || null,
         aiGenerated: false,
         aiTags: [],
       })
@@ -192,7 +205,7 @@ export default function CreateMaterialPage() {
       console.error('Error creating material:', error)
       toast({
         title: 'Ошибка',
-        description: 'Не удалось создать материал',
+        description: error instanceof Error ? error.message : 'Не удалось создать материал',
         variant: 'destructive',
       })
     } finally {
