@@ -27,21 +27,24 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/hooks/useAuth'
+import { useLanguage } from '@/hooks/useLanguage'
 import { useUIStore } from '@/stores/uiStore'
 import { getInitials } from '@/lib/utils'
 import NotificationBell from './NotificationBell'
-
-const navLinks = [
-  { href: '/feed', label: 'Лента', icon: Home },
-  { href: '/explore', label: 'Обзор', icon: Compass },
-  { href: '/communities', label: 'Сообщества', icon: Users },
-  { href: '/collections', label: 'Коллекции', icon: BookmarkIcon },
-]
+import LanguageSwitcher from './LanguageSwitcher'
 
 export default function Navbar() {
   const { user, signOut, isAuthenticated } = useAuth()
+  const { t } = useLanguage()
   const { toggleMobileMenu } = useUIStore()
   const pathname = usePathname()
+
+  const navLinks = [
+    { href: '/feed', label: t.nav.feed, icon: Home },
+    { href: '/explore', label: t.nav.explore, icon: Compass },
+    { href: '/communities', label: t.nav.communities, icon: Users },
+    { href: '/collections', label: t.nav.collections, icon: BookmarkIcon },
+  ]
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -60,7 +63,7 @@ export default function Navbar() {
         <Link href={isAuthenticated ? '/feed' : '/'} className="flex items-center gap-2">
           <BookOpen className="h-6 w-6 text-primary" />
           <span className="hidden font-bold sm:inline-block">
-            Методическая копилка
+            {t.landing.title}
           </span>
         </Link>
 
@@ -92,7 +95,7 @@ export default function Navbar() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Поиск материалов..."
+                placeholder={t.common.search}
                 className="pl-10"
               />
             </div>
@@ -107,7 +110,7 @@ export default function Navbar() {
               <Link href="/materials/create">
                 <Button size="sm" className="hidden sm:flex gap-2">
                   <Plus className="h-4 w-4" />
-                  Создать
+                  {t.common.create}
                 </Button>
                 <Button size="icon" variant="ghost" className="sm:hidden">
                   <Plus className="h-5 w-5" />
@@ -123,6 +126,9 @@ export default function Navbar() {
 
               {/* Notifications */}
               <NotificationBell />
+
+              {/* Language switcher */}
+              <LanguageSwitcher />
 
               {/* User menu */}
               <DropdownMenu>
@@ -146,28 +152,28 @@ export default function Navbar() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link href={`/profile/${user?.username}`}>
-                      Мой профиль
+                      {t.nav.myProfile}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/materials">
-                      Мои материалы
+                      {t.nav.myMaterials}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/analytics">
-                      Аналитика
+                      {t.nav.analytics}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/achievements">
-                      Достижения
+                      {t.nav.achievements}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link href="/settings">
-                      Настройки
+                      {t.nav.settings}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -175,18 +181,19 @@ export default function Navbar() {
                     className="text-destructive focus:text-destructive"
                     onClick={signOut}
                   >
-                    Выйти
+                    {t.nav.logout}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
           ) : (
             <>
+              <LanguageSwitcher />
               <Link href="/login">
-                <Button variant="ghost">Войти</Button>
+                <Button variant="ghost">{t.nav.login}</Button>
               </Link>
               <Link href="/register">
-                <Button>Регистрация</Button>
+                <Button>{t.nav.register}</Button>
               </Link>
             </>
           )}
