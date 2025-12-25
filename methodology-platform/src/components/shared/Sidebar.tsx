@@ -13,6 +13,7 @@ import {
   Settings,
   HelpCircle,
   GraduationCap,
+  Shield,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -42,14 +43,18 @@ const bottomNavItems = [
   { href: '/help', label: 'Помощь', icon: HelpCircle },
 ]
 
+// Admin emails list
+const ADMIN_EMAILS = ['admin@kopilka.ru', 'agarkomatvei2007@gmail.com']
+
 export default function Sidebar() {
-  const { user } = useAuth()
+  const { user, firebaseUser } = useAuth()
   const { sidebarOpen } = useUIStore()
   const pathname = usePathname()
 
   if (!sidebarOpen) return null
 
   const levelProgress = user ? calculateLevelProgress(user.points) : 0
+  const isAdmin = firebaseUser?.email && ADMIN_EMAILS.includes(firebaseUser.email)
 
   return (
     <aside className="hidden lg:flex flex-col w-64 border-r bg-background h-[calc(100vh-4rem)] sticky top-16">
@@ -123,6 +128,27 @@ export default function Sidebar() {
             )
           })}
         </nav>
+
+        {/* Admin Panel Link */}
+        {isAdmin && (
+          <>
+            <Separator className="my-4" />
+            <nav className="space-y-1 px-3">
+              <Link href="/admin">
+                <Button
+                  variant={pathname.startsWith('/admin') ? 'secondary' : 'ghost'}
+                  className={cn(
+                    'w-full justify-start gap-3 text-primary',
+                    pathname.startsWith('/admin') && 'font-semibold'
+                  )}
+                >
+                  <Shield className="h-4 w-4" />
+                  Админ-панель
+                </Button>
+              </Link>
+            </nav>
+          </>
+        )}
       </ScrollArea>
 
       {/* Level progress */}
