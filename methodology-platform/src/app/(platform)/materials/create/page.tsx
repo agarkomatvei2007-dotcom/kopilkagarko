@@ -14,7 +14,6 @@ import {
   FileAudio,
   HelpCircle,
   X,
-  Sparkles,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -28,31 +27,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import RichTextEditor from '@/components/editor/RichTextEditor'
 import { useAuth } from '@/hooks/useAuth'
+import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
 import { createMaterial } from '@/lib/firebase/firestore'
 import { uploadMaterialFile, uploadThumbnail } from '@/lib/firebase/storage'
 import { SUBJECTS, GRADES, GRADE_LABELS, MaterialType, MaterialDifficulty } from '@/types'
-
-const materialTypes = [
-  { value: 'text', label: 'Текст', icon: FileText },
-  { value: 'video', label: 'Видео', icon: Video },
-  { value: 'presentation', label: 'Презентация', icon: FileImage },
-  { value: 'document', label: 'Документ', icon: FileText },
-  { value: 'audio', label: 'Аудио', icon: FileAudio },
-  { value: 'quiz', label: 'Тест', icon: HelpCircle },
-]
-
-const difficulties = [
-  { value: 'easy', label: 'Легкий' },
-  { value: 'medium', label: 'Средний' },
-  { value: 'hard', label: 'Сложный' },
-]
 
 const materialSchema = z.object({
   title: z.string().min(5, 'Название должно быть не менее 5 символов'),
@@ -70,6 +54,7 @@ type MaterialFormData = z.infer<typeof materialSchema>
 export default function CreateMaterialPage() {
   const router = useRouter()
   const { user } = useAuth()
+  const { language } = useLanguage()
   const { toast } = useToast()
 
   const [selectedGrades, setSelectedGrades] = useState<number[]>([])
@@ -79,6 +64,72 @@ export default function CreateMaterialPage() {
   const [files, setFiles] = useState<File[]>([])
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Translations
+  const txt = {
+    pageTitle: language === 'ru' ? 'Создание материала' : 'Материал жасау',
+    materialType: language === 'ru' ? 'Тип материала' : 'Материал түрі',
+    types: {
+      text: language === 'ru' ? 'Текст' : 'Мәтін',
+      video: language === 'ru' ? 'Видео' : 'Видео',
+      presentation: language === 'ru' ? 'Презентация' : 'Презентация',
+      document: language === 'ru' ? 'Документ' : 'Құжат',
+      audio: language === 'ru' ? 'Аудио' : 'Аудио',
+      quiz: language === 'ru' ? 'Тест' : 'Тест',
+    },
+    basicInfo: language === 'ru' ? 'Основная информация' : 'Негізгі ақпарат',
+    title: language === 'ru' ? 'Название' : 'Атауы',
+    titlePlaceholder: language === 'ru' ? 'Введите название материала' : 'Материал атауын енгізіңіз',
+    description: language === 'ru' ? 'Описание' : 'Сипаттамасы',
+    descriptionPlaceholder: language === 'ru' ? 'Опишите ваш материал...' : 'Материалыңызды сипаттаңыз...',
+    subject: language === 'ru' ? 'Дисциплина' : 'Пән',
+    selectSubject: language === 'ru' ? 'Выберите дисциплину' : 'Пәнді таңдаңыз',
+    difficulty: language === 'ru' ? 'Сложность' : 'Қиындығы',
+    difficulties: {
+      easy: language === 'ru' ? 'Легкий' : 'Жеңіл',
+      medium: language === 'ru' ? 'Средний' : 'Орташа',
+      hard: language === 'ru' ? 'Сложный' : 'Қиын',
+    },
+    courses: language === 'ru' ? 'Курсы' : 'Курстар',
+    tags: language === 'ru' ? 'Теги' : 'Тегтер',
+    addTag: language === 'ru' ? 'Добавить тег...' : 'Тег қосу...',
+    add: language === 'ru' ? 'Добавить' : 'Қосу',
+    content: language === 'ru' ? 'Содержимое' : 'Мазмұны',
+    textContent: language === 'ru' ? 'Текст материала' : 'Материал мәтіні',
+    videoUrl: language === 'ru' ? 'Ссылка на видео (YouTube)' : 'Видео сілтемесі (YouTube)',
+    files: language === 'ru' ? 'Файлы' : 'Файлдар',
+    uploadFiles: language === 'ru' ? 'Нажмите для загрузки или перетащите файлы' : 'Жүктеу үшін басыңыз немесе файлдарды сүйреңіз',
+    fileTypes: 'PDF, DOC, DOCX, PPT, PPTX (100MB)',
+    thumbnail: language === 'ru' ? 'Обложка (опционально)' : 'Мұқаба (міндетті емес)',
+    uploadThumbnail: language === 'ru' ? 'Загрузить обложку' : 'Мұқаба жүктеу',
+    settings: language === 'ru' ? 'Настройки' : 'Параметрлер',
+    publicMaterial: language === 'ru' ? 'Публичный материал' : 'Жалпыға қолжетімді',
+    publicDesc: language === 'ru' ? 'Материал будет виден всем пользователям' : 'Материал барлық пайдаланушыларға көрінеді',
+    allowDownload: language === 'ru' ? 'Разрешить скачивание' : 'Жүктеуге рұқсат беру',
+    downloadDesc: language === 'ru' ? 'Пользователи смогут скачивать файлы' : 'Пайдаланушылар файлдарды жүктей алады',
+    cancel: language === 'ru' ? 'Отмена' : 'Болдырмау',
+    publish: language === 'ru' ? 'Опубликовать' : 'Жариялау',
+    error: language === 'ru' ? 'Ошибка' : 'Қате',
+    selectCourse: language === 'ru' ? 'Выберите хотя бы один курс' : 'Кем дегенде бір курсты таңдаңыз',
+    success: language === 'ru' ? 'Материал создан!' : 'Материал жасалды!',
+    successDesc: language === 'ru' ? 'Ваш материал успешно опубликован' : 'Материалыңыз сәтті жарияланды',
+    createError: language === 'ru' ? 'Не удалось создать материал' : 'Материал жасау мүмкін болмады',
+  }
+
+  const materialTypes = [
+    { value: 'text', label: txt.types.text, icon: FileText },
+    { value: 'video', label: txt.types.video, icon: Video },
+    { value: 'presentation', label: txt.types.presentation, icon: FileImage },
+    { value: 'document', label: txt.types.document, icon: FileText },
+    { value: 'audio', label: txt.types.audio, icon: FileAudio },
+    { value: 'quiz', label: txt.types.quiz, icon: HelpCircle },
+  ]
+
+  const difficulties = [
+    { value: 'easy', label: txt.difficulties.easy },
+    { value: 'medium', label: txt.difficulties.medium },
+    { value: 'hard', label: txt.difficulties.hard },
+  ]
 
   const {
     register,
@@ -129,8 +180,8 @@ export default function CreateMaterialPage() {
     if (!user) return
     if (selectedGrades.length === 0) {
       toast({
-        title: 'Ошибка',
-        description: 'Выберите хотя бы один курс',
+        title: txt.error,
+        description: txt.selectCourse,
         variant: 'destructive',
       })
       return
@@ -139,10 +190,8 @@ export default function CreateMaterialPage() {
     setIsSubmitting(true)
 
     try {
-      // Generate a temporary ID for file uploads
       const tempId = `temp_${Date.now()}`
 
-      // Upload files (skip if Storage not configured or no files)
       let uploadedFiles: Awaited<ReturnType<typeof uploadMaterialFile>>[] = []
       if (files.length > 0) {
         try {
@@ -150,23 +199,19 @@ export default function CreateMaterialPage() {
             files.map((file) => uploadMaterialFile(user.id, tempId, file))
           )
         } catch (uploadError) {
-          console.warn('File upload failed (Storage may not be configured):', uploadError)
-          // Continue without files
+          console.warn('File upload failed:', uploadError)
         }
       }
 
-      // Upload thumbnail if exists (skip if Storage not configured)
       let thumbnailUrl = null
       if (thumbnailFile) {
         try {
           thumbnailUrl = await uploadThumbnail(tempId, thumbnailFile)
         } catch (uploadError) {
           console.warn('Thumbnail upload failed:', uploadError)
-          // Continue without thumbnail
         }
       }
 
-      // Create material
       const materialId = await createMaterial({
         title: data.title,
         description: data.description,
@@ -189,23 +234,23 @@ export default function CreateMaterialPage() {
         price: null,
         allowDownload: data.allowDownload,
         authorId: user.id,
-        authorName: user.displayName || 'Пользователь',
+        authorName: user.displayName || (language === 'ru' ? 'Пользователь' : 'Пайдаланушы'),
         authorAvatar: user.avatar || null,
         aiGenerated: false,
         aiTags: [],
       })
 
       toast({
-        title: 'Материал создан!',
-        description: 'Ваш материал успешно опубликован',
+        title: txt.success,
+        description: txt.successDesc,
       })
 
       router.push(`/materials/${materialId}`)
     } catch (error) {
       console.error('Error creating material:', error)
       toast({
-        title: 'Ошибка',
-        description: error instanceof Error ? error.message : 'Не удалось создать материал',
+        title: txt.error,
+        description: error instanceof Error ? error.message : txt.createError,
         variant: 'destructive',
       })
     } finally {
@@ -215,13 +260,13 @@ export default function CreateMaterialPage() {
 
   return (
     <div className="container mx-auto py-6 px-4 max-w-4xl">
-      <h1 className="text-2xl font-bold mb-6">Создание материала</h1>
+      <h1 className="text-2xl font-bold mb-6">{txt.pageTitle}</h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Material type */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Тип материала</CardTitle>
+            <CardTitle className="text-lg">{txt.materialType}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
@@ -251,14 +296,14 @@ export default function CreateMaterialPage() {
         {/* Basic info */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Основная информация</CardTitle>
+            <CardTitle className="text-lg">{txt.basicInfo}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Название</Label>
+              <Label htmlFor="title">{txt.title}</Label>
               <Input
                 id="title"
-                placeholder="Введите название материала"
+                placeholder={txt.titlePlaceholder}
                 {...register('title')}
               />
               {errors.title && (
@@ -267,10 +312,10 @@ export default function CreateMaterialPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Описание</Label>
+              <Label htmlFor="description">{txt.description}</Label>
               <Textarea
                 id="description"
-                placeholder="Опишите ваш материал..."
+                placeholder={txt.descriptionPlaceholder}
                 rows={4}
                 {...register('description')}
               />
@@ -281,10 +326,10 @@ export default function CreateMaterialPage() {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Предмет</Label>
+                <Label>{txt.subject}</Label>
                 <Select onValueChange={(value) => setValue('subject', value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Выберите предмет" />
+                    <SelectValue placeholder={txt.selectSubject} />
                   </SelectTrigger>
                   <SelectContent>
                     {SUBJECTS.map((subject) => (
@@ -300,7 +345,7 @@ export default function CreateMaterialPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Сложность</Label>
+                <Label>{txt.difficulty}</Label>
                 <Select
                   defaultValue="medium"
                   onValueChange={(value) => setValue('difficulty', value as MaterialDifficulty)}
@@ -321,7 +366,7 @@ export default function CreateMaterialPage() {
 
             {/* Grades */}
             <div className="space-y-2">
-              <Label>Классы</Label>
+              <Label>{txt.courses}</Label>
               <div className="flex flex-wrap gap-2">
                 {GRADES.map((grade) => (
                   <button
@@ -342,16 +387,16 @@ export default function CreateMaterialPage() {
 
             {/* Tags */}
             <div className="space-y-2">
-              <Label>Теги</Label>
+              <Label>{txt.tags}</Label>
               <div className="flex gap-2">
                 <Input
-                  placeholder="Добавить тег..."
+                  placeholder={txt.addTag}
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
                 />
                 <Button type="button" variant="secondary" onClick={handleAddTag}>
-                  Добавить
+                  {txt.add}
                 </Button>
               </div>
               {tags.length > 0 && (
@@ -373,19 +418,19 @@ export default function CreateMaterialPage() {
         {/* Content */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Содержимое</CardTitle>
+            <CardTitle className="text-lg">{txt.content}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {selectedType === 'text' && (
               <div className="space-y-2">
-                <Label>Текст материала</Label>
+                <Label>{txt.textContent}</Label>
                 <RichTextEditor content={content} onChange={setContent} />
               </div>
             )}
 
             {selectedType === 'video' && (
               <div className="space-y-2">
-                <Label htmlFor="videoUrl">Ссылка на видео (YouTube)</Label>
+                <Label htmlFor="videoUrl">{txt.videoUrl}</Label>
                 <Input
                   id="videoUrl"
                   placeholder="https://youtube.com/watch?v=..."
@@ -396,7 +441,7 @@ export default function CreateMaterialPage() {
 
             {/* File upload */}
             <div className="space-y-2">
-              <Label>Файлы</Label>
+              <Label>{txt.files}</Label>
               <div className="border-2 border-dashed rounded-lg p-6 text-center">
                 <input
                   type="file"
@@ -411,10 +456,10 @@ export default function CreateMaterialPage() {
                 >
                   <Upload className="h-8 w-8 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">
-                    Нажмите для загрузки или перетащите файлы
+                    {txt.uploadFiles}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    PDF, DOC, DOCX, PPT, PPTX до 100MB
+                    {txt.fileTypes}
                   </span>
                 </label>
               </div>
@@ -442,7 +487,7 @@ export default function CreateMaterialPage() {
 
             {/* Thumbnail */}
             <div className="space-y-2">
-              <Label>Обложка (опционально)</Label>
+              <Label>{txt.thumbnail}</Label>
               <div className="border-2 border-dashed rounded-lg p-4 text-center">
                 <input
                   type="file"
@@ -456,7 +501,7 @@ export default function CreateMaterialPage() {
                     <span className="text-sm">{thumbnailFile.name}</span>
                   ) : (
                     <span className="text-sm text-muted-foreground">
-                      Загрузить обложку
+                      {txt.uploadThumbnail}
                     </span>
                   )}
                 </label>
@@ -468,14 +513,14 @@ export default function CreateMaterialPage() {
         {/* Settings */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Настройки</CardTitle>
+            <CardTitle className="text-lg">{txt.settings}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label>Публичный материал</Label>
+                <Label>{txt.publicMaterial}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Материал будет виден всем пользователям
+                  {txt.publicDesc}
                 </p>
               </div>
               <Switch
@@ -486,9 +531,9 @@ export default function CreateMaterialPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <Label>Разрешить скачивание</Label>
+                <Label>{txt.allowDownload}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Пользователи смогут скачивать файлы
+                  {txt.downloadDesc}
                 </p>
               </div>
               <Switch
@@ -507,11 +552,11 @@ export default function CreateMaterialPage() {
             className="flex-1"
             onClick={() => router.back()}
           >
-            Отмена
+            {txt.cancel}
           </Button>
           <Button type="submit" className="flex-1" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Опубликовать
+            {txt.publish}
           </Button>
         </div>
       </form>

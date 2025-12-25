@@ -21,35 +21,37 @@ import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useAuth } from '@/hooks/useAuth'
+import { useLanguage } from '@/hooks/useLanguage'
 import { useUIStore } from '@/stores/uiStore'
 import { calculateLevelProgress, cn } from '@/lib/utils'
-
-const mainNavItems = [
-  { href: '/feed', label: 'Лента', icon: Home },
-  { href: '/explore', label: 'Обзор', icon: Compass },
-  { href: '/my-materials', label: 'Мои материалы', icon: FolderOpen },
-  { href: '/collections', label: 'Коллекции', icon: BookmarkIcon },
-  { href: '/courses', label: 'Курсы', icon: GraduationCap },
-]
-
-const socialNavItems = [
-  { href: '/communities', label: 'Сообщества', icon: Users },
-  { href: '/leaderboard', label: 'Рейтинг', icon: Trophy },
-]
-
-const bottomNavItems = [
-  { href: '/analytics', label: 'Аналитика', icon: BarChart3 },
-  { href: '/settings', label: 'Настройки', icon: Settings },
-  { href: '/help', label: 'Помощь', icon: HelpCircle },
-]
 
 // Admin emails list
 const ADMIN_EMAILS = ['admin@kopilka.ru', 'agarkomatvei2007@gmail.com']
 
 export default function Sidebar() {
   const { user, firebaseUser } = useAuth()
+  const { t, language } = useLanguage()
   const { sidebarOpen } = useUIStore()
   const pathname = usePathname()
+
+  const mainNavItems = [
+    { href: '/feed', label: t.nav.feed, icon: Home },
+    { href: '/explore', label: t.nav.explore, icon: Compass },
+    { href: '/my-materials', label: t.nav.myMaterials, icon: FolderOpen },
+    { href: '/collections', label: t.nav.collections, icon: BookmarkIcon },
+    { href: '/courses', label: t.nav.courses, icon: GraduationCap },
+  ]
+
+  const socialNavItems = [
+    { href: '/communities', label: t.nav.communities, icon: Users },
+    { href: '/leaderboard', label: language === 'ru' ? 'Рейтинг' : 'Рейтинг', icon: Trophy },
+  ]
+
+  const bottomNavItems = [
+    { href: '/analytics', label: t.nav.analytics, icon: BarChart3 },
+    { href: '/settings', label: t.nav.settings, icon: Settings },
+    { href: '/help', label: t.nav.help, icon: HelpCircle },
+  ]
 
   if (!sidebarOpen) return null
 
@@ -84,7 +86,7 @@ export default function Sidebar() {
 
         <nav className="space-y-1 px-3">
           <p className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            Социальное
+            {language === 'ru' ? 'Социальное' : 'Әлеуметтік'}
           </p>
           {socialNavItems.map((item) => {
             const Icon = item.icon
@@ -143,7 +145,7 @@ export default function Sidebar() {
                   )}
                 >
                   <Shield className="h-4 w-4" />
-                  Админ-панель
+                  {t.nav.adminPanel}
                 </Button>
               </Link>
             </nav>
@@ -155,12 +157,16 @@ export default function Sidebar() {
       {user && (
         <div className="border-t p-4">
           <div className="flex items-center justify-between text-sm mb-2">
-            <span className="font-medium">Уровень {user.level}</span>
-            <span className="text-muted-foreground">{user.points} очков</span>
+            <span className="font-medium">
+              {language === 'ru' ? 'Уровень' : 'Деңгей'} {user.level}
+            </span>
+            <span className="text-muted-foreground">
+              {user.points} {language === 'ru' ? 'очков' : 'ұпай'}
+            </span>
           </div>
           <Progress value={levelProgress} className="h-2" />
           <p className="text-xs text-muted-foreground mt-1">
-            {100 - levelProgress} очков до следующего уровня
+            {100 - levelProgress} {language === 'ru' ? 'очков до следующего уровня' : 'ұпай келесі деңгейге дейін'}
           </p>
         </div>
       )}
