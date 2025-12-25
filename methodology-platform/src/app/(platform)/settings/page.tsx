@@ -198,10 +198,10 @@ export default function SettingsPage() {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="school">Школа / Учреждение</Label>
+                <Label htmlFor="school">Колледж / Учреждение</Label>
                 <Input
                   id="school"
-                  placeholder="Название школы"
+                  placeholder="Название колледжа"
                   {...register('school')}
                 />
               </div>
@@ -257,8 +257,8 @@ export default function SettingsPage() {
         {/* Grades */}
         <Card>
           <CardHeader>
-            <CardTitle>Классы</CardTitle>
-            <CardDescription>Выберите классы, с которыми вы работаете</CardDescription>
+            <CardTitle>Курсы</CardTitle>
+            <CardDescription>Выберите курсы, с которыми вы работаете</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">

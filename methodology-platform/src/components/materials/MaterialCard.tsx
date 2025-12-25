@@ -136,8 +136,8 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
             {material.grades.length > 0 && (
               <Badge variant="outline" className="text-xs">
                 {material.grades.length === 1
-                  ? `${material.grades[0]} класс`
-                  : `${material.grades[0]}-${material.grades[material.grades.length - 1]} класс`}
+                  ? `${material.grades[0]} курс`
+                  : `${material.grades[0]}-${material.grades[material.grades.length - 1]} курс`}
               </Badge>
             )}
             <Badge variant="outline" className="text-xs">

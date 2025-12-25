@@ -111,10 +111,10 @@ export default function ExplorePage() {
 
           <Select value={selectedGrade} onValueChange={(v) => { setSelectedGrade(v); handleFilterChange(); }}>
             <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Класс" />
+              <SelectValue placeholder="Курс" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Все классы</SelectItem>
+              <SelectItem value="all">Все курсы</SelectItem>
               {GRADES.map((grade) => (
                 <SelectItem key={grade} value={grade.toString()}>
                   {GRADE_LABELS[grade]}

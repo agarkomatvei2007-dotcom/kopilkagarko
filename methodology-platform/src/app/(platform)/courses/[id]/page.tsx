@@ -32,16 +32,16 @@ import { useAuth } from '@/hooks/useAuth'
 // Demo course data
 const courseData = {
   id: '1',
-  title: 'Основы математики для 5 класса',
-  description: 'Полный курс по математике для пятиклассников. Включает теорию, практику и проверочные задания по всем основным темам программы.',
+  title: 'Основы программирования на Python',
+  description: 'Полный курс по основам программирования для студентов 1-2 курса СПО. Включает теорию, практику и лабораторные работы.',
   thumbnail: null,
   author: {
     id: '1',
     name: 'Иванова Мария Александровна',
     avatar: null,
-    title: 'Учитель математики высшей категории',
+    title: 'Преподаватель информатики высшей категории',
   },
-  subject: 'Математика',
+  subject: 'Программирование',
   duration: '12 часов',
   lessonsCount: 24,
   studentsCount: 156,
@@ -53,26 +53,26 @@ const courseData = {
       title: 'Введение в курс',
       lessons: [
         { id: '1', title: 'Добро пожаловать на курс', duration: '5 мин', completed: true, free: true },
-        { id: '2', title: 'Как проходить курс', duration: '8 мин', completed: true, free: true },
+        { id: '2', title: 'Установка Python и IDE', duration: '15 мин', completed: true, free: true },
       ],
     },
     {
       id: '2',
-      title: 'Натуральные числа',
+      title: 'Основы синтаксиса',
       lessons: [
-        { id: '3', title: 'Понятие натурального числа', duration: '15 мин', completed: true, free: false },
-        { id: '4', title: 'Сложение и вычитание', duration: '20 мин', completed: false, free: false },
-        { id: '5', title: 'Умножение и деление', duration: '25 мин', completed: false, free: false },
-        { id: '6', title: 'Практические задания', duration: '30 мин', completed: false, free: false },
+        { id: '3', title: 'Переменные и типы данных', duration: '20 мин', completed: true, free: false },
+        { id: '4', title: 'Операторы и выражения', duration: '20 мин', completed: false, free: false },
+        { id: '5', title: 'Условные конструкции', duration: '25 мин', completed: false, free: false },
+        { id: '6', title: 'Практическая работа №1', duration: '30 мин', completed: false, free: false },
       ],
     },
     {
       id: '3',
-      title: 'Дроби',
+      title: 'Циклы и функции',
       lessons: [
-        { id: '7', title: 'Обыкновенные дроби', duration: '20 мин', completed: false, free: false },
-        { id: '8', title: 'Десятичные дроби', duration: '25 мин', completed: false, free: false },
-        { id: '9', title: 'Действия с дробями', duration: '30 мин', completed: false, free: false },
+        { id: '7', title: 'Цикл for и while', duration: '25 мин', completed: false, free: false },
+        { id: '8', title: 'Создание функций', duration: '25 мин', completed: false, free: false },
+        { id: '9', title: 'Практическая работа №2', duration: '30 мин', completed: false, free: false },
       ],
     },
   ],
@@ -115,7 +115,7 @@ export default function CourseDetailPage() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Badge variant="outline">{course.subject}</Badge>
-              <Badge variant="secondary">5 класс</Badge>
+              <Badge variant="secondary">1-2 курс</Badge>
             </div>
             <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
             <p className="text-muted-foreground">{course.description}</p>
@@ -137,7 +137,7 @@ export default function CourseDetailPage() {
           <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <PlayCircle className="h-4 w-4" />
-              {course.lessonsCount} уроков
+              {course.lessonsCount} занятий
             </span>
             <span className="flex items-center gap-1">
               <Clock className="h-4 w-4" />
@@ -145,7 +145,7 @@ export default function CourseDetailPage() {
             </span>
             <span className="flex items-center gap-1">
               <Users className="h-4 w-4" />
-              {course.studentsCount} учеников
+              {course.studentsCount} студентов
             </span>
             <span className="flex items-center gap-1">
               <Star className="h-4 w-4 text-yellow-500" />

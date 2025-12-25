@@ -11,7 +11,7 @@ export async function generateLessonPlan(
   duration: number = 45
 ): Promise<string> {
   const prompt = `
-    Создай подробный план урока по предмету "${subject}" на тему "${topic}" для ${grade} класса.
+    Создай подробный план занятия по дисциплине "${subject}" на тему "${topic}" для ${grade} курса колледжа.
     Продолжительность урока: ${duration} минут.
 
     Структура плана:
@@ -41,7 +41,7 @@ export async function generateQuiz(
   questionsCount: number = 10
 ): Promise<string> {
   const prompt = `
-    Создай тест из ${questionsCount} вопросов по предмету "${subject}" на тему "${topic}" для ${grade} класса.
+    Создай тест из ${questionsCount} вопросов по дисциплине "${subject}" на тему "${topic}" для ${grade} курса колледжа.
 
     Требования:
     - Включи вопросы разной сложности (легкие, средние, сложные)
@@ -88,7 +88,7 @@ export async function generateTags(content: string, subject: string): Promise<st
     Материал:
     ${content.slice(0, 2000)}
 
-    Верни теги через запятую, например: алгебра, уравнения, 7 класс, контрольная работа
+    Верни теги через запятую, например: программирование, python, 2 курс, лабораторная работа
   `
 
   const result = await geminiModel.generateContent(prompt)
@@ -105,7 +105,7 @@ export async function analyzeContent(content: string): Promise<{
   const prompt = `
     Проанализируй следующий учебный материал и определи:
     1. Уровень сложности (easy, medium, hard)
-    2. Для каких классов подходит (числа от 1 до 11)
+    2. Для каких курсов колледжа подходит (числа от 1 до 4)
     3. Основные темы/ключевые понятия (до 5)
     4. Рекомендации по улучшению (до 3)
 
@@ -150,7 +150,7 @@ export async function checkFGOSCompliance(
   suggestions: string[]
 }> {
   const prompt = `
-    Проверь соответствие следующего учебного материала требованиям ФГОС для ${grade} класса по предмету "${subject}".
+    Проверь соответствие следующего учебного материала требованиям ФГОС СПО для ${grade} курса по дисциплине "${subject}".
 
     Материал:
     ${content.slice(0, 3000)}

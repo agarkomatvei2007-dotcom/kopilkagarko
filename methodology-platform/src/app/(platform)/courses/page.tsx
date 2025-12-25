@@ -14,8 +14,8 @@ import { useAuth } from '@/hooks/useAuth'
 const sampleCourses = [
   {
     id: '1',
-    title: 'Основы математики для 5 класса',
-    description: 'Полный курс по математике для пятиклассников',
+    title: 'Основы программирования на Python',
+    description: 'Полный курс по основам программирования для студентов 1-2 курса',
     thumbnail: null,
     lessonsCount: 24,
     duration: '12 часов',
@@ -23,12 +23,12 @@ const sampleCourses = [
     rating: 4.8,
     progress: 0,
     author: 'Иванова М.А.',
-    subject: 'Математика',
+    subject: 'Программирование',
   },
   {
     id: '2',
-    title: 'Русский язык: орфография',
-    description: 'Углубленный курс по орфографии русского языка',
+    title: 'Базы данных: SQL и проектирование',
+    description: 'Курс по проектированию и работе с базами данных',
     thumbnail: null,
     lessonsCount: 18,
     duration: '9 часов',
@@ -36,7 +36,7 @@ const sampleCourses = [
     rating: 4.6,
     progress: 45,
     author: 'Петрова Е.В.',
-    subject: 'Русский язык',
+    subject: 'Базы данных',
   },
 ]
 

@@ -132,7 +132,7 @@ export default function EditMaterialPage() {
     if (selectedGrades.length === 0) {
       toast({
         title: 'Ошибка',
-        description: 'Выберите хотя бы один класс',
+        description: 'Выберите хотя бы один курс',
         variant: 'destructive',
       })
       return
