@@ -26,7 +26,7 @@ import { calculateLevelProgress, cn } from '@/lib/utils'
 const mainNavItems = [
   { href: '/feed', label: 'Лента', icon: Home },
   { href: '/explore', label: 'Обзор', icon: Compass },
-  { href: '/materials', label: 'Мои материалы', icon: FolderOpen },
+  { href: '/my-materials', label: 'Мои материалы', icon: FolderOpen },
   { href: '/collections', label: 'Коллекции', icon: BookmarkIcon },
   { href: '/courses', label: 'Курсы', icon: GraduationCap },
 ]
