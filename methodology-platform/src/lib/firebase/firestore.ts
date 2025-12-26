@@ -114,6 +114,19 @@ export async function updateUser(userId: string, data: Partial<User>): Promise<v
   })
 }
 
+export async function getUsers(
+  orderField: 'createdAt' | 'points' | 'stats.materialsCount' = 'createdAt',
+  limitCount = 50
+): Promise<User[]> {
+  const q = query(
+    collection(requireDb(), 'users'),
+    orderBy(orderField, 'desc'),
+    limit(limitCount)
+  )
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User))
+}
+
 export async function addPointsToUser(userId: string, points: number): Promise<void> {
   const userRef = doc(requireDb(), 'users', userId)
   await updateDoc(userRef, {
@@ -689,6 +702,36 @@ export async function removeFromCollection(collectionId: string, materialId: str
   await updateDoc(doc(requireDb(), 'materials', materialId), {
     'stats.saves': increment(-1),
   })
+}
+
+export async function updateCollection(
+  collectionId: string,
+  data: Partial<Pick<CollectionType, 'name' | 'description' | 'isPublic'>>
+): Promise<void> {
+  const collectionRef = doc(requireDb(), 'collections', collectionId)
+  await updateDoc(collectionRef, {
+    ...data,
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export async function deleteCollection(collectionId: string): Promise<void> {
+  const coll = await getCollection(collectionId)
+  if (!coll) return
+
+  // Decrease saves count for all materials in the collection
+  for (const materialId of coll.materialIds) {
+    try {
+      await updateDoc(doc(requireDb(), 'materials', materialId), {
+        'stats.saves': increment(-1),
+      })
+    } catch (error) {
+      // Material might have been deleted
+      console.error('Error updating material saves:', error)
+    }
+  }
+
+  await deleteDoc(doc(requireDb(), 'collections', collectionId))
 }
 
 // ==================== ACTIVITIES ====================

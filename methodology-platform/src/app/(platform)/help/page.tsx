@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   HelpCircle,
   Book,
@@ -23,11 +24,60 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion'
+import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/hooks/useLanguage'
+import { useAuth } from '@/hooks/useAuth'
+import { createChat } from '@/lib/firebase/firestore'
 
 export default function HelpPage() {
   const { language } = useLanguage()
+  const { user } = useAuth()
+  const { toast } = useToast()
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
+  const [isCreatingChat, setIsCreatingChat] = useState(false)
+
+  const SUPPORT_ID = 'support'
+  const SUPPORT_EMAIL = 'support@kopilka.kz'
+
+  const handleOpenChat = async () => {
+    if (!user) {
+      toast({
+        title: language === 'ru' ? 'Требуется авторизация' : 'Авторизация қажет',
+        description: language === 'ru' ? 'Войдите, чтобы написать в поддержку' : 'Қолдауға жазу үшін кіріңіз',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setIsCreatingChat(true)
+    try {
+      const chatId = await createChat(
+        user.id,
+        user.displayName || 'Пользователь',
+        user.avatar || null,
+        SUPPORT_ID,
+        'Поддержка Kopilka',
+        null
+      )
+      router.push(`/messages?chat=${chatId}`)
+    } catch (error) {
+      console.error('Error creating support chat:', error)
+      toast({
+        title: language === 'ru' ? 'Ошибка' : 'Қате',
+        description: language === 'ru' ? 'Не удалось создать чат' : 'Чат жасау мүмкін болмады',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsCreatingChat(false)
+    }
+  }
+
+  const handleSendEmail = () => {
+    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
+      language === 'ru' ? 'Вопрос по платформе Kopilka' : 'Kopilka платформасы бойынша сұрақ'
+    )}`
+  }
 
   const txt = {
     ru: {
@@ -251,15 +301,24 @@ export default function HelpPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-2">
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col items-center gap-2"
+              onClick={handleOpenChat}
+              disabled={isCreatingChat}
+            >
               <MessageCircle className="h-6 w-6" />
               <span>{text.writeChat}</span>
               <span className="text-xs text-muted-foreground">{text.usuallyReply}</span>
             </Button>
-            <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-2">
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col items-center gap-2"
+              onClick={handleSendEmail}
+            >
               <Mail className="h-6 w-6" />
               <span>{text.sendEmail}</span>
-              <span className="text-xs text-muted-foreground">support@kopilka.kz</span>
+              <span className="text-xs text-muted-foreground">{SUPPORT_EMAIL}</span>
             </Button>
           </div>
         </CardContent>

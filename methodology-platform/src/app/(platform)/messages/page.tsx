@@ -1,22 +1,37 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Search, Send, MoreVertical, Phone, Video, Image, Paperclip, Smile, Loader2, MessageCircle } from 'lucide-react'
+import { Search, Send, MoreVertical, Phone, Video, Image, Paperclip, Smile, Loader2, MessageCircle, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
+import { useToast } from '@/hooks/use-toast'
 import { getUserChats, getChatMessages, sendMessage, markMessagesAsRead } from '@/lib/firebase/firestore'
 import { getInitials, formatRelativeTime } from '@/lib/utils'
 import type { Chat, Message } from '@/types'
 
+const EMOJI_LIST = ['😀', '😊', '😂', '🤣', '😍', '🥰', '😘', '😎', '🤔', '😢', '😭', '😡', '👍', '👎', '👏', '🙌', '🎉', '❤️', '💯', '🔥', '✨', '⭐', '📚', '✏️', '📝', '💡', '🎓', '👨‍🏫', '👩‍🏫', '📖']
+
 export default function MessagesPage() {
   const { user } = useAuth()
   const { language } = useLanguage()
+  const { toast } = useToast()
   const [chats, setChats] = useState<Chat[]>([])
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -24,7 +39,10 @@ export default function MessagesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
+  const [emojiOpen, setEmojiOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
 
   const txt = {
     ru: {
@@ -127,6 +145,44 @@ export default function MessagesPage() {
     } finally {
       setIsSending(false)
     }
+  }
+
+  const handlePhoneCall = () => {
+    toast({
+      title: language === 'ru' ? 'Голосовые звонки' : 'Дауыстық қоңыраулар',
+      description: language === 'ru' ? 'Функция будет доступна в ближайшем обновлении' : 'Функция жақын жаңартуда қолжетімді болады',
+    })
+  }
+
+  const handleVideoCall = () => {
+    toast({
+      title: language === 'ru' ? 'Видеозвонки' : 'Бейне қоңыраулар',
+      description: language === 'ru' ? 'Функция будет доступна в ближайшем обновлении' : 'Функция жақын жаңартуда қолжетімді болады',
+    })
+  }
+
+  const handleFileSelect = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleImageSelect = () => {
+    imageInputRef.current?.click()
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      toast({
+        title: language === 'ru' ? 'Отправка файлов' : 'Файлдарды жіберу',
+        description: language === 'ru' ? 'Функция будет доступна в ближайшем обновлении' : 'Функция жақын жаңартуда қолжетімді болады',
+      })
+    }
+    e.target.value = ''
+  }
+
+  const handleEmojiSelect = (emoji: string) => {
+    setNewMessage(prev => prev + emoji)
+    setEmojiOpen(false)
   }
 
   const getOtherUser = (chat: Chat) => {
@@ -240,15 +296,27 @@ export default function MessagesPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" onClick={handlePhoneCall}>
                     <Phone className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" onClick={handleVideoCall}>
                     <Video className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem>
+                        {language === 'ru' ? 'Очистить чат' : 'Чатты тазалау'}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive">
+                        {language === 'ru' ? 'Удалить чат' : 'Чатты жою'}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             )
@@ -284,11 +352,24 @@ export default function MessagesPage() {
 
           {/* Message input */}
           <div className="p-4 border-t">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <input
+              type="file"
+              accept="image/*"
+              ref={imageInputRef}
+              onChange={handleFileChange}
+              className="hidden"
+            />
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" onClick={handleFileSelect}>
                 <Paperclip className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" onClick={handleImageSelect}>
                 <Image className="h-4 w-4" />
               </Button>
               <Input
@@ -299,9 +380,28 @@ export default function MessagesPage() {
                 className="flex-1"
                 disabled={isSending}
               />
-              <Button variant="ghost" size="icon">
-                <Smile className="h-4 w-4" />
-              </Button>
+              <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Smile className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-2" align="end">
+                  <div className="grid grid-cols-6 gap-1">
+                    {EMOJI_LIST.map((emoji) => (
+                      <Button
+                        key={emoji}
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-lg"
+                        onClick={() => handleEmojiSelect(emoji)}
+                      >
+                        {emoji}
+                      </Button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
               <Button onClick={handleSendMessage} disabled={!newMessage.trim() || isSending}>
                 {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </Button>
