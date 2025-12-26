@@ -97,76 +97,26 @@ export default function NotificationsPage() {
 
   const text = txt[language]
 
-  // Demo notifications with translations
-  const demoNotifications = [
-    {
-      id: '1',
-      type: 'like',
-      title: text.newLike,
-      message: `Иванова М.А. ${text.likedMaterial} "Основы Python"`,
-      actorId: '1',
-      actorName: 'Иванова М.А.',
-      actorAvatar: null,
-      materialId: '1',
-      link: '/materials/1',
-      isRead: false,
-      createdAt: new Date(Date.now() - 1000 * 60 * 30),
-    },
-    {
-      id: '2',
-      type: 'comment',
-      title: text.newComment,
-      message: `Петров И.В. ${text.commented} "Тамаша материал!"`,
-      actorId: '2',
-      actorName: 'Петров И.В.',
-      actorAvatar: null,
-      materialId: '1',
-      link: '/materials/1',
-      isRead: false,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
-    },
-    {
-      id: '3',
-      type: 'follow',
-      title: text.newFollower,
-      message: `Сидорова Е.К. ${text.followedYou}`,
-      actorId: '3',
-      actorName: 'Сидорова Е.К.',
-      actorAvatar: null,
-      materialId: null,
-      link: '/profile/sidorova',
-      isRead: true,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    },
-    {
-      id: '4',
-      type: 'achievement',
-      title: text.newAchievement,
-      message: `${text.gotAchievement} "10 материал"`,
-      actorId: null,
-      actorName: null,
-      actorAvatar: null,
-      materialId: null,
-      link: '/achievements',
-      isRead: true,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
-    },
-    {
-      id: '5',
-      type: 'like',
-      title: text.newLike,
-      message: `Козлов А.П. ${text.likedMaterial} "SQL деректер қоры"`,
-      actorId: '4',
-      actorName: 'Козлов А.П.',
-      actorAvatar: null,
-      materialId: '2',
-      link: '/materials/2',
-      isRead: true,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
-    },
-  ]
+  const [notifications, setNotifications] = useState<Notification[]>([])
 
-  const [notifications, setNotifications] = useState(demoNotifications)
+  // Load notifications from Firebase
+  useEffect(() => {
+    const loadNotifications = async () => {
+      if (!user) return
+
+      setIsLoading(true)
+      try {
+        const userNotifications = await getNotifications(user.id, 50)
+        setNotifications(userNotifications)
+      } catch (error) {
+        console.error('Error loading notifications:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadNotifications()
+  }, [user])
 
   const unreadCount = notifications.filter(n => !n.isRead).length
 
@@ -306,7 +256,7 @@ export default function NotificationsPage() {
                               {notification.message}
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              {formatTimeAgo(notification.createdAt)}
+                              {formatTimeAgo(notification.createdAt?.toDate ? notification.createdAt.toDate() : new Date())}
                             </p>
                           </div>
                           <div className="flex items-center gap-1">

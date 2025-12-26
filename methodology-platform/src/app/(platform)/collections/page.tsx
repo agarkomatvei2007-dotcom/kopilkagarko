@@ -29,8 +29,18 @@ import {
 import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
-import { getUserCollections, createCollection } from '@/lib/firebase/firestore'
+import { getUserCollections, createCollection, updateCollection, deleteCollection } from '@/lib/firebase/firestore'
 import type { Collection } from '@/types'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 export default function CollectionsPage() {
   const { user } = useAuth()
@@ -39,12 +49,22 @@ export default function CollectionsPage() {
   const [collections, setCollections] = useState<Collection[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null)
   const [newCollection, setNewCollection] = useState({
     name: '',
     description: '',
     isPublic: false,
   })
+  const [editCollection, setEditCollection] = useState({
+    name: '',
+    description: '',
+    isPublic: false,
+  })
   const [isCreating, setIsCreating] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const txt = {
     ru: {
@@ -71,6 +91,17 @@ export default function CollectionsPage() {
       error: 'Ошибка',
       createError: 'Не удалось создать коллекцию',
       loginRequired: 'Войдите, чтобы увидеть свои коллекции',
+      editCollection: 'Редактировать коллекцию',
+      editDesc: 'Измените название и настройки коллекции',
+      save: 'Сохранить',
+      saving: 'Сохранение...',
+      collectionUpdated: 'Коллекция обновлена',
+      updateError: 'Не удалось обновить коллекцию',
+      deleteCollection: 'Удалить коллекцию?',
+      deleteDesc: 'Это действие нельзя отменить. Коллекция будет удалена навсегда.',
+      deleting: 'Удаление...',
+      collectionDeleted: 'Коллекция удалена',
+      deleteError: 'Не удалось удалить коллекцию',
     },
     kk: {
       title: 'Менің жинақтарым',
@@ -96,6 +127,17 @@ export default function CollectionsPage() {
       error: 'Қате',
       createError: 'Жинақты жасау мүмкін болмады',
       loginRequired: 'Жинақтарыңызды көру үшін кіріңіз',
+      editCollection: 'Жинақты өңдеу',
+      editDesc: 'Жинақтың атауы мен параметрлерін өзгертіңіз',
+      save: 'Сақтау',
+      saving: 'Сақталуда...',
+      collectionUpdated: 'Жинақ жаңартылды',
+      updateError: 'Жинақты жаңарту мүмкін болмады',
+      deleteCollection: 'Жинақты жою керек пе?',
+      deleteDesc: 'Бұл әрекетті қайтару мүмкін емес. Жинақ мәңгілікке жойылады.',
+      deleting: 'Жойылуда...',
+      collectionDeleted: 'Жинақ жойылды',
+      deleteError: 'Жинақты жою мүмкін болмады',
     },
   }
 
@@ -167,6 +209,65 @@ export default function CollectionsPage() {
     } finally {
       setIsCreating(false)
     }
+  }
+
+  const handleEditCollection = async () => {
+    if (!selectedCollection || !editCollection.name.trim()) return
+    setIsUpdating(true)
+    try {
+      await updateCollection(selectedCollection.id, {
+        name: editCollection.name,
+        description: editCollection.description,
+        isPublic: editCollection.isPublic,
+      })
+
+      setCollections(collections.map(c =>
+        c.id === selectedCollection.id
+          ? { ...c, name: editCollection.name, description: editCollection.description, isPublic: editCollection.isPublic }
+          : c
+      ))
+
+      toast({ title: text.collectionUpdated })
+      setEditDialogOpen(false)
+      setSelectedCollection(null)
+    } catch (error) {
+      console.error('Error updating collection:', error)
+      toast({ title: text.error, description: text.updateError, variant: 'destructive' })
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleDeleteCollection = async () => {
+    if (!selectedCollection) return
+    setIsDeleting(true)
+    try {
+      await deleteCollection(selectedCollection.id)
+      setCollections(collections.filter(c => c.id !== selectedCollection.id))
+      toast({ title: text.collectionDeleted })
+      setDeleteDialogOpen(false)
+      setSelectedCollection(null)
+    } catch (error) {
+      console.error('Error deleting collection:', error)
+      toast({ title: text.error, description: text.deleteError, variant: 'destructive' })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const openEditDialog = (collection: Collection) => {
+    setSelectedCollection(collection)
+    setEditCollection({
+      name: collection.name,
+      description: collection.description || '',
+      isPublic: collection.isPublic,
+    })
+    setEditDialogOpen(true)
+  }
+
+  const openDeleteDialog = (collection: Collection) => {
+    setSelectedCollection(collection)
+    setDeleteDialogOpen(true)
   }
 
   if (!user) {
@@ -273,11 +374,14 @@ export default function CollectionsPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openEditDialog(collection)}>
                         <Edit className="h-4 w-4 mr-2" />
                         {text.edit}
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => openDeleteDialog(collection)}
+                      >
                         <Trash2 className="h-4 w-4 mr-2" />
                         {text.delete}
                       </DropdownMenuItem>
@@ -306,6 +410,74 @@ export default function CollectionsPage() {
           ))}
         </div>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{text.editCollection}</DialogTitle>
+            <DialogDescription>{text.editDesc}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">{text.name}</Label>
+              <Input
+                id="edit-name"
+                placeholder={text.namePlaceholder}
+                value={editCollection.name}
+                onChange={(e) => setEditCollection({ ...editCollection, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">{text.description}</Label>
+              <Textarea
+                id="edit-description"
+                placeholder={text.descPlaceholder}
+                value={editCollection.description}
+                onChange={(e) => setEditCollection({ ...editCollection, description: e.target.value })}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>{text.publicCollection}</Label>
+                <p className="text-sm text-muted-foreground">{text.publicDesc}</p>
+              </div>
+              <Switch
+                checked={editCollection.isPublic}
+                onCheckedChange={(checked) => setEditCollection({ ...editCollection, isPublic: checked })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              {text.cancel}
+            </Button>
+            <Button onClick={handleEditCollection} disabled={isUpdating || !editCollection.name.trim()}>
+              {isUpdating ? text.saving : text.save}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{text.deleteCollection}</AlertDialogTitle>
+            <AlertDialogDescription>{text.deleteDesc}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{text.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteCollection}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? text.deleting : text.delete}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

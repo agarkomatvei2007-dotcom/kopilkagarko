@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -16,129 +16,249 @@ import {
   Heart,
   Share2,
   Send,
+  Loader2,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/hooks/useAuth'
+import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
-
-// Demo community data
-const communityData = {
-  id: '1',
-  name: 'Преподаватели информатики СПО',
-  description: 'Сообщество для обмена опытом преподавания информатики и ИТ-дисциплин в колледжах. Делимся методиками, обсуждаем подготовку к демонстрационному экзамену.',
-  avatar: null,
-  coverImage: null,
-  membersCount: 1234,
-  postsCount: 567,
-  isPublic: true,
-  subject: 'Информатика',
-  createdAt: '2024-01-15',
-  admins: [
-    { id: '1', name: 'Иванова М.А.', avatar: null },
-  ],
-  rules: [
-    'Уважайте других участников',
-    'Публикуйте только релевантный контент',
-    'Не размещайте рекламу без согласования',
-    'Указывайте источники при использовании чужих материалов',
-  ],
-}
-
-const posts = [
-  {
-    id: '1',
-    author: { id: '1', name: 'Иванова М.А.', avatar: null },
-    content: 'Коллеги, поделитесь опытом: какие IDE вы используете для обучения студентов 1 курса? VS Code или что-то попроще?',
-    createdAt: '2 часа назад',
-    likes: 24,
-    comments: 12,
-    liked: false,
-  },
-  {
-    id: '2',
-    author: { id: '2', name: 'Петров И.В.', avatar: null },
-    content: 'Подготовил материалы для демонстрационного экзамена по веб-разработке. Делюсь в комментариях!',
-    createdAt: '5 часов назад',
-    likes: 45,
-    comments: 8,
-    liked: true,
-  },
-  {
-    id: '3',
-    author: { id: '3', name: 'Сидорова Е.К.', avatar: null },
-    content: 'Провела открытый урок по теории вероятностей. Дети были в восторге! Готова поделиться презентацией и планом урока.',
-    createdAt: 'Вчера',
-    likes: 67,
-    comments: 23,
-    liked: false,
-  },
-]
+import {
+  getCommunity,
+  getCommunityPosts,
+  joinCommunity,
+  leaveCommunity,
+  isCommunityMember,
+  createCommunityPost,
+  getUser,
+} from '@/lib/firebase/firestore'
+import type { Community, CommunityPost } from '@/lib/firebase/firestore'
+import { getInitials, formatRelativeTime } from '@/lib/utils'
+import type { User } from '@/types'
 
 export default function CommunityDetailPage() {
   const params = useParams()
   const { user } = useAuth()
+  const { language } = useLanguage()
   const { toast } = useToast()
+
+  const [community, setCommunity] = useState<Community | null>(null)
+  const [posts, setPosts] = useState<CommunityPost[]>([])
+  const [owner, setOwner] = useState<User | null>(null)
   const [isMember, setIsMember] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isJoining, setIsJoining] = useState(false)
+  const [isPosting, setIsPosting] = useState(false)
   const [newPost, setNewPost] = useState('')
-  const [localPosts, setLocalPosts] = useState(posts)
 
-  const community = communityData
-
-  const handleJoin = () => {
-    setIsMember(true)
-    toast({ title: 'Вы вступили в сообщество!' })
+  const txt = {
+    ru: {
+      back: 'Назад к сообществам',
+      members: 'участников',
+      posts: 'записей',
+      join: 'Вступить',
+      leave: 'Выйти',
+      joined: 'Вы вступили в сообщество!',
+      left: 'Вы покинули сообщество',
+      postsTab: 'Записи',
+      materialsTab: 'Материалы',
+      membersTab: 'Участники',
+      writeSomething: 'Напишите что-нибудь...',
+      publish: 'Опубликовать',
+      published: 'Запись опубликована!',
+      share: 'Поделиться',
+      admin: 'Администратор',
+      rules: 'Правила сообщества',
+      noRules: 'Правила не установлены',
+      materialsPlaceholder: 'Материалы сообщества появятся здесь',
+      membersPlaceholder: 'Список участников появится здесь',
+      notFound: 'Сообщество не найдено',
+      noPosts: 'Записей пока нет',
+      beFirst: 'Станьте первым, кто напишет!',
+      loginToJoin: 'Войдите, чтобы вступить',
+      loginToPost: 'Войдите, чтобы писать',
+    },
+    kk: {
+      back: 'Қауымдастықтарға оралу',
+      members: 'мүше',
+      posts: 'жазба',
+      join: 'Қосылу',
+      leave: 'Шығу',
+      joined: 'Сіз қауымдастыққа қосылдыңыз!',
+      left: 'Сіз қауымдастықтан шықтыңыз',
+      postsTab: 'Жазбалар',
+      materialsTab: 'Материалдар',
+      membersTab: 'Мүшелер',
+      writeSomething: 'Бірдеңе жазыңыз...',
+      publish: 'Жариялау',
+      published: 'Жазба жарияланды!',
+      share: 'Бөлісу',
+      admin: 'Әкімші',
+      rules: 'Қауымдастық ережелері',
+      noRules: 'Ережелер белгіленбеген',
+      materialsPlaceholder: 'Қауымдастық материалдары осында пайда болады',
+      membersPlaceholder: 'Мүшелер тізімі осында пайда болады',
+      notFound: 'Қауымдастық табылмады',
+      noPosts: 'Жазбалар әлі жоқ',
+      beFirst: 'Бірінші болып жазыңыз!',
+      loginToJoin: 'Қосылу үшін кіріңіз',
+      loginToPost: 'Жазу үшін кіріңіз',
+    },
   }
 
-  const handleLeave = () => {
-    setIsMember(false)
-    toast({ title: 'Вы покинули сообщество' })
-  }
+  const text = txt[language]
 
-  const handleLike = (postId: string) => {
-    setLocalPosts(localPosts.map(post =>
-      post.id === postId
-        ? { ...post, liked: !post.liked, likes: post.liked ? post.likes - 1 : post.likes + 1 }
-        : post
-    ))
-  }
+  useEffect(() => {
+    const loadCommunity = async () => {
+      if (!params.id) return
 
-  const handleCreatePost = () => {
-    if (!newPost.trim()) return
+      try {
+        const communityId = params.id as string
+        const communityData = await getCommunity(communityId)
 
-    const post = {
-      id: Date.now().toString(),
-      author: { id: user?.id || '', name: user?.displayName || 'Вы', avatar: user?.avatar || null },
-      content: newPost,
-      createdAt: 'Только что',
-      likes: 0,
-      comments: 0,
-      liked: false,
+        if (!communityData) {
+          setIsLoading(false)
+          return
+        }
+
+        setCommunity(communityData)
+
+        // Load posts
+        const communityPosts = await getCommunityPosts(communityId)
+        setPosts(communityPosts)
+
+        // Load owner info
+        if (communityData.ownerId) {
+          const ownerData = await getUser(communityData.ownerId)
+          setOwner(ownerData)
+        }
+
+        // Check if user is member
+        if (user) {
+          const member = await isCommunityMember(communityId, user.id)
+          setIsMember(member)
+        }
+      } catch (error) {
+        console.error('Error loading community:', error)
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    setLocalPosts([post, ...localPosts])
-    setNewPost('')
-    toast({ title: 'Запись опубликована!' })
+    loadCommunity()
+  }, [params.id, user])
+
+  const handleJoin = async () => {
+    if (!user) {
+      toast({ title: text.loginToJoin, variant: 'destructive' })
+      return
+    }
+    if (!community) return
+
+    setIsJoining(true)
+    try {
+      await joinCommunity(community.id, user.id)
+      setIsMember(true)
+      setCommunity(prev => prev ? { ...prev, membersCount: prev.membersCount + 1 } : null)
+      toast({ title: text.joined })
+    } catch (error) {
+      console.error('Error joining:', error)
+    } finally {
+      setIsJoining(false)
+    }
   }
+
+  const handleLeave = async () => {
+    if (!user || !community) return
+
+    setIsJoining(true)
+    try {
+      await leaveCommunity(community.id, user.id)
+      setIsMember(false)
+      setCommunity(prev => prev ? { ...prev, membersCount: Math.max(0, prev.membersCount - 1) } : null)
+      toast({ title: text.left })
+    } catch (error) {
+      console.error('Error leaving:', error)
+    } finally {
+      setIsJoining(false)
+    }
+  }
+
+  const handleCreatePost = async () => {
+    if (!user) {
+      toast({ title: text.loginToPost, variant: 'destructive' })
+      return
+    }
+    if (!newPost.trim() || !community) return
+
+    setIsPosting(true)
+    try {
+      await createCommunityPost(community.id, {
+        authorId: user.id,
+        authorName: user.displayName,
+        authorAvatar: user.avatar,
+        content: newPost.trim(),
+        images: [],
+      })
+
+      // Reload posts
+      const updatedPosts = await getCommunityPosts(community.id)
+      setPosts(updatedPosts)
+      setCommunity(prev => prev ? { ...prev, postsCount: prev.postsCount + 1 } : null)
+
+      setNewPost('')
+      toast({ title: text.published })
+    } catch (error) {
+      console.error('Error creating post:', error)
+    } finally {
+      setIsPosting(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (!community) {
+    return (
+      <div className="container mx-auto py-6 px-4">
+        <Link href="/communities">
+          <Button variant="ghost" size="sm" className="mb-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            {text.back}
+          </Button>
+        </Link>
+        <div className="text-center py-12">
+          <Users className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+          <p className="text-muted-foreground">{text.notFound}</p>
+        </div>
+      </div>
+    )
+  }
+
+  const isOwner = user?.id === community.ownerId
 
   return (
     <div className="container mx-auto py-6 px-4">
       <Link href="/communities">
         <Button variant="ghost" size="sm" className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Назад к сообществам
+          {text.back}
         </Button>
       </Link>
 
       {/* Header */}
       <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-6 mb-6">
-        <div className="flex items-start gap-4">
+        <div className="flex flex-col md:flex-row items-start gap-4">
           <Avatar className="h-20 w-20">
             <AvatarImage src={community.avatar || undefined} />
             <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
@@ -159,29 +279,36 @@ export default function CommunityDetailPage() {
               <Badge variant="outline">{community.subject}</Badge>
               <span className="text-sm text-muted-foreground flex items-center gap-1">
                 <Users className="h-4 w-4" />
-                {community.membersCount.toLocaleString()} участников
+                {community.membersCount.toLocaleString()} {text.members}
               </span>
               <span className="text-sm text-muted-foreground flex items-center gap-1">
                 <MessageSquare className="h-4 w-4" />
-                {community.postsCount} записей
+                {community.postsCount} {text.posts}
               </span>
             </div>
           </div>
           <div className="flex gap-2">
-            {isMember ? (
-              <>
-                <Button variant="outline" onClick={handleLeave}>
+            {isOwner ? (
+              <Button variant="outline" size="icon">
+                <Settings className="h-4 w-4" />
+              </Button>
+            ) : isMember ? (
+              <Button variant="outline" onClick={handleLeave} disabled={isJoining}>
+                {isJoining ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
                   <UserMinus className="h-4 w-4 mr-2" />
-                  Выйти
-                </Button>
-                <Button variant="outline" size="icon">
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </>
+                )}
+                {text.leave}
+              </Button>
             ) : (
-              <Button onClick={handleJoin}>
-                <UserPlus className="h-4 w-4 mr-2" />
-                Вступить
+              <Button onClick={handleJoin} disabled={isJoining}>
+                {isJoining ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <UserPlus className="h-4 w-4 mr-2" />
+                )}
+                {text.join}
               </Button>
             )}
           </div>
@@ -193,9 +320,9 @@ export default function CommunityDetailPage() {
         <div className="lg:col-span-2">
           <Tabs defaultValue="posts">
             <TabsList className="mb-4">
-              <TabsTrigger value="posts">Записи</TabsTrigger>
-              <TabsTrigger value="materials">Материалы</TabsTrigger>
-              <TabsTrigger value="members">Участники</TabsTrigger>
+              <TabsTrigger value="posts">{text.postsTab}</TabsTrigger>
+              <TabsTrigger value="materials">{text.materialsTab}</TabsTrigger>
+              <TabsTrigger value="members">{text.membersTab}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="posts" className="space-y-4">
@@ -204,15 +331,22 @@ export default function CommunityDetailPage() {
                 <Card>
                   <CardContent className="pt-4">
                     <Textarea
-                      placeholder="Напишите что-нибудь..."
+                      placeholder={text.writeSomething}
                       value={newPost}
                       onChange={(e) => setNewPost(e.target.value)}
                       className="mb-2"
                     />
                     <div className="flex justify-end">
-                      <Button onClick={handleCreatePost} disabled={!newPost.trim()}>
-                        <Send className="h-4 w-4 mr-2" />
-                        Опубликовать
+                      <Button
+                        onClick={handleCreatePost}
+                        disabled={!newPost.trim() || isPosting}
+                      >
+                        {isPosting ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <Send className="h-4 w-4 mr-2" />
+                        )}
+                        {text.publish}
                       </Button>
                     </div>
                   </CardContent>
@@ -220,56 +354,78 @@ export default function CommunityDetailPage() {
               )}
 
               {/* Posts list */}
-              {localPosts.map((post) => (
-                <Card key={post.id}>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarImage src={post.author.avatar || undefined} />
-                          <AvatarFallback>{post.author.name[0]}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{post.author.name}</p>
-                          <p className="text-xs text-muted-foreground">{post.createdAt}</p>
-                        </div>
+              {posts.length > 0 ? (
+                posts.map((post) => (
+                  <Card key={post.id}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <Link
+                          href={`/profile/${post.authorId}`}
+                          className="flex items-center gap-3 hover:opacity-80"
+                        >
+                          <Avatar>
+                            <AvatarImage src={post.authorAvatar || undefined} />
+                            <AvatarFallback>{getInitials(post.authorName)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">{post.authorName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatRelativeTime(post.createdAt.toDate())}
+                            </p>
+                          </div>
+                        </Link>
+                        <Button variant="ghost" size="icon">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="mb-4">{post.content}</p>
-                    <div className="flex items-center gap-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleLike(post.id)}
-                        className={post.liked ? 'text-red-500' : ''}
-                      >
-                        <Heart className={`h-4 w-4 mr-1 ${post.liked ? 'fill-current' : ''}`} />
-                        {post.likes}
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <MessageSquare className="h-4 w-4 mr-1" />
-                        {post.comments}
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Share2 className="h-4 w-4 mr-1" />
-                        Поделиться
-                      </Button>
-                    </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="mb-4 whitespace-pre-wrap">{post.content}</p>
+                      {post.images && post.images.length > 0 && (
+                        <div className="grid grid-cols-2 gap-2 mb-4">
+                          {post.images.map((img, idx) => (
+                            <img
+                              key={idx}
+                              src={img}
+                              alt=""
+                              className="rounded-lg object-cover w-full h-48"
+                            />
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-4">
+                        <Button variant="ghost" size="sm">
+                          <Heart className="h-4 w-4 mr-1" />
+                          {post.likes}
+                        </Button>
+                        <Button variant="ghost" size="sm">
+                          <MessageSquare className="h-4 w-4 mr-1" />
+                          {post.comments}
+                        </Button>
+                        <Button variant="ghost" size="sm">
+                          <Share2 className="h-4 w-4 mr-1" />
+                          {text.share}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <Card>
+                  <CardContent className="py-12 text-center text-muted-foreground">
+                    <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="font-medium">{text.noPosts}</p>
+                    <p className="text-sm">{text.beFirst}</p>
                   </CardContent>
                 </Card>
-              ))}
+              )}
             </TabsContent>
 
             <TabsContent value="materials">
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Материалы сообщества появятся здесь</p>
+                  <p>{text.materialsPlaceholder}</p>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -278,7 +434,7 @@ export default function CommunityDetailPage() {
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Список участников появится здесь</p>
+                  <p>{text.membersPlaceholder}</p>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -289,38 +445,38 @@ export default function CommunityDetailPage() {
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Администраторы</CardTitle>
+              <CardTitle className="text-base">{text.admin}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {community.admins.map((admin) => (
-                  <div key={admin.id} className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={admin.avatar || undefined} />
-                      <AvatarFallback>{admin.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm">{admin.name}</span>
-                  </div>
-                ))}
-              </div>
+              <Link
+                href={`/profile/${community.ownerId}`}
+                className="flex items-center gap-2 hover:opacity-80"
+              >
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={owner?.avatar || undefined} />
+                  <AvatarFallback>{getInitials(community.ownerName)}</AvatarFallback>
+                </Avatar>
+                <span className="text-sm">{community.ownerName}</span>
+              </Link>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Правила сообщества</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ol className="space-y-2 text-sm">
-                {community.rules.map((rule, index) => (
-                  <li key={index} className="flex gap-2">
-                    <span className="text-muted-foreground">{index + 1}.</span>
-                    <span>{rule}</span>
-                  </li>
-                ))}
-              </ol>
-            </CardContent>
-          </Card>
+          {community.tags && community.tags.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">{text.rules}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ol className="space-y-2 text-sm">
+                  {community.tags.map((tag, index) => (
+                    <li key={index}>
+                      <Badge variant="secondary">{tag}</Badge>
+                    </li>
+                  ))}
+                </ol>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

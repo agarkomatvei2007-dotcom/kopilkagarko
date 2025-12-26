@@ -51,6 +51,9 @@ import {
 import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
+import { getAdminStats, getUsers } from '@/lib/firebase/firestore'
+import { Loader2 } from 'lucide-react'
+import type { User } from '@/types'
 
 // Admin emails - add your admin emails here
 const ADMIN_EMAILS = ['admin@kopilka.ru', 'agarkomatvei2007@gmail.com']
@@ -92,6 +95,15 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<{ type: string; id: string } | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [stats, setStats] = useState<AdminStats>({
+    totalUsers: 0,
+    totalMaterials: 0,
+    totalReports: 0,
+    activeToday: 0,
+  })
+  const [users, setUsers] = useState<User[]>([])
+  const [reports, setReports] = useState<ReportData[]>([])
 
   const txt = {
     ru: {
@@ -255,53 +267,38 @@ export default function AdminPage() {
   // Check if user is admin
   const isAdmin = firebaseUser?.email && ADMIN_EMAILS.includes(firebaseUser.email)
 
-  // Mock data for demonstration
-  const [stats] = useState<AdminStats>({
-    totalUsers: 156,
-    totalMaterials: 423,
-    totalReports: 12,
-    activeToday: 45,
-  })
-
-  const [users] = useState<UserData[]>([
-    {
-      id: '1',
-      email: 'user1@example.com',
-      displayName: 'Иванова М.А.',
-      avatar: null,
-      createdAt: new Date('2024-01-15'),
-      isBanned: false,
-      materialsCount: 15,
-    },
-    {
-      id: '2',
-      email: 'user2@example.com',
-      displayName: 'Петров И.В.',
-      avatar: null,
-      createdAt: new Date('2024-02-20'),
-      isBanned: false,
-      materialsCount: 8,
-    },
-  ])
-
-  const [reports] = useState<ReportData[]>([
-    {
-      id: '1',
-      type: 'material',
-      targetId: 'mat1',
-      targetTitle: 'Спамовый материал',
-      reason: 'Нарушение правил сообщества',
-      reporterName: 'Сидоров К.',
-      createdAt: new Date(),
-      status: 'pending',
-    },
-  ])
-
   useEffect(() => {
     if (!isAdmin && user) {
       router.push('/feed')
     }
   }, [isAdmin, user, router])
+
+  useEffect(() => {
+    const loadAdminData = async () => {
+      if (!isAdmin) return
+
+      try {
+        // Load stats
+        const adminStats = await getAdminStats()
+        setStats({
+          totalUsers: adminStats.usersCount,
+          totalMaterials: adminStats.materialsCount,
+          totalReports: 0, // No reports collection yet
+          activeToday: adminStats.usersCount, // Placeholder
+        })
+
+        // Load users
+        const allUsers = await getUsers('createdAt', 50)
+        setUsers(allUsers)
+      } catch (error) {
+        console.error('Error loading admin data:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadAdminData()
+  }, [isAdmin])
 
   if (!isAdmin) {
     return (
@@ -311,6 +308,14 @@ export default function AdminPage() {
         <p className="text-muted-foreground">
           {text.noAccess}
         </p>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
@@ -508,26 +513,27 @@ export default function AdminPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
+                  {users
+                    .filter(u =>
+                      u.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      u.email.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    .map((u) => (
+                    <TableRow key={u.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Avatar className="h-8 w-8">
-                            <AvatarImage src={user.avatar || undefined} />
-                            <AvatarFallback>{user.displayName[0]}</AvatarFallback>
+                            <AvatarImage src={u.avatar || undefined} />
+                            <AvatarFallback>{u.displayName[0]}</AvatarFallback>
                           </Avatar>
-                          {user.displayName}
+                          {u.displayName}
                         </div>
                       </TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.createdAt.toLocaleDateString(language === 'kk' ? 'kk-KZ' : 'ru-RU')}</TableCell>
-                      <TableCell>{user.materialsCount}</TableCell>
+                      <TableCell>{u.email}</TableCell>
+                      <TableCell>{u.createdAt?.toDate().toLocaleDateString(language === 'kk' ? 'kk-KZ' : 'ru-RU')}</TableCell>
+                      <TableCell>{u.stats?.materialsCount || 0}</TableCell>
                       <TableCell>
-                        {user.isBanned ? (
-                          <Badge variant="destructive">{text.banned}</Badge>
-                        ) : (
-                          <Badge variant="outline">{text.active}</Badge>
-                        )}
+                        <Badge variant="outline">{text.active}</Badge>
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -537,18 +543,18 @@ export default function AdminPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => router.push(`/profile/${u.id}`)}>
                               <Eye className="h-4 w-4 mr-2" />
                               {text.viewProfile}
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleBanUser(user.id)}>
+                            <DropdownMenuItem onClick={() => handleBanUser(u.id)}>
                               <Ban className="h-4 w-4 mr-2" />
-                              {user.isBanned ? text.unban : text.ban}
+                              {text.ban}
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive"
                               onClick={() => {
-                                setSelectedItem({ type: 'user', id: user.id })
+                                setSelectedItem({ type: 'user', id: u.id })
                                 setDeleteDialogOpen(true)
                               }}
                             >
