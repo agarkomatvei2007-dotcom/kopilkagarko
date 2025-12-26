@@ -156,7 +156,7 @@ export default function Navbar() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/materials">
+                    <Link href="/my-materials">
                       {t.nav.myMaterials}
                     </Link>
                   </DropdownMenuItem>
