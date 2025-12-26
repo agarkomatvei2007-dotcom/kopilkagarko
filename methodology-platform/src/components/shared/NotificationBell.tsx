@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useAuth } from '@/hooks/useAuth'
+import { useLanguage } from '@/hooks/useLanguage'
 import { getNotifications, getUnreadNotificationsCount, markNotificationAsRead, markAllNotificationsAsRead } from '@/lib/firebase/firestore'
 import { formatRelativeTime, getInitials } from '@/lib/utils'
 import type { Notification, NotificationType } from '@/types'
@@ -32,9 +33,27 @@ const notificationIcons: Record<NotificationType, React.ReactNode> = {
 
 export default function NotificationBell() {
   const { user } = useAuth()
+  const { language } = useLanguage()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
+
+  const txt = {
+    ru: {
+      title: 'Уведомления',
+      markAllRead: 'Прочитать все',
+      noNotifications: 'Нет уведомлений',
+      allNotifications: 'Все уведомления',
+    },
+    kk: {
+      title: 'Хабарландырулар',
+      markAllRead: 'Барлығын оқу',
+      noNotifications: 'Хабарландырулар жоқ',
+      allNotifications: 'Барлық хабарландырулар',
+    },
+  }
+
+  const text = txt[language]
 
   useEffect(() => {
     if (!user) return
@@ -88,7 +107,7 @@ export default function NotificationBell() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         <DropdownMenuLabel className="flex items-center justify-between">
-          <span>Уведомления</span>
+          <span>{text.title}</span>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
@@ -96,7 +115,7 @@ export default function NotificationBell() {
               className="h-auto p-0 text-xs text-primary"
               onClick={handleMarkAllAsRead}
             >
-              Прочитать все
+              {text.markAllRead}
             </Button>
           )}
         </DropdownMenuLabel>
@@ -104,7 +123,7 @@ export default function NotificationBell() {
         <ScrollArea className="h-[300px]">
           {notifications.length === 0 ? (
             <div className="py-8 text-center text-sm text-muted-foreground">
-              Нет уведомлений
+              {text.noNotifications}
             </div>
           ) : (
             notifications.map((notification) => (
@@ -152,7 +171,7 @@ export default function NotificationBell() {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild className="justify-center">
           <Link href="/notifications" className="text-primary">
-            Все уведомления
+            {text.allNotifications}
           </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
