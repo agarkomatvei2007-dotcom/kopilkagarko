@@ -51,9 +51,9 @@ import {
 import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
-import { getAdminStats, getUsers } from '@/lib/firebase/firestore'
+import { getAdminStats, getUsers, getActivities, getLatestMaterials, updateUser, deleteMaterial } from '@/lib/firebase/firestore'
 import { Loader2 } from 'lucide-react'
-import type { User } from '@/types'
+import type { User, Activity, Material } from '@/types'
 
 // Admin emails - add your admin emails here
 const ADMIN_EMAILS = ['admin@kopilka.ru', 'agarkomatvei2007@gmail.com']
@@ -104,6 +104,8 @@ export default function AdminPage() {
   })
   const [users, setUsers] = useState<User[]>([])
   const [reports, setReports] = useState<ReportData[]>([])
+  const [activities, setActivities] = useState<Activity[]>([])
+  const [materials, setMaterials] = useState<Material[]>([])
 
   const txt = {
     ru: {
@@ -290,6 +292,14 @@ export default function AdminPage() {
         // Load users
         const allUsers = await getUsers('createdAt', 50)
         setUsers(allUsers)
+
+        // Load activities
+        const recentActivities = await getActivities(10)
+        setActivities(recentActivities)
+
+        // Load materials
+        const { materials: allMaterials } = await getLatestMaterials(undefined, 50)
+        setMaterials(allMaterials)
       } catch (error) {
         console.error('Error loading admin data:', error)
       } finally {
@@ -320,27 +330,102 @@ export default function AdminPage() {
     )
   }
 
-  const handleDeleteItem = () => {
+  const handleDeleteItem = async () => {
     if (!selectedItem) return
-    toast({
-      title: text.deleted,
-      description: text.deletedSuccess,
-    })
+
+    try {
+      if (selectedItem.type === 'material') {
+        await deleteMaterial(selectedItem.id)
+        setMaterials(materials.filter(m => m.id !== selectedItem.id))
+      }
+      toast({
+        title: text.deleted,
+        description: text.deletedSuccess,
+      })
+    } catch (error) {
+      console.error('Error deleting item:', error)
+      toast({
+        title: language === 'ru' ? 'Ошибка' : 'Қате',
+        description: language === 'ru' ? 'Не удалось удалить' : 'Жою мүмкін болмады',
+        variant: 'destructive',
+      })
+    }
     setDeleteDialogOpen(false)
     setSelectedItem(null)
   }
 
-  const handleBanUser = (userId: string) => {
-    toast({
-      title: text.userBanned,
-      description: text.userBannedDesc,
-    })
+  const handleBanUser = async (userId: string) => {
+    try {
+      await updateUser(userId, { isBanned: true } as any)
+      setUsers(users.map(u => u.id === userId ? { ...u, isBanned: true } as any : u))
+      toast({
+        title: text.userBanned,
+        description: text.userBannedDesc,
+      })
+    } catch (error) {
+      console.error('Error banning user:', error)
+      toast({
+        title: language === 'ru' ? 'Ошибка' : 'Қате',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleUnbanUser = async (userId: string) => {
+    try {
+      await updateUser(userId, { isBanned: false } as any)
+      setUsers(users.map(u => u.id === userId ? { ...u, isBanned: false } as any : u))
+      toast({
+        title: language === 'ru' ? 'Пользователь разблокирован' : 'Пайдаланушы бұғаттан шығарылды',
+      })
+    } catch (error) {
+      console.error('Error unbanning user:', error)
+    }
+  }
+
+  const handleDeleteMaterial = async (materialId: string) => {
+    try {
+      await deleteMaterial(materialId)
+      setMaterials(materials.filter(m => m.id !== materialId))
+      toast({
+        title: text.deleted,
+        description: text.deletedSuccess,
+      })
+    } catch (error) {
+      console.error('Error deleting material:', error)
+    }
   }
 
   const handleResolveReport = (reportId: string, action: 'resolve' | 'dismiss') => {
     toast({
       title: action === 'resolve' ? text.reportResolved : text.reportDismissed,
     })
+  }
+
+  const formatActivityText = (activity: Activity) => {
+    switch (activity.type) {
+      case 'material_published':
+        return language === 'ru' ? 'опубликовал(а) материал' : 'материал жариялады'
+      case 'user_followed':
+        return language === 'ru' ? 'подписался(-ась)' : 'жазылды'
+      default:
+        return activity.type
+    }
+  }
+
+  const formatTimeAgo = (date: Date) => {
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+
+    if (diffMins < 1) return language === 'ru' ? 'только что' : 'жаңа ғана'
+    if (diffMins < 60) return `${diffMins} ${text.minutesAgo}`
+
+    const diffHours = Math.floor(diffMins / 60)
+    if (diffHours < 24) return language === 'ru' ? `${diffHours} ч. назад` : `${diffHours} сағ. бұрын`
+
+    const diffDays = Math.floor(diffHours / 24)
+    return language === 'ru' ? `${diffDays} дн. назад` : `${diffDays} күн бұрын`
   }
 
   return (
@@ -414,35 +499,31 @@ export default function AdminPage() {
                 <CardDescription>{text.recentActions}</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>И</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">Иванова М.А. {text.publishedMaterial}</p>
-                      <p className="text-xs text-muted-foreground">5 {text.minutesAgo}</p>
-                    </div>
+                {activities.length > 0 ? (
+                  <div className="space-y-4">
+                    {activities.slice(0, 5).map((activity) => (
+                      <div key={activity.id} className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={activity.actorAvatar || undefined} />
+                          <AvatarFallback>{activity.actorName?.[0] || '?'}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">
+                            {activity.actorName} {formatActivityText(activity)}
+                            {activity.materialTitle && ` "${activity.materialTitle}"`}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {activity.createdAt && formatTimeAgo(activity.createdAt.toDate())}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>П</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">Петров И.В. {text.registered}</p>
-                      <p className="text-xs text-muted-foreground">15 {text.minutesAgo}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>С</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">Сидорова Е.К. {text.leftComment}</p>
-                      <p className="text-xs text-muted-foreground">30 {text.minutesAgo}</p>
-                    </div>
-                  </div>
-                </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-4">
+                    {language === 'ru' ? 'Нет активности' : 'Белсенділік жоқ'}
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -533,7 +614,11 @@ export default function AdminPage() {
                       <TableCell>{u.createdAt?.toDate().toLocaleDateString(language === 'kk' ? 'kk-KZ' : 'ru-RU')}</TableCell>
                       <TableCell>{u.stats?.materialsCount || 0}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{text.active}</Badge>
+                        {(u as any).isBanned ? (
+                          <Badge variant="destructive">{text.banned}</Badge>
+                        ) : (
+                          <Badge variant="outline">{text.active}</Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -543,14 +628,21 @@ export default function AdminPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => router.push(`/profile/${u.id}`)}>
+                            <DropdownMenuItem onClick={() => router.push(`/profile/${u.username || u.id}`)}>
                               <Eye className="h-4 w-4 mr-2" />
                               {text.viewProfile}
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleBanUser(u.id)}>
-                              <Ban className="h-4 w-4 mr-2" />
-                              {text.ban}
-                            </DropdownMenuItem>
+                            {(u as any).isBanned ? (
+                              <DropdownMenuItem onClick={() => handleUnbanUser(u.id)}>
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                {text.unban}
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem onClick={() => handleBanUser(u.id)}>
+                                <Ban className="h-4 w-4 mr-2" />
+                                {text.ban}
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               className="text-destructive"
                               onClick={() => {
@@ -579,9 +671,64 @@ export default function AdminPage() {
               <CardDescription>{text.materialsModeration}</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-center text-muted-foreground py-8">
-                {text.materialsListHere}
-              </p>
+              {materials.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{language === 'ru' ? 'Название' : 'Атауы'}</TableHead>
+                      <TableHead>{language === 'ru' ? 'Автор' : 'Автор'}</TableHead>
+                      <TableHead>{language === 'ru' ? 'Предмет' : 'Пән'}</TableHead>
+                      <TableHead>{language === 'ru' ? 'Дата' : 'Күні'}</TableHead>
+                      <TableHead>{language === 'ru' ? 'Просмотры' : 'Көрулер'}</TableHead>
+                      <TableHead>{text.actions}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {materials.map((material) => (
+                      <TableRow key={material.id}>
+                        <TableCell className="font-medium max-w-[200px] truncate">
+                          {material.title}
+                        </TableCell>
+                        <TableCell>{material.authorName}</TableCell>
+                        <TableCell>{material.subject}</TableCell>
+                        <TableCell>
+                          {material.createdAt?.toDate().toLocaleDateString(language === 'kk' ? 'kk-KZ' : 'ru-RU')}
+                        </TableCell>
+                        <TableCell>{material.stats?.views || 0}</TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                {text.actions}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem onClick={() => router.push(`/materials/${material.id}`)}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                {language === 'ru' ? 'Просмотр' : 'Қарау'}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => {
+                                  setSelectedItem({ type: 'material', id: material.id })
+                                  setDeleteDialogOpen(true)
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                {text.delete}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">
+                  {language === 'ru' ? 'Нет материалов' : 'Материалдар жоқ'}
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
