@@ -29,9 +29,10 @@ interface Message {
 export async function POST(request: NextRequest) {
   try {
     if (!GEMINI_API_KEY) {
+      console.error('GEMINI_API_KEY is not set in environment variables')
       return NextResponse.json(
-        { error: 'Gemini API key not configured' },
-        { status: 500 }
+        { error: 'API_KEY_NOT_CONFIGURED', message: 'ИИ-ассистент временно недоступен. API ключ не настроен.' },
+        { status: 503 }
       )
     }
 
