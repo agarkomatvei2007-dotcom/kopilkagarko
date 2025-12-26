@@ -27,12 +27,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/hooks/useAuth'
+import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
 import { getUserCollections, createCollection } from '@/lib/firebase/firestore'
 import type { Collection } from '@/types'
 
 export default function CollectionsPage() {
   const { user } = useAuth()
+  const { t, language } = useLanguage()
   const { toast } = useToast()
   const [collections, setCollections] = useState<Collection[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -43,6 +45,61 @@ export default function CollectionsPage() {
     isPublic: false,
   })
   const [isCreating, setIsCreating] = useState(false)
+
+  const txt = {
+    ru: {
+      title: 'Мои коллекции',
+      createCollection: 'Создать коллекцию',
+      newCollection: 'Новая коллекция',
+      createDesc: 'Создайте коллекцию для организации материалов',
+      name: 'Название',
+      namePlaceholder: 'Моя коллекция',
+      description: 'Описание',
+      descPlaceholder: 'Описание коллекции...',
+      publicCollection: 'Публичная коллекция',
+      publicDesc: 'Другие пользователи смогут видеть эту коллекцию',
+      cancel: 'Отмена',
+      create: 'Создать',
+      creating: 'Создание...',
+      noCollections: 'У вас пока нет коллекций',
+      createFirst: 'Создать первую коллекцию',
+      edit: 'Редактировать',
+      delete: 'Удалить',
+      materials: 'материал(ов)',
+      collectionCreated: 'Коллекция создана',
+      collectionCreatedDesc: 'Теперь вы можете добавлять в неё материалы',
+      error: 'Ошибка',
+      createError: 'Не удалось создать коллекцию',
+      loginRequired: 'Войдите, чтобы увидеть свои коллекции',
+    },
+    kk: {
+      title: 'Менің жинақтарым',
+      createCollection: 'Жинақ жасау',
+      newCollection: 'Жаңа жинақ',
+      createDesc: 'Материалдарды ұйымдастыру үшін жинақ жасаңыз',
+      name: 'Атауы',
+      namePlaceholder: 'Менің жинағым',
+      description: 'Сипаттамасы',
+      descPlaceholder: 'Жинақтың сипаттамасы...',
+      publicCollection: 'Ашық жинақ',
+      publicDesc: 'Басқа пайдаланушылар бұл жинақты көре алады',
+      cancel: 'Болдырмау',
+      create: 'Жасау',
+      creating: 'Жасалуда...',
+      noCollections: 'Сізде әлі жинақтар жоқ',
+      createFirst: 'Алғашқы жинақты жасау',
+      edit: 'Өңдеу',
+      delete: 'Жою',
+      materials: 'материал',
+      collectionCreated: 'Жинақ жасалды',
+      collectionCreatedDesc: 'Енді оған материалдар қосуға болады',
+      error: 'Қате',
+      createError: 'Жинақты жасау мүмкін болмады',
+      loginRequired: 'Жинақтарыңызды көру үшін кіріңіз',
+    },
+  }
+
+  const text = txt[language]
 
   useEffect(() => {
     if (user) {
@@ -94,8 +151,8 @@ export default function CollectionsPage() {
       ])
 
       toast({
-        title: 'Коллекция создана',
-        description: 'Теперь вы можете добавлять в неё материалы',
+        title: text.collectionCreated,
+        description: text.collectionCreatedDesc,
       })
 
       setDialogOpen(false)
@@ -103,8 +160,8 @@ export default function CollectionsPage() {
     } catch (error) {
       console.error('Error creating collection:', error)
       toast({
-        title: 'Ошибка',
-        description: 'Не удалось создать коллекцию',
+        title: text.error,
+        description: text.createError,
         variant: 'destructive',
       })
     } finally {
@@ -115,7 +172,7 @@ export default function CollectionsPage() {
   if (!user) {
     return (
       <div className="container mx-auto py-12 text-center">
-        <p>Войдите, чтобы увидеть свои коллекции</p>
+        <p>{text.loginRequired}</p>
       </div>
     )
   }
@@ -123,45 +180,45 @@ export default function CollectionsPage() {
   return (
     <div className="container mx-auto py-6 px-4">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Мои коллекции</h1>
+        <h1 className="text-2xl font-bold">{text.title}</h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Создать коллекцию
+              {text.createCollection}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Новая коллекция</DialogTitle>
+              <DialogTitle>{text.newCollection}</DialogTitle>
               <DialogDescription>
-                Создайте коллекцию для организации материалов
+                {text.createDesc}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Название</Label>
+                <Label htmlFor="name">{text.name}</Label>
                 <Input
                   id="name"
-                  placeholder="Моя коллекция"
+                  placeholder={text.namePlaceholder}
                   value={newCollection.name}
                   onChange={(e) => setNewCollection({ ...newCollection, name: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Описание</Label>
+                <Label htmlFor="description">{text.description}</Label>
                 <Textarea
                   id="description"
-                  placeholder="Описание коллекции..."
+                  placeholder={text.descPlaceholder}
                   value={newCollection.description}
                   onChange={(e) => setNewCollection({ ...newCollection, description: e.target.value })}
                 />
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <Label>Публичная коллекция</Label>
+                  <Label>{text.publicCollection}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Другие пользователи смогут видеть эту коллекцию
+                    {text.publicDesc}
                   </p>
                 </div>
                 <Switch
@@ -172,10 +229,10 @@ export default function CollectionsPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                Отмена
+                {text.cancel}
               </Button>
               <Button onClick={handleCreateCollection} disabled={isCreating || !newCollection.name.trim()}>
-                {isCreating ? 'Создание...' : 'Создать'}
+                {isCreating ? text.creating : text.create}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -189,10 +246,10 @@ export default function CollectionsPage() {
       ) : collections.length === 0 ? (
         <div className="text-center py-12">
           <Folder className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-          <p className="text-muted-foreground mb-4">У вас пока нет коллекций</p>
+          <p className="text-muted-foreground mb-4">{text.noCollections}</p>
           <Button onClick={() => setDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Создать первую коллекцию
+            {text.createFirst}
           </Button>
         </div>
       ) : (
@@ -218,11 +275,11 @@ export default function CollectionsPage() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem>
                         <Edit className="h-4 w-4 mr-2" />
-                        Редактировать
+                        {text.edit}
                       </DropdownMenuItem>
                       <DropdownMenuItem className="text-destructive">
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Удалить
+                        {text.delete}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -242,7 +299,7 @@ export default function CollectionsPage() {
               </CardContent>
               <CardFooter className="pt-2">
                 <Badge variant="secondary">
-                  {collection.materialsCount} материал(ов)
+                  {collection.materialsCount} {text.materials}
                 </Badge>
               </CardFooter>
             </Card>

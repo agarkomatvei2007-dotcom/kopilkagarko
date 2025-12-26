@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useAuth } from '@/hooks/useAuth'
+import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
 import { uploadAvatar } from '@/lib/firebase/storage'
 import { getInitials } from '@/lib/utils'
@@ -39,7 +40,83 @@ type ProfileForm = z.infer<typeof profileSchema>
 
 export default function SettingsPage() {
   const { user, updateProfile } = useAuth()
+  const { language } = useLanguage()
   const { toast } = useToast()
+
+  const txt = {
+    ru: {
+      title: 'Настройки',
+      profilePhoto: 'Фото профиля',
+      uploadPhoto: 'Загрузить фото',
+      photoHint: 'JPG, PNG до 5MB',
+      avatarUpdated: 'Аватар обновлен',
+      avatarError: 'Не удалось загрузить аватар',
+      mainInfo: 'Основная информация',
+      name: 'Имя',
+      aboutMe: 'О себе',
+      aboutPlaceholder: 'Расскажите о себе...',
+      college: 'Колледж / Учреждение',
+      collegePlaceholder: 'Название колледжа',
+      city: 'Город',
+      cityPlaceholder: 'Ваш город',
+      experience: 'Опыт работы (лет)',
+      subjects: 'Предметы',
+      subjectsDesc: 'Выберите предметы, которые вы преподаете',
+      courses: 'Курсы',
+      coursesDesc: 'Выберите курсы, с которыми вы работаете',
+      notifications: 'Уведомления',
+      emailNotifications: 'Email-уведомления',
+      emailNotificationsDesc: 'Получать уведомления на почту',
+      pushNotifications: 'Push-уведомления',
+      pushNotificationsDesc: 'Получать push-уведомления в браузере',
+      privacy: 'Приватность',
+      privateProfile: 'Приватный профиль',
+      privateProfileDesc: 'Скрыть профиль от других пользователей',
+      showEmail: 'Показывать email',
+      showEmailDesc: 'Другие пользователи смогут видеть ваш email',
+      saveChanges: 'Сохранить изменения',
+      profileUpdated: 'Профиль обновлен',
+      profileError: 'Не удалось обновить профиль',
+      error: 'Ошибка',
+    },
+    kk: {
+      title: 'Параметрлер',
+      profilePhoto: 'Профиль суреті',
+      uploadPhoto: 'Сурет жүктеу',
+      photoHint: 'JPG, PNG 5MB дейін',
+      avatarUpdated: 'Аватар жаңартылды',
+      avatarError: 'Аватарды жүктеу мүмкін болмады',
+      mainInfo: 'Негізгі ақпарат',
+      name: 'Аты',
+      aboutMe: 'Өзім туралы',
+      aboutPlaceholder: 'Өзіңіз туралы айтыңыз...',
+      college: 'Колледж / Мекеме',
+      collegePlaceholder: 'Колледж атауы',
+      city: 'Қала',
+      cityPlaceholder: 'Сіздің қалаңыз',
+      experience: 'Жұмыс тәжірибесі (жыл)',
+      subjects: 'Пәндер',
+      subjectsDesc: 'Оқытатын пәндерді таңдаңыз',
+      courses: 'Курстар',
+      coursesDesc: 'Жұмыс істейтін курстарды таңдаңыз',
+      notifications: 'Хабарландырулар',
+      emailNotifications: 'Email-хабарландырулар',
+      emailNotificationsDesc: 'Поштаға хабарландырулар алу',
+      pushNotifications: 'Push-хабарландырулар',
+      pushNotificationsDesc: 'Браузерде push-хабарландырулар алу',
+      privacy: 'Құпиялылық',
+      privateProfile: 'Жабық профиль',
+      privateProfileDesc: 'Профильді басқа пайдаланушылардан жасыру',
+      showEmail: 'Email көрсету',
+      showEmailDesc: 'Басқа пайдаланушылар сіздің email-ды көре алады',
+      saveChanges: 'Өзгерістерді сақтау',
+      profileUpdated: 'Профиль жаңартылды',
+      profileError: 'Профильді жаңарту мүмкін болмады',
+      error: 'Қате',
+    },
+  }
+
+  const text = txt[language]
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
@@ -74,11 +151,11 @@ export default function SettingsPage() {
     try {
       const url = await uploadAvatar(user.id, file)
       await updateProfile({ avatar: url })
-      toast({ title: 'Аватар обновлен' })
+      toast({ title: text.avatarUpdated })
     } catch (error) {
       toast({
-        title: 'Ошибка',
-        description: 'Не удалось загрузить аватар',
+        title: text.error,
+        description: text.avatarError,
         variant: 'destructive',
       })
     }
@@ -116,11 +193,11 @@ export default function SettingsPage() {
         settings,
       })
 
-      toast({ title: 'Профиль обновлен' })
+      toast({ title: text.profileUpdated })
     } catch (error) {
       toast({
-        title: 'Ошибка',
-        description: 'Не удалось обновить профиль',
+        title: text.error,
+        description: text.profileError,
         variant: 'destructive',
       })
     } finally {
@@ -132,13 +209,13 @@ export default function SettingsPage() {
 
   return (
     <div className="container mx-auto py-6 px-4 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-6">Настройки</h1>
+      <h1 className="text-2xl font-bold mb-6">{text.title}</h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Avatar */}
         <Card>
           <CardHeader>
-            <CardTitle>Фото профиля</CardTitle>
+            <CardTitle>{text.profilePhoto}</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center gap-6">
             <Avatar className="h-24 w-24">
@@ -159,12 +236,12 @@ export default function SettingsPage() {
                 <Button type="button" variant="outline" asChild>
                   <span className="cursor-pointer">
                     <Upload className="h-4 w-4 mr-2" />
-                    Загрузить фото
+                    {text.uploadPhoto}
                   </span>
                 </Button>
               </label>
               <p className="text-xs text-muted-foreground mt-2">
-                JPG, PNG до 5MB
+                {text.photoHint}
               </p>
             </div>
           </CardContent>
@@ -173,11 +250,11 @@ export default function SettingsPage() {
         {/* Profile info */}
         <Card>
           <CardHeader>
-            <CardTitle>Основная информация</CardTitle>
+            <CardTitle>{text.mainInfo}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="displayName">Имя</Label>
+              <Label htmlFor="displayName">{text.name}</Label>
               <Input
                 id="displayName"
                 {...register('displayName')}
@@ -188,36 +265,36 @@ export default function SettingsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="bio">О себе</Label>
+              <Label htmlFor="bio">{text.aboutMe}</Label>
               <Textarea
                 id="bio"
-                placeholder="Расскажите о себе..."
+                placeholder={text.aboutPlaceholder}
                 {...register('bio')}
               />
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="school">Колледж / Учреждение</Label>
+                <Label htmlFor="school">{text.college}</Label>
                 <Input
                   id="school"
-                  placeholder="Название колледжа"
+                  placeholder={text.collegePlaceholder}
                   {...register('school')}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="city">Город</Label>
+                <Label htmlFor="city">{text.city}</Label>
                 <Input
                   id="city"
-                  placeholder="Ваш город"
+                  placeholder={text.cityPlaceholder}
                   {...register('city')}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Опыт работы (лет)</Label>
+              <Label>{text.experience}</Label>
               <Input
                 type="number"
                 min="0"
@@ -231,8 +308,8 @@ export default function SettingsPage() {
         {/* Subjects */}
         <Card>
           <CardHeader>
-            <CardTitle>Предметы</CardTitle>
-            <CardDescription>Выберите предметы, которые вы преподаете</CardDescription>
+            <CardTitle>{text.subjects}</CardTitle>
+            <CardDescription>{text.subjectsDesc}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
@@ -257,8 +334,8 @@ export default function SettingsPage() {
         {/* Grades */}
         <Card>
           <CardHeader>
-            <CardTitle>Курсы</CardTitle>
-            <CardDescription>Выберите курсы, с которыми вы работаете</CardDescription>
+            <CardTitle>{text.courses}</CardTitle>
+            <CardDescription>{text.coursesDesc}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
@@ -283,14 +360,14 @@ export default function SettingsPage() {
         {/* Notifications */}
         <Card>
           <CardHeader>
-            <CardTitle>Уведомления</CardTitle>
+            <CardTitle>{text.notifications}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label>Email-уведомления</Label>
+                <Label>{text.emailNotifications}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Получать уведомления на почту
+                  {text.emailNotificationsDesc}
                 </p>
               </div>
               <Switch
@@ -305,9 +382,9 @@ export default function SettingsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <Label>Push-уведомления</Label>
+                <Label>{text.pushNotifications}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Получать push-уведомления в браузере
+                  {text.pushNotificationsDesc}
                 </p>
               </div>
               <Switch
@@ -323,14 +400,14 @@ export default function SettingsPage() {
         {/* Privacy */}
         <Card>
           <CardHeader>
-            <CardTitle>Приватность</CardTitle>
+            <CardTitle>{text.privacy}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label>Приватный профиль</Label>
+                <Label>{text.privateProfile}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Скрыть профиль от других пользователей
+                  {text.privateProfileDesc}
                 </p>
               </div>
               <Switch
@@ -345,9 +422,9 @@ export default function SettingsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <Label>Показывать email</Label>
+                <Label>{text.showEmail}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Другие пользователи смогут видеть ваш email
+                  {text.showEmailDesc}
                 </p>
               </div>
               <Switch
@@ -363,7 +440,7 @@ export default function SettingsPage() {
         {/* Submit */}
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Сохранить изменения
+          {text.saveChanges}
         </Button>
       </form>
     </div>

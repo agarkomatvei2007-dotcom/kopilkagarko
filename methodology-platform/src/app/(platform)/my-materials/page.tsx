@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useAuth } from '@/hooks/useAuth'
+import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
 import { getMaterialsByAuthor, deleteMaterial, updateMaterial } from '@/lib/firebase/firestore'
 import { GRADE_LABELS } from '@/types'
@@ -41,6 +42,7 @@ const typeIcons: Record<string, React.ReactNode> = {
 
 export default function MyMaterialsPage() {
   const { user } = useAuth()
+  const { t } = useLanguage()
   const { toast } = useToast()
   const [materials, setMaterials] = useState<Material[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -62,8 +64,8 @@ export default function MyMaterialsPage() {
     } catch (error) {
       console.error('Error loading materials:', error)
       toast({
-        title: 'Ошибка',
-        description: 'Не удалось загрузить материалы',
+        title: t.common.error,
+        description: t.errors.loadFailed,
         variant: 'destructive',
       })
     } finally {
@@ -77,14 +79,14 @@ export default function MyMaterialsPage() {
       await deleteMaterial(materialToDelete)
       setMaterials(materials.filter(m => m.id !== materialToDelete))
       toast({
-        title: 'Удалено',
-        description: 'Материал успешно удалён',
+        title: t.pages.myMaterials.deleted,
+        description: t.pages.myMaterials.deletedDesc,
       })
     } catch (error) {
       console.error('Error deleting material:', error)
       toast({
-        title: 'Ошибка',
-        description: 'Не удалось удалить материал',
+        title: t.common.error,
+        description: t.errors.deleteFailed,
         variant: 'destructive',
       })
     } finally {
@@ -100,16 +102,16 @@ export default function MyMaterialsPage() {
         m.id === material.id ? { ...m, isPublic: !m.isPublic } : m
       ))
       toast({
-        title: material.isPublic ? 'Скрыто' : 'Опубликовано',
+        title: material.isPublic ? t.pages.myMaterials.hidden : t.pages.myMaterials.publish,
         description: material.isPublic
-          ? 'Материал теперь виден только вам'
-          : 'Материал теперь виден всем',
+          ? t.pages.myMaterials.hiddenDesc
+          : t.pages.myMaterials.publishedDesc,
       })
     } catch (error) {
       console.error('Error updating material:', error)
       toast({
-        title: 'Ошибка',
-        description: 'Не удалось изменить видимость',
+        title: t.common.error,
+        description: t.errors.loadFailed,
         variant: 'destructive',
       })
     }
@@ -118,7 +120,7 @@ export default function MyMaterialsPage() {
   if (!user) {
     return (
       <div className="container mx-auto py-12 text-center">
-        <p>Войдите, чтобы увидеть свои материалы</p>
+        <p>{t.pages.myMaterials.loginRequired}</p>
       </div>
     )
   }
@@ -126,11 +128,11 @@ export default function MyMaterialsPage() {
   return (
     <div className="container mx-auto py-6 px-4">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Мои материалы</h1>
+        <h1 className="text-2xl font-bold">{t.pages.myMaterials.title}</h1>
         <Link href="/materials/create">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
-            Создать
+            {t.pages.myMaterials.create}
           </Button>
         </Link>
       </div>
@@ -141,11 +143,11 @@ export default function MyMaterialsPage() {
         </div>
       ) : materials.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-muted-foreground mb-4">У вас пока нет материалов</p>
+          <p className="text-muted-foreground mb-4">{t.pages.myMaterials.noMaterials}</p>
           <Link href="/materials/create">
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Создать первый материал
+              {t.pages.myMaterials.createFirst}
             </Button>
           </Link>
         </div>
@@ -161,7 +163,7 @@ export default function MyMaterialsPage() {
                     {!material.isPublic && (
                       <Badge variant="secondary">
                         <EyeOff className="h-3 w-3 mr-1" />
-                        Скрыт
+                        {t.pages.myMaterials.hidden}
                       </Badge>
                     )}
                   </div>
@@ -175,25 +177,25 @@ export default function MyMaterialsPage() {
                       <DropdownMenuItem asChild>
                         <Link href={`/materials/${material.id}`}>
                           <Eye className="h-4 w-4 mr-2" />
-                          Просмотр
+                          {t.pages.myMaterials.view}
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link href={`/materials/${material.id}/edit`}>
                           <Edit className="h-4 w-4 mr-2" />
-                          Редактировать
+                          {t.pages.myMaterials.edit}
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => toggleVisibility(material)}>
                         {material.isPublic ? (
                           <>
                             <EyeOff className="h-4 w-4 mr-2" />
-                            Скрыть
+                            {t.pages.myMaterials.hide}
                           </>
                         ) : (
                           <>
                             <Eye className="h-4 w-4 mr-2" />
-                            Опубликовать
+                            {t.pages.myMaterials.publish}
                           </>
                         )}
                       </DropdownMenuItem>
@@ -205,7 +207,7 @@ export default function MyMaterialsPage() {
                         }}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Удалить
+                        {t.pages.myMaterials.delete}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -252,15 +254,15 @@ export default function MyMaterialsPage() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Удалить материал?</AlertDialogTitle>
+            <AlertDialogTitle>{t.pages.myMaterials.deleteConfirm}</AlertDialogTitle>
             <AlertDialogDescription>
-              Это действие нельзя отменить. Материал будет удалён навсегда.
+              {t.pages.myMaterials.deleteWarning}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
-              Удалить
+              {t.common.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

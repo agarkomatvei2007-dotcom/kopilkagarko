@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Search, Filter, Grid, List } from 'lucide-react'
+import { Search, Grid, List } from 'lucide-react'
 
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -17,9 +17,10 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { searchMaterials } from '@/lib/firebase/firestore'
+import { useLanguage } from '@/hooks/useLanguage'
 import { SUBJECTS, GRADES, GRADE_LABELS } from '@/types'
 import type { Material } from '@/types'
-import { Eye, Heart, MessageCircle, FileText, Video, FileImage, HelpCircle, FileAudio } from 'lucide-react'
+import { Eye, Heart, FileText, Video, FileImage, HelpCircle, FileAudio } from 'lucide-react'
 
 const typeIcons: Record<string, React.ReactNode> = {
   text: <FileText className="h-4 w-4" />,
@@ -31,6 +32,7 @@ const typeIcons: Record<string, React.ReactNode> = {
 }
 
 export default function ExplorePage() {
+  const { t } = useLanguage()
   const [materials, setMaterials] = useState<Material[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -76,15 +78,21 @@ export default function ExplorePage() {
     handleSearch()
   }
 
+  const getDifficultyLabel = (difficulty: string) => {
+    if (difficulty === 'easy') return t.pages.explore.easy
+    if (difficulty === 'medium') return t.pages.explore.medium
+    return t.pages.explore.hard
+  }
+
   return (
     <div className="container mx-auto py-6 px-4">
-      <h1 className="text-2xl font-bold mb-6">Обзор материалов</h1>
+      <h1 className="text-2xl font-bold mb-6">{t.pages.explore.title}</h1>
 
       {/* Search and filters */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="flex-1 flex gap-2">
           <Input
-            placeholder="Поиск материалов..."
+            placeholder={t.pages.explore.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -97,10 +105,10 @@ export default function ExplorePage() {
         <div className="flex gap-2">
           <Select value={selectedSubject} onValueChange={(v) => { setSelectedSubject(v); handleFilterChange(); }}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Предмет" />
+              <SelectValue placeholder={t.materials.subject} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Все предметы</SelectItem>
+              <SelectItem value="all">{t.pages.explore.allSubjects}</SelectItem>
               {SUBJECTS.map((subject) => (
                 <SelectItem key={subject} value={subject}>
                   {subject}
@@ -111,10 +119,10 @@ export default function ExplorePage() {
 
           <Select value={selectedGrade} onValueChange={(v) => { setSelectedGrade(v); handleFilterChange(); }}>
             <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Курс" />
+              <SelectValue placeholder={t.materials.course} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Все курсы</SelectItem>
+              <SelectItem value="all">{t.pages.explore.allCourses}</SelectItem>
               {GRADES.map((grade) => (
                 <SelectItem key={grade} value={grade.toString()}>
                   {GRADE_LABELS[grade]}
@@ -149,8 +157,8 @@ export default function ExplorePage() {
         </div>
       ) : materials.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
-          <p>Материалы не найдены</p>
-          <p className="text-sm mt-2">Попробуйте изменить параметры поиска</p>
+          <p>{t.pages.explore.noResults}</p>
+          <p className="text-sm mt-2">{t.pages.explore.tryDifferent}</p>
         </div>
       ) : (
         <div className={viewMode === 'grid'
@@ -167,8 +175,7 @@ export default function ExplorePage() {
                       <Badge variant="outline">{material.subject}</Badge>
                     </div>
                     <Badge variant="secondary">
-                      {material.difficulty === 'easy' ? 'Легкий' :
-                       material.difficulty === 'medium' ? 'Средний' : 'Сложный'}
+                      {getDifficultyLabel(material.difficulty)}
                     </Badge>
                   </div>
                 </CardHeader>
