@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuth } from '@/hooks/useAuth'
+import { useLanguage } from '@/hooks/useLanguage'
 import { getLeaderboard } from '@/lib/firebase/firestore'
 import { formatNumber, getInitials } from '@/lib/utils'
 import type { User } from '@/types'
@@ -18,10 +19,38 @@ const rankIcons = [Trophy, Medal, Medal]
 
 export default function LeaderboardPage() {
   const { user: currentUser } = useAuth()
+  const { language } = useLanguage()
   const [pointsLeaders, setPointsLeaders] = useState<User[]>([])
   const [materialsLeaders, setMaterialsLeaders] = useState<User[]>([])
   const [likesLeaders, setLikesLeaders] = useState<User[]>([])
   const [isLoading, setIsLoading] = useState(true)
+
+  const txt = {
+    ru: {
+      title: 'Рейтинг',
+      byPoints: 'По очкам',
+      byMaterials: 'По материалам',
+      byLikes: 'По лайкам',
+      you: 'Вы',
+      points: 'очков',
+      materials: 'материалов',
+      likes: 'лайков',
+      level: 'Ур.',
+    },
+    kk: {
+      title: 'Рейтинг',
+      byPoints: 'Ұпай бойынша',
+      byMaterials: 'Материалдар бойынша',
+      byLikes: 'Ұнатулар бойынша',
+      you: 'Сіз',
+      points: 'ұпай',
+      materials: 'материал',
+      likes: 'ұнату',
+      level: 'Дең.',
+    },
+  }
+
+  const text = txt[language]
 
   useEffect(() => {
     const loadLeaderboards = async () => {
@@ -46,15 +75,19 @@ export default function LeaderboardPage() {
         const RankIcon = index < 3 ? rankIcons[index] : null
 
         let value: number
+        let label: string
         switch (valueField) {
           case 'points':
             value = leader.points
+            label = text.points
             break
           case 'materialsCount':
             value = leader.stats.materialsCount
+            label = text.materials
             break
           case 'totalLikes':
             value = leader.stats.totalLikes
+            label = text.likes
             break
         }
 
@@ -87,7 +120,7 @@ export default function LeaderboardPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-medium truncate">{leader.displayName}</span>
-                    {isCurrentUser && <Badge variant="secondary">Вы</Badge>}
+                    {isCurrentUser && <Badge variant="secondary">{text.you}</Badge>}
                   </div>
                   <p className="text-sm text-muted-foreground">@{leader.username}</p>
                 </div>
@@ -95,16 +128,12 @@ export default function LeaderboardPage() {
                 {/* Value */}
                 <div className="text-right">
                   <div className="font-bold text-lg">{formatNumber(value)}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {valueField === 'points' && 'очков'}
-                    {valueField === 'materialsCount' && 'материалов'}
-                    {valueField === 'totalLikes' && 'лайков'}
-                  </div>
+                  <div className="text-xs text-muted-foreground">{label}</div>
                 </div>
 
                 {/* Level badge */}
                 <Badge variant="outline" className="ml-2">
-                  Ур. {leader.level}
+                  {text.level} {leader.level}
                 </Badge>
               </CardContent>
             </Card>
@@ -126,20 +155,20 @@ export default function LeaderboardPage() {
     <div className="container mx-auto py-6 px-4">
       <div className="flex items-center gap-3 mb-6">
         <Trophy className="h-8 w-8 text-primary" />
-        <h1 className="text-2xl font-bold">Рейтинг</h1>
+        <h1 className="text-2xl font-bold">{text.title}</h1>
       </div>
 
       <Tabs defaultValue="points">
         <TabsList className="mb-6">
           <TabsTrigger value="points" className="gap-2">
             <Star className="h-4 w-4" />
-            По очкам
+            {text.byPoints}
           </TabsTrigger>
           <TabsTrigger value="materials" className="gap-2">
-            По материалам
+            {text.byMaterials}
           </TabsTrigger>
           <TabsTrigger value="likes" className="gap-2">
-            По лайкам
+            {text.byLikes}
           </TabsTrigger>
         </TabsList>
 

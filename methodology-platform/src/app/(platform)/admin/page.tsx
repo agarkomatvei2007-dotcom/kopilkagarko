@@ -49,6 +49,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/hooks/useAuth'
+import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
 
 // Admin emails - add your admin emails here
@@ -84,12 +85,172 @@ interface ReportData {
 
 export default function AdminPage() {
   const { user, firebaseUser } = useAuth()
+  const { language } = useLanguage()
   const router = useRouter()
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState('overview')
   const [searchQuery, setSearchQuery] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<{ type: string; id: string } | null>(null)
+
+  const txt = {
+    ru: {
+      title: 'Админ-панель',
+      accessDenied: 'Доступ запрещён',
+      noAccess: 'У вас нет прав для просмотра этой страницы',
+      users: 'Пользователей',
+      materials: 'Материалов',
+      reports: 'Жалоб',
+      activeToday: 'Активных сегодня',
+      perWeek: 'за неделю',
+      pending: 'Ожидают рассмотрения',
+      usersOnline: 'Пользователей онлайн',
+      overview: 'Обзор',
+      usersTab: 'Пользователи',
+      materialsTab: 'Материалы',
+      reportsTab: 'Жалобы',
+      settings: 'Настройки',
+      lastActivity: 'Последняя активность',
+      recentActions: 'Недавние действия пользователей',
+      publishedMaterial: 'опубликовала материал',
+      registered: 'зарегистрировался',
+      leftComment: 'оставила комментарий',
+      minutesAgo: 'минут назад',
+      needsAttention: 'Требует внимания',
+      moderationItems: 'Элементы требующие модерации',
+      review: 'Рассмотреть',
+      noAttention: 'Нет элементов требующих внимания',
+      userManagement: 'Управление пользователями платформы',
+      searchUsers: 'Поиск пользователей...',
+      user: 'Пользователь',
+      email: 'Email',
+      regDate: 'Дата регистрации',
+      materialsCount: 'Материалов',
+      status: 'Статус',
+      actions: 'Действия',
+      banned: 'Заблокирован',
+      active: 'Активен',
+      viewProfile: 'Просмотр профиля',
+      ban: 'Заблокировать',
+      unban: 'Разблокировать',
+      delete: 'Удалить',
+      materialsModeration: 'Модерация и управление материалами',
+      materialsListHere: 'Здесь будет список всех материалов с возможностью модерации',
+      reportsReview: 'Рассмотрение жалоб пользователей',
+      type: 'Тип',
+      object: 'Объект',
+      reason: 'Причина',
+      from: 'От кого',
+      statusLabel: 'Статус',
+      material: 'Материал',
+      userType: 'Пользователь',
+      comment: 'Комментарий',
+      pendingStatus: 'Ожидает',
+      resolved: 'Решено',
+      dismissed: 'Отклонено',
+      accept: 'Принять',
+      reject: 'Отклонить',
+      noReports: 'Нет активных жалоб',
+      platformSettings: 'Настройки платформы',
+      globalSettings: 'Глобальные настройки и конфигурация',
+      userRegistration: 'Регистрация новых пользователей',
+      allowRegistration: 'Разрешить регистрацию на платформе',
+      enabled: 'Включено',
+      disabled: 'Отключено',
+      materialsModSettings: 'Модерация материалов',
+      checkBeforePublish: 'Проверять материалы перед публикацией',
+      emailNotifications: 'Email уведомления',
+      sendEmailNotifications: 'Отправлять email уведомления пользователям',
+      deleteItem: 'Удалить элемент?',
+      deleteWarning: 'Это действие нельзя отменить. Элемент будет удалён навсегда.',
+      cancel: 'Отмена',
+      deleted: 'Удалено',
+      deletedSuccess: 'Элемент успешно удалён',
+      userBanned: 'Пользователь заблокирован',
+      userBannedDesc: 'Пользователь больше не может войти в систему',
+      reportResolved: 'Жалоба обработана',
+      reportDismissed: 'Жалоба отклонена',
+    },
+    kk: {
+      title: 'Әкімші панелі',
+      accessDenied: 'Кіруге тыйым салынған',
+      noAccess: 'Сізде бұл бетті қарау құқығы жоқ',
+      users: 'Пайдаланушылар',
+      materials: 'Материалдар',
+      reports: 'Шағымдар',
+      activeToday: 'Бүгін белсенді',
+      perWeek: 'апта ішінде',
+      pending: 'Қарауды күтуде',
+      usersOnline: 'Желідегі пайдаланушылар',
+      overview: 'Шолу',
+      usersTab: 'Пайдаланушылар',
+      materialsTab: 'Материалдар',
+      reportsTab: 'Шағымдар',
+      settings: 'Параметрлер',
+      lastActivity: 'Соңғы белсенділік',
+      recentActions: 'Пайдаланушылардың соңғы әрекеттері',
+      publishedMaterial: 'материал жариялады',
+      registered: 'тіркелді',
+      leftComment: 'пікір қалдырды',
+      minutesAgo: 'минут бұрын',
+      needsAttention: 'Назар аударуды қажет етеді',
+      moderationItems: 'Модерацияны қажет ететін элементтер',
+      review: 'Қарау',
+      noAttention: 'Назар аударатын элементтер жоқ',
+      userManagement: 'Платформа пайдаланушыларын басқару',
+      searchUsers: 'Пайдаланушыларды іздеу...',
+      user: 'Пайдаланушы',
+      email: 'Email',
+      regDate: 'Тіркелу күні',
+      materialsCount: 'Материалдар',
+      status: 'Күй',
+      actions: 'Әрекеттер',
+      banned: 'Бұғатталған',
+      active: 'Белсенді',
+      viewProfile: 'Профильді қарау',
+      ban: 'Бұғаттау',
+      unban: 'Бұғаттан шығару',
+      delete: 'Жою',
+      materialsModeration: 'Материалдарды модерациялау және басқару',
+      materialsListHere: 'Мұнда модерациялау мүмкіндігі бар барлық материалдар тізімі болады',
+      reportsReview: 'Пайдаланушы шағымдарын қарау',
+      type: 'Түрі',
+      object: 'Нысан',
+      reason: 'Себебі',
+      from: 'Кімнен',
+      statusLabel: 'Күй',
+      material: 'Материал',
+      userType: 'Пайдаланушы',
+      comment: 'Пікір',
+      pendingStatus: 'Күтуде',
+      resolved: 'Шешілді',
+      dismissed: 'Қабылданбады',
+      accept: 'Қабылдау',
+      reject: 'Қабылдамау',
+      noReports: 'Белсенді шағымдар жоқ',
+      platformSettings: 'Платформа параметрлері',
+      globalSettings: 'Жаһандық параметрлер мен конфигурация',
+      userRegistration: 'Жаңа пайдаланушыларды тіркеу',
+      allowRegistration: 'Платформаға тіркелуге рұқсат беру',
+      enabled: 'Қосулы',
+      disabled: 'Өшірулі',
+      materialsModSettings: 'Материалдарды модерациялау',
+      checkBeforePublish: 'Жарияланар алдында материалдарды тексеру',
+      emailNotifications: 'Email хабарландырулар',
+      sendEmailNotifications: 'Пайдаланушыларға email хабарландыру жіберу',
+      deleteItem: 'Элементті жою керек пе?',
+      deleteWarning: 'Бұл әрекетті қайтару мүмкін емес. Элемент мәңгілікке жойылады.',
+      cancel: 'Болдырмау',
+      deleted: 'Жойылды',
+      deletedSuccess: 'Элемент сәтті жойылды',
+      userBanned: 'Пайдаланушы бұғатталды',
+      userBannedDesc: 'Пайдаланушы енді жүйеге кіре алмайды',
+      reportResolved: 'Шағым өңделді',
+      reportDismissed: 'Шағым қабылданбады',
+    },
+  }
+
+  const text = txt[language]
 
   // Check if user is admin
   const isAdmin = firebaseUser?.email && ADMIN_EMAILS.includes(firebaseUser.email)
@@ -146,9 +307,9 @@ export default function AdminPage() {
     return (
       <div className="container mx-auto py-12 text-center">
         <Shield className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-        <h1 className="text-2xl font-bold mb-2">Доступ запрещён</h1>
+        <h1 className="text-2xl font-bold mb-2">{text.accessDenied}</h1>
         <p className="text-muted-foreground">
-          У вас нет прав для просмотра этой страницы
+          {text.noAccess}
         </p>
       </div>
     )
@@ -157,8 +318,8 @@ export default function AdminPage() {
   const handleDeleteItem = () => {
     if (!selectedItem) return
     toast({
-      title: 'Удалено',
-      description: 'Элемент успешно удалён',
+      title: text.deleted,
+      description: text.deletedSuccess,
     })
     setDeleteDialogOpen(false)
     setSelectedItem(null)
@@ -166,14 +327,14 @@ export default function AdminPage() {
 
   const handleBanUser = (userId: string) => {
     toast({
-      title: 'Пользователь заблокирован',
-      description: 'Пользователь больше не может войти в систему',
+      title: text.userBanned,
+      description: text.userBannedDesc,
     })
   }
 
   const handleResolveReport = (reportId: string, action: 'resolve' | 'dismiss') => {
     toast({
-      title: action === 'resolve' ? 'Жалоба обработана' : 'Жалоба отклонена',
+      title: action === 'resolve' ? text.reportResolved : text.reportDismissed,
     })
   }
 
@@ -181,71 +342,71 @@ export default function AdminPage() {
     <div className="container mx-auto py-6 px-4">
       <div className="flex items-center gap-2 mb-6">
         <Shield className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold">Админ-панель</h1>
+        <h1 className="text-2xl font-bold">{text.title}</h1>
       </div>
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Пользователей</CardTitle>
+            <CardTitle className="text-sm font-medium">{text.users}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalUsers}</div>
-            <p className="text-xs text-muted-foreground">+12 за неделю</p>
+            <p className="text-xs text-muted-foreground">+12 {text.perWeek}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Материалов</CardTitle>
+            <CardTitle className="text-sm font-medium">{text.materials}</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalMaterials}</div>
-            <p className="text-xs text-muted-foreground">+34 за неделю</p>
+            <p className="text-xs text-muted-foreground">+34 {text.perWeek}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Жалоб</CardTitle>
+            <CardTitle className="text-sm font-medium">{text.reports}</CardTitle>
             <Flag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalReports}</div>
-            <p className="text-xs text-muted-foreground">Ожидают рассмотрения</p>
+            <p className="text-xs text-muted-foreground">{text.pending}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Активных сегодня</CardTitle>
+            <CardTitle className="text-sm font-medium">{text.activeToday}</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.activeToday}</div>
-            <p className="text-xs text-muted-foreground">Пользователей онлайн</p>
+            <p className="text-xs text-muted-foreground">{text.usersOnline}</p>
           </CardContent>
         </Card>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="overview">Обзор</TabsTrigger>
-          <TabsTrigger value="users">Пользователи</TabsTrigger>
-          <TabsTrigger value="materials">Материалы</TabsTrigger>
-          <TabsTrigger value="reports">Жалобы</TabsTrigger>
-          <TabsTrigger value="settings">Настройки</TabsTrigger>
+          <TabsTrigger value="overview">{text.overview}</TabsTrigger>
+          <TabsTrigger value="users">{text.usersTab}</TabsTrigger>
+          <TabsTrigger value="materials">{text.materialsTab}</TabsTrigger>
+          <TabsTrigger value="reports">{text.reportsTab}</TabsTrigger>
+          <TabsTrigger value="settings">{text.settings}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4 mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
               <CardHeader>
-                <CardTitle>Последняя активность</CardTitle>
-                <CardDescription>Недавние действия пользователей</CardDescription>
+                <CardTitle>{text.lastActivity}</CardTitle>
+                <CardDescription>{text.recentActions}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -254,8 +415,8 @@ export default function AdminPage() {
                       <AvatarFallback>И</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <p className="text-sm font-medium">Иванова М.А. опубликовала материал</p>
-                      <p className="text-xs text-muted-foreground">5 минут назад</p>
+                      <p className="text-sm font-medium">Иванова М.А. {text.publishedMaterial}</p>
+                      <p className="text-xs text-muted-foreground">5 {text.minutesAgo}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -263,8 +424,8 @@ export default function AdminPage() {
                       <AvatarFallback>П</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <p className="text-sm font-medium">Петров И.В. зарегистрировался</p>
-                      <p className="text-xs text-muted-foreground">15 минут назад</p>
+                      <p className="text-sm font-medium">Петров И.В. {text.registered}</p>
+                      <p className="text-xs text-muted-foreground">15 {text.minutesAgo}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -272,8 +433,8 @@ export default function AdminPage() {
                       <AvatarFallback>С</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <p className="text-sm font-medium">Сидорова Е.К. оставила комментарий</p>
-                      <p className="text-xs text-muted-foreground">30 минут назад</p>
+                      <p className="text-sm font-medium">Сидорова Е.К. {text.leftComment}</p>
+                      <p className="text-xs text-muted-foreground">30 {text.minutesAgo}</p>
                     </div>
                   </div>
                 </div>
@@ -284,9 +445,9 @@ export default function AdminPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                  Требует внимания
+                  {text.needsAttention}
                 </CardTitle>
-                <CardDescription>Элементы требующие модерации</CardDescription>
+                <CardDescription>{text.moderationItems}</CardDescription>
               </CardHeader>
               <CardContent>
                 {reports.filter(r => r.status === 'pending').length > 0 ? (
@@ -298,14 +459,14 @@ export default function AdminPage() {
                           <p className="text-xs text-muted-foreground">{report.reason}</p>
                         </div>
                         <Button size="sm" variant="outline" onClick={() => setActiveTab('reports')}>
-                          Рассмотреть
+                          {text.review}
                         </Button>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <p className="text-muted-foreground text-center py-4">
-                    Нет элементов требующих внимания
+                    {text.noAttention}
                   </p>
                 )}
               </CardContent>
@@ -318,12 +479,12 @@ export default function AdminPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Пользователи</CardTitle>
-                  <CardDescription>Управление пользователями платформы</CardDescription>
+                  <CardTitle>{text.usersTab}</CardTitle>
+                  <CardDescription>{text.userManagement}</CardDescription>
                 </div>
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Поиск пользователей..."
+                    placeholder={text.searchUsers}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-64"
@@ -338,12 +499,12 @@ export default function AdminPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Пользователь</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Дата регистрации</TableHead>
-                    <TableHead>Материалов</TableHead>
-                    <TableHead>Статус</TableHead>
-                    <TableHead>Действия</TableHead>
+                    <TableHead>{text.user}</TableHead>
+                    <TableHead>{text.email}</TableHead>
+                    <TableHead>{text.regDate}</TableHead>
+                    <TableHead>{text.materialsCount}</TableHead>
+                    <TableHead>{text.status}</TableHead>
+                    <TableHead>{text.actions}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -359,30 +520,30 @@ export default function AdminPage() {
                         </div>
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.createdAt.toLocaleDateString('ru-RU')}</TableCell>
+                      <TableCell>{user.createdAt.toLocaleDateString(language === 'kk' ? 'kk-KZ' : 'ru-RU')}</TableCell>
                       <TableCell>{user.materialsCount}</TableCell>
                       <TableCell>
                         {user.isBanned ? (
-                          <Badge variant="destructive">Заблокирован</Badge>
+                          <Badge variant="destructive">{text.banned}</Badge>
                         ) : (
-                          <Badge variant="outline">Активен</Badge>
+                          <Badge variant="outline">{text.active}</Badge>
                         )}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">
-                              Действия
+                              {text.actions}
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
                             <DropdownMenuItem>
                               <Eye className="h-4 w-4 mr-2" />
-                              Просмотр профиля
+                              {text.viewProfile}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleBanUser(user.id)}>
                               <Ban className="h-4 w-4 mr-2" />
-                              {user.isBanned ? 'Разблокировать' : 'Заблокировать'}
+                              {user.isBanned ? text.unban : text.ban}
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive"
@@ -392,7 +553,7 @@ export default function AdminPage() {
                               }}
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
-                              Удалить
+                              {text.delete}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -408,12 +569,12 @@ export default function AdminPage() {
         <TabsContent value="materials" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Материалы</CardTitle>
-              <CardDescription>Модерация и управление материалами</CardDescription>
+              <CardTitle>{text.materialsTab}</CardTitle>
+              <CardDescription>{text.materialsModeration}</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-center text-muted-foreground py-8">
-                Здесь будет список всех материалов с возможностью модерации
+                {text.materialsListHere}
               </p>
             </CardContent>
           </Card>
@@ -422,20 +583,20 @@ export default function AdminPage() {
         <TabsContent value="reports" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Жалобы</CardTitle>
-              <CardDescription>Рассмотрение жалоб пользователей</CardDescription>
+              <CardTitle>{text.reportsTab}</CardTitle>
+              <CardDescription>{text.reportsReview}</CardDescription>
             </CardHeader>
             <CardContent>
               {reports.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Тип</TableHead>
-                      <TableHead>Объект</TableHead>
-                      <TableHead>Причина</TableHead>
-                      <TableHead>От кого</TableHead>
-                      <TableHead>Статус</TableHead>
-                      <TableHead>Действия</TableHead>
+                      <TableHead>{text.type}</TableHead>
+                      <TableHead>{text.object}</TableHead>
+                      <TableHead>{text.reason}</TableHead>
+                      <TableHead>{text.from}</TableHead>
+                      <TableHead>{text.statusLabel}</TableHead>
+                      <TableHead>{text.actions}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -443,8 +604,8 @@ export default function AdminPage() {
                       <TableRow key={report.id}>
                         <TableCell>
                           <Badge variant="outline">
-                            {report.type === 'material' ? 'Материал' :
-                             report.type === 'user' ? 'Пользователь' : 'Комментарий'}
+                            {report.type === 'material' ? text.material :
+                             report.type === 'user' ? text.userType : text.comment}
                           </Badge>
                         </TableCell>
                         <TableCell>{report.targetTitle}</TableCell>
@@ -452,11 +613,11 @@ export default function AdminPage() {
                         <TableCell>{report.reporterName}</TableCell>
                         <TableCell>
                           {report.status === 'pending' ? (
-                            <Badge variant="secondary">Ожидает</Badge>
+                            <Badge variant="secondary">{text.pendingStatus}</Badge>
                           ) : report.status === 'resolved' ? (
-                            <Badge variant="default">Решено</Badge>
+                            <Badge variant="default">{text.resolved}</Badge>
                           ) : (
-                            <Badge variant="outline">Отклонено</Badge>
+                            <Badge variant="outline">{text.dismissed}</Badge>
                           )}
                         </TableCell>
                         <TableCell>
@@ -468,7 +629,7 @@ export default function AdminPage() {
                                 onClick={() => handleResolveReport(report.id, 'resolve')}
                               >
                                 <CheckCircle className="h-4 w-4 mr-1" />
-                                Принять
+                                {text.accept}
                               </Button>
                               <Button
                                 size="sm"
@@ -476,7 +637,7 @@ export default function AdminPage() {
                                 onClick={() => handleResolveReport(report.id, 'dismiss')}
                               >
                                 <XCircle className="h-4 w-4 mr-1" />
-                                Отклонить
+                                {text.reject}
                               </Button>
                             </div>
                           )}
@@ -487,7 +648,7 @@ export default function AdminPage() {
                 </Table>
               ) : (
                 <p className="text-center text-muted-foreground py-8">
-                  Нет активных жалоб
+                  {text.noReports}
                 </p>
               )}
             </CardContent>
@@ -497,30 +658,30 @@ export default function AdminPage() {
         <TabsContent value="settings" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Настройки платформы</CardTitle>
-              <CardDescription>Глобальные настройки и конфигурация</CardDescription>
+              <CardTitle>{text.platformSettings}</CardTitle>
+              <CardDescription>{text.globalSettings}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between p-4 border rounded">
                 <div>
-                  <h4 className="font-medium">Регистрация новых пользователей</h4>
-                  <p className="text-sm text-muted-foreground">Разрешить регистрацию на платформе</p>
+                  <h4 className="font-medium">{text.userRegistration}</h4>
+                  <p className="text-sm text-muted-foreground">{text.allowRegistration}</p>
                 </div>
-                <Badge variant="default">Включено</Badge>
+                <Badge variant="default">{text.enabled}</Badge>
               </div>
               <div className="flex items-center justify-between p-4 border rounded">
                 <div>
-                  <h4 className="font-medium">Модерация материалов</h4>
-                  <p className="text-sm text-muted-foreground">Проверять материалы перед публикацией</p>
+                  <h4 className="font-medium">{text.materialsModSettings}</h4>
+                  <p className="text-sm text-muted-foreground">{text.checkBeforePublish}</p>
                 </div>
-                <Badge variant="secondary">Отключено</Badge>
+                <Badge variant="secondary">{text.disabled}</Badge>
               </div>
               <div className="flex items-center justify-between p-4 border rounded">
                 <div>
-                  <h4 className="font-medium">Email уведомления</h4>
-                  <p className="text-sm text-muted-foreground">Отправлять email уведомления пользователям</p>
+                  <h4 className="font-medium">{text.emailNotifications}</h4>
+                  <p className="text-sm text-muted-foreground">{text.sendEmailNotifications}</p>
                 </div>
-                <Badge variant="default">Включено</Badge>
+                <Badge variant="default">{text.enabled}</Badge>
               </div>
             </CardContent>
           </Card>
@@ -530,15 +691,15 @@ export default function AdminPage() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Удалить элемент?</AlertDialogTitle>
+            <AlertDialogTitle>{text.deleteItem}</AlertDialogTitle>
             <AlertDialogDescription>
-              Это действие нельзя отменить. Элемент будет удалён навсегда.
+              {text.deleteWarning}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogCancel>{text.cancel}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteItem} className="bg-destructive">
-              Удалить
+              {text.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

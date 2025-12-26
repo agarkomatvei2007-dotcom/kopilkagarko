@@ -7,15 +7,40 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { useAuth } from '@/hooks/useAuth'
+import { useLanguage } from '@/hooks/useLanguage'
 import { getAchievements, getUserAchievements } from '@/lib/firebase/firestore'
 import { formatDate } from '@/lib/utils'
 import type { Achievement, UserAchievement } from '@/types'
 
 export default function AchievementsPage() {
   const { user } = useAuth()
+  const { language } = useLanguage()
   const [achievements, setAchievements] = useState<Achievement[]>([])
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([])
   const [isLoading, setIsLoading] = useState(true)
+
+  const txt = {
+    ru: {
+      title: 'Достижения',
+      progress: 'Прогресс достижений',
+      youUnlocked: 'Вы открыли',
+      ofAll: '% всех достижений',
+      received: 'Получено',
+      progressLabel: 'Прогресс',
+      noAchievements: 'Достижения еще не настроены',
+    },
+    kk: {
+      title: 'Жетістіктер',
+      progress: 'Жетістіктер прогресі',
+      youUnlocked: 'Сіз',
+      ofAll: '% барлық жетістіктерді аштыңыз',
+      received: 'Алынды',
+      progressLabel: 'Прогресс',
+      noAchievements: 'Жетістіктер әлі бапталмаған',
+    },
+  }
+
+  const text = txt[language]
 
   useEffect(() => {
     const loadAchievements = async () => {
@@ -86,21 +111,21 @@ export default function AchievementsPage() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Award className="h-8 w-8 text-primary" />
-        <h1 className="text-2xl font-bold">Достижения</h1>
+        <h1 className="text-2xl font-bold">{text.title}</h1>
       </div>
 
       {/* Progress */}
       <Card className="mb-6">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-medium">Прогресс достижений</span>
+            <span className="font-medium">{text.progress}</span>
             <span className="text-muted-foreground">
               {unlockedCount} / {totalCount}
             </span>
           </div>
           <Progress value={progress} className="h-3" />
           <p className="text-sm text-muted-foreground mt-2">
-            Вы открыли {Math.round(progress)}% всех достижений
+            {text.youUnlocked} {Math.round(progress)}{text.ofAll}
           </p>
         </CardContent>
       </Card>
@@ -153,12 +178,12 @@ export default function AchievementsPage() {
 
                     {isUnlocked && userAchievement ? (
                       <p className="text-xs text-primary">
-                        Получено {formatDate(userAchievement.unlockedAt.toDate())}
+                        {text.received} {formatDate(userAchievement.unlockedAt.toDate())}
                       </p>
                     ) : (
                       <div>
                         <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                          <span>Прогресс</span>
+                          <span>{text.progressLabel}</span>
                           <span>
                             {currentValue} / {achievement.condition.value}
                           </span>
@@ -176,7 +201,7 @@ export default function AchievementsPage() {
 
       {achievements.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
-          Достижения еще не настроены
+          {text.noAchievements}
         </div>
       )}
     </div>

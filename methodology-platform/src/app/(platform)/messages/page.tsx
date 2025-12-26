@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/hooks/useAuth'
+import { useLanguage } from '@/hooks/useLanguage'
 
 // Demo chat data
 const chats = [
@@ -16,6 +17,7 @@ const chats = [
     id: '1',
     user: { id: '1', name: 'Иванова М.А.', avatar: null, online: true },
     lastMessage: 'Спасибо за материал!',
+    lastMessageKk: 'Материал үшін рахмет!',
     time: '10:30',
     unread: 2,
   },
@@ -23,14 +25,18 @@ const chats = [
     id: '2',
     user: { id: '2', name: 'Петров И.В.', avatar: null, online: false },
     lastMessage: 'Когда планируете выложить продолжение курса?',
+    lastMessageKk: 'Курстың жалғасын қашан жариялайсыз?',
     time: 'Вчера',
+    timeKk: 'Кеше',
     unread: 0,
   },
   {
     id: '3',
     user: { id: '3', name: 'Сидорова Е.К.', avatar: null, online: true },
     lastMessage: 'Отличная презентация!',
+    lastMessageKk: 'Тамаша презентация!',
     time: 'Пн',
+    timeKk: 'Дс',
     unread: 0,
   },
 ]
@@ -40,39 +46,66 @@ const messages = [
     id: '1',
     senderId: '1',
     text: 'Здравствуйте! Очень понравился ваш материал по дробям.',
+    textKk: 'Сәлеметсіз бе! Бөлшектер туралы материалыңыз өте ұнады.',
     time: '10:15',
   },
   {
     id: '2',
     senderId: 'me',
     text: 'Спасибо! Рад, что пригодилось.',
+    textKk: 'Рахмет! Пайдасы тигеніне қуаныштымын.',
     time: '10:20',
   },
   {
     id: '3',
     senderId: '1',
     text: 'Можете подсказать, как лучше объяснить детям сложение дробей с разными знаменателями?',
+    textKk: 'Балаларға әртүрлі бөлімі бар бөлшектерді қосуды қалай түсіндіруге болатынын айта аласыз ба?',
     time: '10:25',
   },
   {
     id: '4',
     senderId: 'me',
     text: 'Конечно! Я обычно использую визуализацию с помощью круговых диаграмм. Сначала показываю, как найти общий знаменатель на примере пиццы.',
+    textKk: 'Әрине! Мен әдетте дөңгелек диаграммалар арқылы визуализация қолданамын. Алдымен пицца мысалында ортақ бөлімді қалай табуға болатынын көрсетемін.',
     time: '10:28',
   },
   {
     id: '5',
     senderId: '1',
     text: 'Спасибо за материал!',
+    textKk: 'Материал үшін рахмет!',
     time: '10:30',
   },
 ]
 
 export default function MessagesPage() {
   const { user } = useAuth()
+  const { language } = useLanguage()
   const [selectedChat, setSelectedChat] = useState(chats[0])
   const [newMessage, setNewMessage] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+
+  const txt = {
+    ru: {
+      title: 'Сообщения',
+      searchPlaceholder: 'Поиск...',
+      online: 'В сети',
+      offline: 'Не в сети',
+      writeMessage: 'Написать сообщение...',
+      loginRequired: 'Войдите, чтобы просматривать сообщения',
+    },
+    kk: {
+      title: 'Хабарламалар',
+      searchPlaceholder: 'Іздеу...',
+      online: 'Желіде',
+      offline: 'Желіде емес',
+      writeMessage: 'Хабарлама жазу...',
+      loginRequired: 'Хабарламаларды көру үшін кіріңіз',
+    },
+  }
+
+  const text = txt[language]
 
   const filteredChats = chats.filter(chat =>
     chat.user.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -87,7 +120,7 @@ export default function MessagesPage() {
   if (!user) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
-        <p className="text-muted-foreground">Войдите, чтобы просматривать сообщения</p>
+        <p className="text-muted-foreground">{text.loginRequired}</p>
       </div>
     )
   }
@@ -97,11 +130,11 @@ export default function MessagesPage() {
       {/* Chats list */}
       <div className="w-80 border-r flex flex-col">
         <div className="p-4 border-b">
-          <h2 className="font-semibold mb-3">Сообщения</h2>
+          <h2 className="font-semibold mb-3">{text.title}</h2>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Поиск..."
+              placeholder={text.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -129,9 +162,13 @@ export default function MessagesPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <span className="font-medium truncate">{chat.user.name}</span>
-                  <span className="text-xs text-muted-foreground">{chat.time}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {language === 'kk' && chat.timeKk ? chat.timeKk : chat.time}
+                  </span>
                 </div>
-                <p className="text-sm text-muted-foreground truncate">{chat.lastMessage}</p>
+                <p className="text-sm text-muted-foreground truncate">
+                  {language === 'kk' ? chat.lastMessageKk : chat.lastMessage}
+                </p>
               </div>
               {chat.unread > 0 && (
                 <Badge className="rounded-full">{chat.unread}</Badge>
@@ -158,7 +195,7 @@ export default function MessagesPage() {
             <div>
               <p className="font-medium">{selectedChat.user.name}</p>
               <p className="text-xs text-muted-foreground">
-                {selectedChat.user.online ? 'В сети' : 'Не в сети'}
+                {selectedChat.user.online ? text.online : text.offline}
               </p>
             </div>
           </div>
@@ -190,7 +227,9 @@ export default function MessagesPage() {
                       : 'bg-muted'
                   }`}
                 >
-                  <p className="text-sm">{message.text}</p>
+                  <p className="text-sm">
+                    {language === 'kk' ? message.textKk : message.text}
+                  </p>
                   <p className={`text-xs mt-1 ${
                     message.senderId === 'me' ? 'text-primary-foreground/70' : 'text-muted-foreground'
                   }`}>
@@ -212,7 +251,7 @@ export default function MessagesPage() {
               <Image className="h-4 w-4" />
             </Button>
             <Input
-              placeholder="Написать сообщение..."
+              placeholder={text.writeMessage}
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
