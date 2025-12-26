@@ -176,10 +176,10 @@ export async function createMaterial(data: Omit<Material, 'id' | 'stats' | 'crea
     type: 'material_published',
     actorId: data.authorId,
     actorName: data.authorName,
-    actorAvatar: data.authorAvatar || null,
+    actorAvatar: data.authorAvatar ?? null,
     materialId: docRef.id,
     materialTitle: data.title,
-    materialThumbnail: data.thumbnail || null,
+    materialThumbnail: data.thumbnail ?? undefined,
   })
 
   return docRef.id

@@ -162,6 +162,7 @@ export interface Collection {
   name: string
   description: string | null
   ownerId: string
+  ownerName: string
   isPublic: boolean
 
   materialIds: string[]
@@ -402,7 +403,7 @@ export type Subject = typeof SUBJECTS[number]
 export const GRADES = [1, 2, 3, 4] as const
 export type Grade = typeof GRADES[number]
 
-export const GRADE_LABELS: Record<Grade, string> = {
+export const GRADE_LABELS: Record<number, string> = {
   1: '1 курс',
   2: '2 курс',
   3: '3 курс',

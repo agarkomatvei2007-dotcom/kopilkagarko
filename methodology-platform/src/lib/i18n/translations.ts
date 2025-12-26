@@ -573,4 +573,10 @@ export const translations = {
 } as const
 
 export type Language = keyof typeof translations
-export type TranslationKeys = typeof translations.ru
+
+// Create a type that allows any translation (ru or kk) by using string for all values
+type DeepStringify<T> = T extends object
+  ? { [K in keyof T]: DeepStringify<T[K]> }
+  : string
+
+export type TranslationKeys = DeepStringify<typeof translations.ru>

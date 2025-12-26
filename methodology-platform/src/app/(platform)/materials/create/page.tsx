@@ -217,8 +217,8 @@ export default function CreateMaterialPage() {
         description: data.description,
         type: data.type as MaterialType,
         content: {
-          text: data.type === 'text' ? content : null,
-          videoUrl: data.type === 'video' ? (data.videoUrl || null) : null,
+          text: data.type === 'text' ? content : undefined,
+          videoUrl: data.type === 'video' ? (data.videoUrl || undefined) : undefined,
           files: uploadedFiles,
         },
         subject: data.subject,
