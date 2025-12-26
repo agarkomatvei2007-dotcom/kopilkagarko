@@ -12,30 +12,99 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth, useRequireGuest } from '@/hooks/useAuth'
+import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
-
-const registerSchema = z.object({
-  displayName: z.string().min(2, 'Имя должно быть не менее 2 символов'),
-  username: z
-    .string()
-    .min(3, 'Имя пользователя должно быть не менее 3 символов')
-    .max(20, 'Имя пользователя должно быть не более 20 символов')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Только латинские буквы, цифры и _'),
-  email: z.string().email('Введите корректный email'),
-  password: z.string().min(6, 'Пароль должен быть не менее 6 символов'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Пароли не совпадают',
-  path: ['confirmPassword'],
-})
-
-type RegisterForm = z.infer<typeof registerSchema>
 
 export default function RegisterPage() {
   useRequireGuest()
   const { signUp, signInWithGoogle, isLoading } = useAuth()
+  const { language } = useLanguage()
   const { toast } = useToast()
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+
+  const txt = {
+    ru: {
+      title: 'Регистрация',
+      description: 'Создайте аккаунт для доступа к платформе',
+      displayName: 'Имя',
+      displayNamePlaceholder: 'Иван Петров',
+      username: 'Имя пользователя',
+      usernamePlaceholder: 'ivan_petrov',
+      email: 'Email',
+      emailPlaceholder: 'teacher@college.ru',
+      password: 'Пароль',
+      confirmPassword: 'Подтверждение пароля',
+      register: 'Зарегистрироваться',
+      or: 'или',
+      signInGoogle: 'Войти через Google',
+      haveAccount: 'Уже есть аккаунт?',
+      signIn: 'Войти',
+      accountCreated: 'Аккаунт создан!',
+      checkEmail: 'Проверьте почту для подтверждения email',
+      welcome: 'Добро пожаловать!',
+      successGoogle: 'Вы успешно вошли через Google',
+      error: 'Ошибка',
+      registerError: 'Произошла ошибка при регистрации',
+      googleError: 'Произошла ошибка при входе через Google',
+      displayNameError: 'Имя должно быть не менее 2 символов',
+      usernameMinError: 'Имя пользователя должно быть не менее 3 символов',
+      usernameMaxError: 'Имя пользователя должно быть не более 20 символов',
+      usernameFormatError: 'Только латинские буквы, цифры и _',
+      emailError: 'Введите корректный email',
+      passwordError: 'Пароль должен быть не менее 6 символов',
+      passwordMismatch: 'Пароли не совпадают',
+    },
+    kk: {
+      title: 'Тіркелу',
+      description: 'Платформаға кіру үшін аккаунт жасаңыз',
+      displayName: 'Аты-жөні',
+      displayNamePlaceholder: 'Иван Петров',
+      username: 'Пайдаланушы аты',
+      usernamePlaceholder: 'ivan_petrov',
+      email: 'Email',
+      emailPlaceholder: 'teacher@college.kz',
+      password: 'Құпия сөз',
+      confirmPassword: 'Құпия сөзді растау',
+      register: 'Тіркелу',
+      or: 'немесе',
+      signInGoogle: 'Google арқылы кіру',
+      haveAccount: 'Аккаунтыңыз бар ма?',
+      signIn: 'Кіру',
+      accountCreated: 'Аккаунт жасалды!',
+      checkEmail: 'Email растау үшін поштаңызды тексеріңіз',
+      welcome: 'Қош келдіңіз!',
+      successGoogle: 'Сіз Google арқылы сәтті кірдіңіз',
+      error: 'Қате',
+      registerError: 'Тіркелу кезінде қате пайда болды',
+      googleError: 'Google арқылы кіру кезінде қате пайда болды',
+      displayNameError: 'Аты-жөні кемінде 2 таңбадан тұруы керек',
+      usernameMinError: 'Пайдаланушы аты кемінде 3 таңбадан тұруы керек',
+      usernameMaxError: 'Пайдаланушы аты 20 таңбадан аспауы керек',
+      usernameFormatError: 'Тек латын әріптері, сандар және _',
+      emailError: 'Дұрыс email енгізіңіз',
+      passwordError: 'Құпия сөз кемінде 6 таңбадан тұруы керек',
+      passwordMismatch: 'Құпия сөздер сәйкес келмейді',
+    },
+  }
+
+  const text = txt[language]
+
+  const registerSchema = z.object({
+    displayName: z.string().min(2, text.displayNameError),
+    username: z
+      .string()
+      .min(3, text.usernameMinError)
+      .max(20, text.usernameMaxError)
+      .regex(/^[a-zA-Z0-9_]+$/, text.usernameFormatError),
+    email: z.string().email(text.emailError),
+    password: z.string().min(6, text.passwordError),
+    confirmPassword: z.string(),
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: text.passwordMismatch,
+    path: ['confirmPassword'],
+  })
+
+  type RegisterForm = z.infer<typeof registerSchema>
 
   const {
     register,
@@ -49,13 +118,13 @@ export default function RegisterPage() {
     try {
       await signUp(data.email, data.password, data.username, data.displayName)
       toast({
-        title: 'Аккаунт создан!',
-        description: 'Проверьте почту для подтверждения email',
+        title: text.accountCreated,
+        description: text.checkEmail,
       })
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Произошла ошибка при регистрации'
+      const errorMessage = error instanceof Error ? error.message : text.registerError
       toast({
-        title: 'Ошибка',
+        title: text.error,
         description: errorMessage,
         variant: 'destructive',
       })
@@ -67,13 +136,13 @@ export default function RegisterPage() {
     try {
       await signInWithGoogle()
       toast({
-        title: 'Добро пожаловать!',
-        description: 'Вы успешно вошли через Google',
+        title: text.welcome,
+        description: text.successGoogle,
       })
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Произошла ошибка при входе через Google'
+      const errorMessage = error instanceof Error ? error.message : text.googleError
       toast({
-        title: 'Ошибка',
+        title: text.error,
         description: errorMessage,
         variant: 'destructive',
       })
@@ -85,18 +154,18 @@ export default function RegisterPage() {
   return (
     <Card>
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl text-center">Регистрация</CardTitle>
+        <CardTitle className="text-2xl text-center">{text.title}</CardTitle>
         <CardDescription className="text-center">
-          Создайте аккаунт для доступа к платформе
+          {text.description}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="displayName">Имя</Label>
+            <Label htmlFor="displayName">{text.displayName}</Label>
             <Input
               id="displayName"
-              placeholder="Иван Петров"
+              placeholder={text.displayNamePlaceholder}
               {...register('displayName')}
               disabled={isSubmitting || isLoading}
             />
@@ -105,10 +174,10 @@ export default function RegisterPage() {
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="username">Имя пользователя</Label>
+            <Label htmlFor="username">{text.username}</Label>
             <Input
               id="username"
-              placeholder="ivan_petrov"
+              placeholder={text.usernamePlaceholder}
               {...register('username')}
               disabled={isSubmitting || isLoading}
             />
@@ -117,11 +186,11 @@ export default function RegisterPage() {
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{text.email}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="teacher@school.ru"
+              placeholder={text.emailPlaceholder}
               {...register('email')}
               disabled={isSubmitting || isLoading}
             />
@@ -130,7 +199,7 @@ export default function RegisterPage() {
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Пароль</Label>
+            <Label htmlFor="password">{text.password}</Label>
             <Input
               id="password"
               type="password"
@@ -143,7 +212,7 @@ export default function RegisterPage() {
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Подтверждение пароля</Label>
+            <Label htmlFor="confirmPassword">{text.confirmPassword}</Label>
             <Input
               id="confirmPassword"
               type="password"
@@ -163,7 +232,7 @@ export default function RegisterPage() {
             {(isSubmitting || isLoading) && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Зарегистрироваться
+            {text.register}
           </Button>
         </form>
 
@@ -173,7 +242,7 @@ export default function RegisterPage() {
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">
-              или
+              {text.or}
             </span>
           </div>
         </div>
@@ -205,14 +274,14 @@ export default function RegisterPage() {
               fill="#EA4335"
             />
           </svg>
-          Войти через Google
+          {text.signInGoogle}
         </Button>
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm text-muted-foreground">
-          Уже есть аккаунт?{' '}
+          {text.haveAccount}{' '}
           <Link href="/login" className="text-primary hover:underline">
-            Войти
+            {text.signIn}
           </Link>
         </p>
       </CardFooter>

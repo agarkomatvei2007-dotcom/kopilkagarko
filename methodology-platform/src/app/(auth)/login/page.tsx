@@ -12,20 +12,69 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth, useRequireGuest } from '@/hooks/useAuth'
+import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
-
-const loginSchema = z.object({
-  email: z.string().email('Введите корректный email'),
-  password: z.string().min(6, 'Пароль должен быть не менее 6 символов'),
-})
-
-type LoginForm = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   useRequireGuest()
   const { signIn, signInWithGoogle, isLoading } = useAuth()
+  const { language } = useLanguage()
   const { toast } = useToast()
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+
+  const txt = {
+    ru: {
+      title: 'Вход',
+      description: 'Войдите в свой аккаунт для доступа к платформе',
+      email: 'Email',
+      emailPlaceholder: 'teacher@college.ru',
+      password: 'Пароль',
+      forgotPassword: 'Забыли пароль?',
+      signIn: 'Войти',
+      or: 'или',
+      signInGoogle: 'Войти через Google',
+      noAccount: 'Нет аккаунта?',
+      register: 'Зарегистрироваться',
+      welcome: 'Добро пожаловать!',
+      successLogin: 'Вы успешно вошли в систему',
+      successGoogle: 'Вы успешно вошли через Google',
+      error: 'Ошибка',
+      loginError: 'Произошла ошибка при входе',
+      googleError: 'Произошла ошибка при входе через Google',
+      emailError: 'Введите корректный email',
+      passwordError: 'Пароль должен быть не менее 6 символов',
+    },
+    kk: {
+      title: 'Кіру',
+      description: 'Платформаға кіру үшін аккаунтыңызға кіріңіз',
+      email: 'Email',
+      emailPlaceholder: 'teacher@college.kz',
+      password: 'Құпия сөз',
+      forgotPassword: 'Құпия сөзді ұмыттыңыз ба?',
+      signIn: 'Кіру',
+      or: 'немесе',
+      signInGoogle: 'Google арқылы кіру',
+      noAccount: 'Аккаунтыңыз жоқ па?',
+      register: 'Тіркелу',
+      welcome: 'Қош келдіңіз!',
+      successLogin: 'Сіз жүйеге сәтті кірдіңіз',
+      successGoogle: 'Сіз Google арқылы сәтті кірдіңіз',
+      error: 'Қате',
+      loginError: 'Кіру кезінде қате пайда болды',
+      googleError: 'Google арқылы кіру кезінде қате пайда болды',
+      emailError: 'Дұрыс email енгізіңіз',
+      passwordError: 'Құпия сөз кемінде 6 таңбадан тұруы керек',
+    },
+  }
+
+  const text = txt[language]
+
+  const loginSchema = z.object({
+    email: z.string().email(text.emailError),
+    password: z.string().min(6, text.passwordError),
+  })
+
+  type LoginForm = z.infer<typeof loginSchema>
 
   const {
     register,
@@ -39,13 +88,13 @@ export default function LoginPage() {
     try {
       await signIn(data.email, data.password)
       toast({
-        title: 'Добро пожаловать!',
-        description: 'Вы успешно вошли в систему',
+        title: text.welcome,
+        description: text.successLogin,
       })
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Произошла ошибка при входе'
+      const errorMessage = error instanceof Error ? error.message : text.loginError
       toast({
-        title: 'Ошибка',
+        title: text.error,
         description: errorMessage,
         variant: 'destructive',
       })
@@ -57,13 +106,13 @@ export default function LoginPage() {
     try {
       await signInWithGoogle()
       toast({
-        title: 'Добро пожаловать!',
-        description: 'Вы успешно вошли через Google',
+        title: text.welcome,
+        description: text.successGoogle,
       })
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Произошла ошибка при входе через Google'
+      const errorMessage = error instanceof Error ? error.message : text.googleError
       toast({
-        title: 'Ошибка',
+        title: text.error,
         description: errorMessage,
         variant: 'destructive',
       })
@@ -75,19 +124,19 @@ export default function LoginPage() {
   return (
     <Card>
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl text-center">Вход</CardTitle>
+        <CardTitle className="text-2xl text-center">{text.title}</CardTitle>
         <CardDescription className="text-center">
-          Войдите в свой аккаунт для доступа к платформе
+          {text.description}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{text.email}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="teacher@school.ru"
+              placeholder={text.emailPlaceholder}
               {...register('email')}
               disabled={isSubmitting || isLoading}
             />
@@ -97,12 +146,12 @@ export default function LoginPage() {
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Пароль</Label>
+              <Label htmlFor="password">{text.password}</Label>
               <Link
                 href="/reset-password"
                 className="text-sm text-primary hover:underline"
               >
-                Забыли пароль?
+                {text.forgotPassword}
               </Link>
             </div>
             <Input
@@ -124,7 +173,7 @@ export default function LoginPage() {
             {(isSubmitting || isLoading) && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Войти
+            {text.signIn}
           </Button>
         </form>
 
@@ -134,7 +183,7 @@ export default function LoginPage() {
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">
-              или
+              {text.or}
             </span>
           </div>
         </div>
@@ -166,14 +215,14 @@ export default function LoginPage() {
               fill="#EA4335"
             />
           </svg>
-          Войти через Google
+          {text.signInGoogle}
         </Button>
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm text-muted-foreground">
-          Нет аккаунта?{' '}
+          {text.noAccount}{' '}
           <Link href="/register" className="text-primary hover:underline">
-            Зарегистрироваться
+            {text.register}
           </Link>
         </p>
       </CardFooter>
