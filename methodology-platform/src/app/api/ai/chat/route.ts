@@ -116,10 +116,28 @@ export async function POST(request: NextRequest) {
     )
 
     if (!response.ok) {
-      const error = await response.text()
-      console.error('Gemini API error:', error)
+      const errorText = await response.text()
+      console.error('Gemini API error:', errorText)
+
+      // Parse error for better messaging
+      let errorMessage = 'Ошибка при обращении к ИИ'
+      try {
+        const errorData = JSON.parse(errorText)
+        if (errorData.error?.message) {
+          if (errorData.error.message.includes('API_KEY_INVALID')) {
+            errorMessage = 'Неверный API ключ Gemini. Проверьте ключ в настройках.'
+          } else if (errorData.error.message.includes('QUOTA_EXCEEDED')) {
+            errorMessage = 'Превышен лимит запросов к API. Попробуйте позже.'
+          } else {
+            errorMessage = `Ошибка Gemini: ${errorData.error.message}`
+          }
+        }
+      } catch {
+        // Keep default message
+      }
+
       return NextResponse.json(
-        { error: 'Failed to get response from AI' },
+        { error: 'GEMINI_ERROR', message: errorMessage, details: errorText },
         { status: 500 }
       )
     }

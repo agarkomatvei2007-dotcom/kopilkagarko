@@ -111,13 +111,13 @@ export default function AIAssistantPage() {
       const data = await response.json()
 
       if (data.error) {
-        // Show specific message for API key not configured
-        if (data.error === 'API_KEY_NOT_CONFIGURED') {
+        // Show specific error messages
+        if (data.error === 'API_KEY_NOT_CONFIGURED' || data.error === 'GEMINI_ERROR') {
           const errorMessage: Message = {
             role: 'assistant',
             content: data.message || (language === 'ru'
-              ? 'ИИ-ассистент временно недоступен. Администратор должен настроить API ключ.'
-              : 'ЖИ-көмекші уақытша қолжетімсіз. Әкімші API кілтін баптауы керек.')
+              ? 'ИИ-ассистент временно недоступен. Попробуйте позже.'
+              : 'ЖИ-көмекші уақытша қолжетімсіз. Кейінірек қайталап көріңіз.')
           }
           setMessages(prev => [...prev, errorMessage])
           return
