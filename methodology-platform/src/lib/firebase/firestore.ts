@@ -831,3 +831,609 @@ export async function getLeaderboard(
   const snapshot = await getDocs(q)
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User))
 }
+
+// ==================== CHATS & MESSAGES ====================
+
+export async function createChat(
+  currentUserId: string,
+  currentUserName: string,
+  currentUserAvatar: string | null,
+  otherUserId: string,
+  otherUserName: string,
+  otherUserAvatar: string | null
+): Promise<string> {
+  // Check if chat already exists between these users
+  const existingChat = await getChatBetweenUsers(currentUserId, otherUserId)
+  if (existingChat) {
+    return existingChat.id
+  }
+
+  const chatRef = await addDoc(collection(requireDb(), 'chats'), {
+    participants: [currentUserId, otherUserId],
+    participantsData: {
+      [currentUserId]: {
+        name: currentUserName,
+        avatar: currentUserAvatar,
+        lastRead: serverTimestamp(),
+      },
+      [otherUserId]: {
+        name: otherUserName,
+        avatar: otherUserAvatar,
+        lastRead: serverTimestamp(),
+      },
+    },
+    lastMessage: null,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
+
+  return chatRef.id
+}
+
+export async function getChatBetweenUsers(userId1: string, userId2: string): Promise<Chat | null> {
+  const q = query(
+    collection(requireDb(), 'chats'),
+    where('participants', 'array-contains', userId1)
+  )
+  const snapshot = await getDocs(q)
+
+  for (const doc of snapshot.docs) {
+    const chat = { id: doc.id, ...doc.data() } as Chat
+    if (chat.participants.includes(userId2)) {
+      return chat
+    }
+  }
+  return null
+}
+
+export async function getChat(chatId: string): Promise<Chat | null> {
+  const docSnap = await getDoc(doc(requireDb(), 'chats', chatId))
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() } as Chat
+  }
+  return null
+}
+
+export async function getUserChats(userId: string): Promise<Chat[]> {
+  const q = query(
+    collection(requireDb(), 'chats'),
+    where('participants', 'array-contains', userId),
+    orderBy('updatedAt', 'desc')
+  )
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Chat))
+}
+
+export async function sendMessage(
+  chatId: string,
+  senderId: string,
+  text: string,
+  fileUrl?: string,
+  fileType?: string
+): Promise<string> {
+  const messageRef = await addDoc(collection(requireDb(), 'chats', chatId, 'messages'), {
+    chatId,
+    senderId,
+    text,
+    fileUrl: fileUrl || null,
+    fileType: fileType || null,
+    readBy: [senderId],
+    createdAt: serverTimestamp(),
+  })
+
+  // Update chat's last message
+  await updateDoc(doc(requireDb(), 'chats', chatId), {
+    lastMessage: {
+      text,
+      senderId,
+      timestamp: serverTimestamp(),
+    },
+    updatedAt: serverTimestamp(),
+  })
+
+  return messageRef.id
+}
+
+export async function getChatMessages(chatId: string, limitCount = 50): Promise<Message[]> {
+  const q = query(
+    collection(requireDb(), 'chats', chatId, 'messages'),
+    orderBy('createdAt', 'asc'),
+    limit(limitCount)
+  )
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message))
+}
+
+export async function markMessagesAsRead(chatId: string, userId: string): Promise<void> {
+  const messages = await getChatMessages(chatId, 100)
+  const batch = writeBatch(requireDb())
+
+  messages.forEach(message => {
+    if (!message.readBy.includes(userId)) {
+      batch.update(doc(requireDb(), 'chats', chatId, 'messages', message.id), {
+        readBy: [...message.readBy, userId],
+      })
+    }
+  })
+
+  // Update user's lastRead in chat
+  const chat = await getChat(chatId)
+  if (chat) {
+    await updateDoc(doc(requireDb(), 'chats', chatId), {
+      [`participantsData.${userId}.lastRead`]: serverTimestamp(),
+    })
+  }
+
+  await batch.commit()
+}
+
+export async function getUnreadChatsCount(userId: string): Promise<number> {
+  const chats = await getUserChats(userId)
+  let count = 0
+
+  for (const chat of chats) {
+    if (chat.lastMessage && chat.lastMessage.senderId !== userId) {
+      const userLastRead = chat.participantsData[userId]?.lastRead
+      if (!userLastRead || (chat.lastMessage.timestamp && chat.lastMessage.timestamp > userLastRead)) {
+        count++
+      }
+    }
+  }
+
+  return count
+}
+
+// ==================== COURSES ====================
+
+export async function createCourse(
+  data: Omit<Course, 'id' | 'stats' | 'lessonsCount' | 'createdAt' | 'updatedAt'>
+): Promise<string> {
+  const docRef = await addDoc(collection(requireDb(), 'courses'), {
+    ...data,
+    stats: {
+      enrollments: 0,
+      rating: 0,
+      reviews: 0,
+    },
+    lessonsCount: 0,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
+  return docRef.id
+}
+
+export async function getCourse(courseId: string): Promise<Course | null> {
+  const docSnap = await getDoc(doc(requireDb(), 'courses', courseId))
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() } as Course
+  }
+  return null
+}
+
+export async function updateCourse(courseId: string, data: Partial<Course>): Promise<void> {
+  await updateDoc(doc(requireDb(), 'courses', courseId), {
+    ...data,
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export async function deleteCourse(courseId: string): Promise<void> {
+  // Delete all lessons first
+  const lessons = await getCourseLessons(courseId)
+  const batch = writeBatch(requireDb())
+
+  lessons.forEach(lesson => {
+    batch.delete(doc(requireDb(), 'courses', courseId, 'lessons', lesson.id))
+  })
+
+  batch.delete(doc(requireDb(), 'courses', courseId))
+  await batch.commit()
+}
+
+export async function getCourses(
+  filters?: { subject?: string; instructorId?: string },
+  limitCount = 20
+): Promise<Course[]> {
+  const constraints: QueryConstraint[] = [
+    orderBy('createdAt', 'desc'),
+    limit(limitCount),
+  ]
+
+  if (filters?.subject) {
+    constraints.unshift(where('subject', '==', filters.subject))
+  }
+
+  if (filters?.instructorId) {
+    constraints.unshift(where('instructorId', '==', filters.instructorId))
+  }
+
+  const q = query(collection(requireDb(), 'courses'), ...constraints)
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course))
+}
+
+export async function addLesson(
+  courseId: string,
+  data: Omit<Lesson, 'id' | 'courseId' | 'createdAt'>
+): Promise<string> {
+  const lessonRef = await addDoc(collection(requireDb(), 'courses', courseId, 'lessons'), {
+    ...data,
+    courseId,
+    createdAt: serverTimestamp(),
+  })
+
+  // Update course lessons count
+  await updateDoc(doc(requireDb(), 'courses', courseId), {
+    lessonsCount: increment(1),
+    updatedAt: serverTimestamp(),
+  })
+
+  return lessonRef.id
+}
+
+export async function getCourseLessons(courseId: string): Promise<Lesson[]> {
+  const q = query(
+    collection(requireDb(), 'courses', courseId, 'lessons'),
+    orderBy('order', 'asc')
+  )
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lesson))
+}
+
+export async function getLesson(courseId: string, lessonId: string): Promise<Lesson | null> {
+  const docSnap = await getDoc(doc(requireDb(), 'courses', courseId, 'lessons', lessonId))
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() } as Lesson
+  }
+  return null
+}
+
+export async function enrollInCourse(courseId: string, userId: string): Promise<void> {
+  const enrollmentRef = doc(requireDb(), 'courses', courseId, 'enrollments', userId)
+  const existing = await getDoc(enrollmentRef)
+
+  if (!existing.exists()) {
+    await setDoc(enrollmentRef, {
+      userId,
+      progress: 0,
+      completedLessons: [],
+      enrolledAt: serverTimestamp(),
+    })
+
+    await updateDoc(doc(requireDb(), 'courses', courseId), {
+      'stats.enrollments': increment(1),
+    })
+  }
+}
+
+export async function isEnrolledInCourse(courseId: string, userId: string): Promise<boolean> {
+  const enrollmentRef = doc(requireDb(), 'courses', courseId, 'enrollments', userId)
+  const docSnap = await getDoc(enrollmentRef)
+  return docSnap.exists()
+}
+
+export async function getUserEnrolledCourses(userId: string): Promise<Course[]> {
+  // Get all courses and filter by enrollment
+  const courses = await getCourses({}, 100)
+  const enrolledCourses: Course[] = []
+
+  for (const course of courses) {
+    if (await isEnrolledInCourse(course.id, userId)) {
+      enrolledCourses.push(course)
+    }
+  }
+
+  return enrolledCourses
+}
+
+// ==================== COMMUNITIES ====================
+
+export interface Community {
+  id: string
+  name: string
+  description: string
+  avatar: string | null
+  coverImage: string | null
+
+  ownerId: string
+  ownerName: string
+
+  subject: string
+  tags: string[]
+
+  isPublic: boolean
+
+  membersCount: number
+  postsCount: number
+
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+export interface CommunityPost {
+  id: string
+  communityId: string
+  authorId: string
+  authorName: string
+  authorAvatar: string | null
+
+  content: string
+  images: string[]
+
+  likes: number
+  comments: number
+
+  createdAt: Timestamp
+}
+
+export async function createCommunity(
+  data: Omit<Community, 'id' | 'membersCount' | 'postsCount' | 'createdAt' | 'updatedAt'>
+): Promise<string> {
+  const docRef = await addDoc(collection(requireDb(), 'communities'), {
+    ...data,
+    membersCount: 1, // Owner is first member
+    postsCount: 0,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
+
+  // Add owner as member
+  await setDoc(doc(requireDb(), 'communities', docRef.id, 'members', data.ownerId), {
+    userId: data.ownerId,
+    role: 'owner',
+    joinedAt: serverTimestamp(),
+  })
+
+  return docRef.id
+}
+
+export async function getCommunity(communityId: string): Promise<Community | null> {
+  const docSnap = await getDoc(doc(requireDb(), 'communities', communityId))
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() } as Community
+  }
+  return null
+}
+
+export async function updateCommunity(communityId: string, data: Partial<Community>): Promise<void> {
+  await updateDoc(doc(requireDb(), 'communities', communityId), {
+    ...data,
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export async function getCommunities(
+  filters?: { subject?: string; ownerId?: string },
+  limitCount = 20
+): Promise<Community[]> {
+  const constraints: QueryConstraint[] = [
+    where('isPublic', '==', true),
+    orderBy('membersCount', 'desc'),
+    limit(limitCount),
+  ]
+
+  if (filters?.subject) {
+    constraints.unshift(where('subject', '==', filters.subject))
+  }
+
+  if (filters?.ownerId) {
+    constraints.unshift(where('ownerId', '==', filters.ownerId))
+  }
+
+  const q = query(collection(requireDb(), 'communities'), ...constraints)
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Community))
+}
+
+export async function joinCommunity(communityId: string, userId: string): Promise<void> {
+  const memberRef = doc(requireDb(), 'communities', communityId, 'members', userId)
+  const existing = await getDoc(memberRef)
+
+  if (!existing.exists()) {
+    await setDoc(memberRef, {
+      userId,
+      role: 'member',
+      joinedAt: serverTimestamp(),
+    })
+
+    await updateDoc(doc(requireDb(), 'communities', communityId), {
+      membersCount: increment(1),
+    })
+  }
+}
+
+export async function leaveCommunity(communityId: string, userId: string): Promise<void> {
+  const memberRef = doc(requireDb(), 'communities', communityId, 'members', userId)
+  const memberSnap = await getDoc(memberRef)
+
+  if (memberSnap.exists() && memberSnap.data().role !== 'owner') {
+    await deleteDoc(memberRef)
+    await updateDoc(doc(requireDb(), 'communities', communityId), {
+      membersCount: increment(-1),
+    })
+  }
+}
+
+export async function isCommunityMember(communityId: string, userId: string): Promise<boolean> {
+  const memberRef = doc(requireDb(), 'communities', communityId, 'members', userId)
+  const docSnap = await getDoc(memberRef)
+  return docSnap.exists()
+}
+
+export async function getUserCommunities(userId: string): Promise<Community[]> {
+  const communities = await getCommunities({}, 100)
+  const userCommunities: Community[] = []
+
+  for (const community of communities) {
+    if (await isCommunityMember(community.id, userId)) {
+      userCommunities.push(community)
+    }
+  }
+
+  return userCommunities
+}
+
+export async function createCommunityPost(
+  communityId: string,
+  data: Omit<CommunityPost, 'id' | 'communityId' | 'likes' | 'comments' | 'createdAt'>
+): Promise<string> {
+  const postRef = await addDoc(collection(requireDb(), 'communities', communityId, 'posts'), {
+    ...data,
+    communityId,
+    likes: 0,
+    comments: 0,
+    createdAt: serverTimestamp(),
+  })
+
+  await updateDoc(doc(requireDb(), 'communities', communityId), {
+    postsCount: increment(1),
+    updatedAt: serverTimestamp(),
+  })
+
+  return postRef.id
+}
+
+export async function getCommunityPosts(communityId: string, limitCount = 20): Promise<CommunityPost[]> {
+  const q = query(
+    collection(requireDb(), 'communities', communityId, 'posts'),
+    orderBy('createdAt', 'desc'),
+    limit(limitCount)
+  )
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunityPost))
+}
+
+// ==================== ADMIN STATS ====================
+
+export async function getAdminStats(): Promise<{
+  usersCount: number
+  materialsCount: number
+  coursesCount: number
+  communitiesCount: number
+}> {
+  const [usersSnap, materialsSnap, coursesSnap, communitiesSnap] = await Promise.all([
+    getDocs(collection(requireDb(), 'users')),
+    getDocs(collection(requireDb(), 'materials')),
+    getDocs(collection(requireDb(), 'courses')),
+    getDocs(collection(requireDb(), 'communities')),
+  ])
+
+  return {
+    usersCount: usersSnap.size,
+    materialsCount: materialsSnap.size,
+    coursesCount: coursesSnap.size,
+    communitiesCount: communitiesSnap.size,
+  }
+}
+
+// ==================== SEED DATA ====================
+
+export async function seedAchievements(): Promise<void> {
+  const achievements = [
+    {
+      name: 'Первые шаги',
+      description: 'Опубликуйте свой первый материал',
+      icon: '🎯',
+      condition: { type: 'materials_count', value: 1 },
+      points: 10,
+    },
+    {
+      name: 'Активный автор',
+      description: 'Опубликуйте 5 материалов',
+      icon: '✍️',
+      condition: { type: 'materials_count', value: 5 },
+      points: 25,
+    },
+    {
+      name: 'Мастер контента',
+      description: 'Опубликуйте 10 материалов',
+      icon: '📚',
+      condition: { type: 'materials_count', value: 10 },
+      points: 50,
+    },
+    {
+      name: 'Профессионал',
+      description: 'Опубликуйте 25 материалов',
+      icon: '🏆',
+      condition: { type: 'materials_count', value: 25 },
+      points: 100,
+    },
+    {
+      name: 'Первый лайк',
+      description: 'Получите первый лайк на ваш материал',
+      icon: '❤️',
+      condition: { type: 'likes_received', value: 1 },
+      points: 5,
+    },
+    {
+      name: 'Популярный автор',
+      description: 'Получите 10 лайков',
+      icon: '💖',
+      condition: { type: 'likes_received', value: 10 },
+      points: 20,
+    },
+    {
+      name: 'Любимец публики',
+      description: 'Получите 50 лайков',
+      icon: '🌟',
+      condition: { type: 'likes_received', value: 50 },
+      points: 75,
+    },
+    {
+      name: 'Первый подписчик',
+      description: 'Получите первого подписчика',
+      icon: '👤',
+      condition: { type: 'followers_count', value: 1 },
+      points: 10,
+    },
+    {
+      name: 'Растущая аудитория',
+      description: 'Наберите 10 подписчиков',
+      icon: '👥',
+      condition: { type: 'followers_count', value: 10 },
+      points: 30,
+    },
+    {
+      name: 'Лидер мнений',
+      description: 'Наберите 50 подписчиков',
+      icon: '🎖️',
+      condition: { type: 'followers_count', value: 50 },
+      points: 100,
+    },
+    {
+      name: 'Первые просмотры',
+      description: 'Ваши материалы просмотрели 10 раз',
+      icon: '👁️',
+      condition: { type: 'views_count', value: 10 },
+      points: 5,
+    },
+    {
+      name: 'Набираем обороты',
+      description: 'Ваши материалы просмотрели 100 раз',
+      icon: '📈',
+      condition: { type: 'views_count', value: 100 },
+      points: 25,
+    },
+    {
+      name: 'Тысячник',
+      description: 'Ваши материалы просмотрели 1000 раз',
+      icon: '🚀',
+      condition: { type: 'views_count', value: 1000 },
+      points: 100,
+    },
+  ]
+
+  for (const achievement of achievements) {
+    // Check if already exists
+    const q = query(
+      collection(requireDb(), 'achievements'),
+      where('name', '==', achievement.name),
+      limit(1)
+    )
+    const existing = await getDocs(q)
+
+    if (existing.empty) {
+      await addDoc(collection(requireDb(), 'achievements'), achievement)
+    }
+  }
+}

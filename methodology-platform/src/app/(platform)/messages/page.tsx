@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Search, Send, MoreVertical, Phone, Video, Image, Paperclip, Smile } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Search, Send, MoreVertical, Phone, Video, Image, Paperclip, Smile, Loader2, MessageCircle } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,81 +10,21 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
-
-// Demo chat data
-const chats = [
-  {
-    id: '1',
-    user: { id: '1', name: 'Иванова М.А.', avatar: null, online: true },
-    lastMessage: 'Спасибо за материал!',
-    lastMessageKk: 'Материал үшін рахмет!',
-    time: '10:30',
-    unread: 2,
-  },
-  {
-    id: '2',
-    user: { id: '2', name: 'Петров И.В.', avatar: null, online: false },
-    lastMessage: 'Когда планируете выложить продолжение курса?',
-    lastMessageKk: 'Курстың жалғасын қашан жариялайсыз?',
-    time: 'Вчера',
-    timeKk: 'Кеше',
-    unread: 0,
-  },
-  {
-    id: '3',
-    user: { id: '3', name: 'Сидорова Е.К.', avatar: null, online: true },
-    lastMessage: 'Отличная презентация!',
-    lastMessageKk: 'Тамаша презентация!',
-    time: 'Пн',
-    timeKk: 'Дс',
-    unread: 0,
-  },
-]
-
-const messages = [
-  {
-    id: '1',
-    senderId: '1',
-    text: 'Здравствуйте! Очень понравился ваш материал по дробям.',
-    textKk: 'Сәлеметсіз бе! Бөлшектер туралы материалыңыз өте ұнады.',
-    time: '10:15',
-  },
-  {
-    id: '2',
-    senderId: 'me',
-    text: 'Спасибо! Рад, что пригодилось.',
-    textKk: 'Рахмет! Пайдасы тигеніне қуаныштымын.',
-    time: '10:20',
-  },
-  {
-    id: '3',
-    senderId: '1',
-    text: 'Можете подсказать, как лучше объяснить детям сложение дробей с разными знаменателями?',
-    textKk: 'Балаларға әртүрлі бөлімі бар бөлшектерді қосуды қалай түсіндіруге болатынын айта аласыз ба?',
-    time: '10:25',
-  },
-  {
-    id: '4',
-    senderId: 'me',
-    text: 'Конечно! Я обычно использую визуализацию с помощью круговых диаграмм. Сначала показываю, как найти общий знаменатель на примере пиццы.',
-    textKk: 'Әрине! Мен әдетте дөңгелек диаграммалар арқылы визуализация қолданамын. Алдымен пицца мысалында ортақ бөлімді қалай табуға болатынын көрсетемін.',
-    time: '10:28',
-  },
-  {
-    id: '5',
-    senderId: '1',
-    text: 'Спасибо за материал!',
-    textKk: 'Материал үшін рахмет!',
-    time: '10:30',
-  },
-]
+import { getUserChats, getChatMessages, sendMessage, markMessagesAsRead } from '@/lib/firebase/firestore'
+import { getInitials, formatRelativeTime } from '@/lib/utils'
+import type { Chat, Message } from '@/types'
 
 export default function MessagesPage() {
   const { user } = useAuth()
   const { language } = useLanguage()
-  const [selectedChat, setSelectedChat] = useState(chats[0])
+  const [chats, setChats] = useState<Chat[]>([])
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
+  const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSending, setIsSending] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const txt = {
     ru: {
@@ -94,6 +34,10 @@ export default function MessagesPage() {
       offline: 'Не в сети',
       writeMessage: 'Написать сообщение...',
       loginRequired: 'Войдите, чтобы просматривать сообщения',
+      noChats: 'У вас пока нет чатов',
+      noChatsDescription: 'Начните общение с другими преподавателями на платформе',
+      selectChat: 'Выберите чат',
+      selectChatDescription: 'Выберите чат из списка слева, чтобы начать общение',
     },
     kk: {
       title: 'Хабарламалар',
@@ -102,25 +46,107 @@ export default function MessagesPage() {
       offline: 'Желіде емес',
       writeMessage: 'Хабарлама жазу...',
       loginRequired: 'Хабарламаларды көру үшін кіріңіз',
+      noChats: 'Сізде әлі чаттар жоқ',
+      noChatsDescription: 'Платформадағы басқа оқытушылармен сөйлесуді бастаңыз',
+      selectChat: 'Чат таңдаңыз',
+      selectChatDescription: 'Сөйлесуді бастау үшін сол жақтағы тізімнен чатты таңдаңыз',
     },
   }
 
   const text = txt[language]
 
-  const filteredChats = chats.filter(chat =>
-    chat.user.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Load user's chats
+  useEffect(() => {
+    const loadChats = async () => {
+      if (!user) return
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return
-    // In real app, send message to Firebase
-    setNewMessage('')
+      try {
+        const userChats = await getUserChats(user.id)
+        setChats(userChats)
+        if (userChats.length > 0 && !selectedChat) {
+          setSelectedChat(userChats[0])
+        }
+      } catch (error) {
+        console.error('Error loading chats:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadChats()
+    // Refresh chats every 30 seconds
+    const interval = setInterval(loadChats, 30000)
+    return () => clearInterval(interval)
+  }, [user])
+
+  // Load messages when chat is selected
+  useEffect(() => {
+    const loadMessages = async () => {
+      if (!selectedChat || !user) return
+
+      try {
+        const chatMessages = await getChatMessages(selectedChat.id)
+        setMessages(chatMessages)
+        // Mark messages as read
+        await markMessagesAsRead(selectedChat.id, user.id)
+      } catch (error) {
+        console.error('Error loading messages:', error)
+      }
+    }
+
+    loadMessages()
+    // Refresh messages every 5 seconds
+    const interval = setInterval(loadMessages, 5000)
+    return () => clearInterval(interval)
+  }, [selectedChat, user])
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  const filteredChats = chats.filter(chat => {
+    if (!user) return false
+    const otherUserId = chat.participants.find(id => id !== user.id)
+    const otherUserData = otherUserId ? chat.participantsData[otherUserId] : null
+    return otherUserData?.name.toLowerCase().includes(searchQuery.toLowerCase())
+  })
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedChat || !user || isSending) return
+
+    setIsSending(true)
+    try {
+      await sendMessage(selectedChat.id, user.id, newMessage.trim())
+      setNewMessage('')
+      // Reload messages
+      const chatMessages = await getChatMessages(selectedChat.id)
+      setMessages(chatMessages)
+    } catch (error) {
+      console.error('Error sending message:', error)
+    } finally {
+      setIsSending(false)
+    }
+  }
+
+  const getOtherUser = (chat: Chat) => {
+    if (!user) return null
+    const otherUserId = chat.participants.find(id => id !== user.id)
+    return otherUserId ? { id: otherUserId, ...chat.participantsData[otherUserId] } : null
   }
 
   if (!user) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
         <p className="text-muted-foreground">{text.loginRequired}</p>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
@@ -142,130 +168,155 @@ export default function MessagesPage() {
           </div>
         </div>
         <ScrollArea className="flex-1">
-          {filteredChats.map((chat) => (
-            <div
-              key={chat.id}
-              onClick={() => setSelectedChat(chat)}
-              className={`flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/50 transition-colors ${
-                selectedChat.id === chat.id ? 'bg-muted' : ''
-              }`}
-            >
-              <div className="relative">
-                <Avatar>
-                  <AvatarImage src={chat.user.avatar || undefined} />
-                  <AvatarFallback>{chat.user.name[0]}</AvatarFallback>
-                </Avatar>
-                {chat.user.online && (
-                  <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background rounded-full" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium truncate">{chat.user.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {language === 'kk' && chat.timeKk ? chat.timeKk : chat.time}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground truncate">
-                  {language === 'kk' ? chat.lastMessageKk : chat.lastMessage}
-                </p>
-              </div>
-              {chat.unread > 0 && (
-                <Badge className="rounded-full">{chat.unread}</Badge>
-              )}
+          {filteredChats.length === 0 ? (
+            <div className="p-6 text-center">
+              <MessageCircle className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+              <p className="font-medium">{text.noChats}</p>
+              <p className="text-sm text-muted-foreground mt-1">{text.noChatsDescription}</p>
             </div>
-          ))}
+          ) : (
+            filteredChats.map((chat) => {
+              const otherUser = getOtherUser(chat)
+              if (!otherUser) return null
+
+              const unread = chat.lastMessage &&
+                chat.lastMessage.senderId !== user.id &&
+                chat.participantsData[user.id]?.lastRead &&
+                chat.lastMessage.timestamp > chat.participantsData[user.id].lastRead
+
+              return (
+                <div
+                  key={chat.id}
+                  onClick={() => setSelectedChat(chat)}
+                  className={`flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/50 transition-colors ${
+                    selectedChat?.id === chat.id ? 'bg-muted' : ''
+                  }`}
+                >
+                  <Avatar>
+                    <AvatarImage src={otherUser.avatar || undefined} />
+                    <AvatarFallback>{getInitials(otherUser.name)}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium truncate">{otherUser.name}</span>
+                      {chat.lastMessage && (
+                        <span className="text-xs text-muted-foreground">
+                          {formatRelativeTime(chat.lastMessage.timestamp.toDate())}
+                        </span>
+                      )}
+                    </div>
+                    {chat.lastMessage && (
+                      <p className="text-sm text-muted-foreground truncate">
+                        {chat.lastMessage.senderId === user.id ? 'Вы: ' : ''}
+                        {chat.lastMessage.text}
+                      </p>
+                    )}
+                  </div>
+                  {unread && (
+                    <Badge className="rounded-full h-3 w-3 p-0" />
+                  )}
+                </div>
+              )
+            })
+          )}
         </ScrollArea>
       </div>
 
       {/* Chat window */}
-      <div className="flex-1 flex flex-col">
-        {/* Chat header */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Avatar>
-                <AvatarImage src={selectedChat.user.avatar || undefined} />
-                <AvatarFallback>{selectedChat.user.name[0]}</AvatarFallback>
-              </Avatar>
-              {selectedChat.user.online && (
-                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background rounded-full" />
-              )}
-            </div>
-            <div>
-              <p className="font-medium">{selectedChat.user.name}</p>
-              <p className="text-xs text-muted-foreground">
-                {selectedChat.user.online ? text.online : text.offline}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon">
-              <Phone className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Video className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Messages */}
-        <ScrollArea className="flex-1 p-4">
-          <div className="space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.senderId === 'me' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[70%] rounded-2xl px-4 py-2 ${
-                    message.senderId === 'me'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted'
-                  }`}
-                >
-                  <p className="text-sm">
-                    {language === 'kk' ? message.textKk : message.text}
-                  </p>
-                  <p className={`text-xs mt-1 ${
-                    message.senderId === 'me' ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                  }`}>
-                    {message.time}
-                  </p>
+      {selectedChat ? (
+        <div className="flex-1 flex flex-col">
+          {/* Chat header */}
+          {(() => {
+            const otherUser = getOtherUser(selectedChat)
+            return (
+              <div className="flex items-center justify-between p-4 border-b">
+                <div className="flex items-center gap-3">
+                  <Avatar>
+                    <AvatarImage src={otherUser?.avatar || undefined} />
+                    <AvatarFallback>{otherUser ? getInitials(otherUser.name) : '?'}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{otherUser?.name}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon">
+                    <Phone className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon">
+                    <Video className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-            ))}
-          </div>
-        </ScrollArea>
+            )
+          })()}
 
-        {/* Message input */}
-        <div className="p-4 border-t">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon">
-              <Paperclip className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Image className="h-4 w-4" />
-            </Button>
-            <Input
-              placeholder={text.writeMessage}
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              className="flex-1"
-            />
-            <Button variant="ghost" size="icon">
-              <Smile className="h-4 w-4" />
-            </Button>
-            <Button onClick={handleSendMessage} disabled={!newMessage.trim()}>
-              <Send className="h-4 w-4" />
-            </Button>
+          {/* Messages */}
+          <ScrollArea className="flex-1 p-4">
+            <div className="space-y-4">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.senderId === user.id ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[70%] rounded-2xl px-4 py-2 ${
+                      message.senderId === user.id
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted'
+                    }`}
+                  >
+                    <p className="text-sm">{message.text}</p>
+                    <p className={`text-xs mt-1 ${
+                      message.senderId === user.id ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                    }`}>
+                      {message.createdAt && formatRelativeTime(message.createdAt.toDate())}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
+
+          {/* Message input */}
+          <div className="p-4 border-t">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon">
+                <Paperclip className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon">
+                <Image className="h-4 w-4" />
+              </Button>
+              <Input
+                placeholder={text.writeMessage}
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                className="flex-1"
+                disabled={isSending}
+              />
+              <Button variant="ghost" size="icon">
+                <Smile className="h-4 w-4" />
+              </Button>
+              <Button onClick={handleSendMessage} disabled={!newMessage.trim() || isSending}>
+                {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <MessageCircle className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+            <p className="font-medium">{text.selectChat}</p>
+            <p className="text-sm text-muted-foreground mt-1">{text.selectChatDescription}</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
