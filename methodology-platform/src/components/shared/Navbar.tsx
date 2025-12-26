@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation'
 import {
   BookOpen,
   Search,
-  Bell,
   Menu,
   Plus,
   MessageSquare,
@@ -13,6 +12,7 @@ import {
   Compass,
   Users,
   BookmarkIcon,
+  Sparkles,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -29,7 +29,7 @@ import {
 import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
 import { useUIStore } from '@/stores/uiStore'
-import { getInitials } from '@/lib/utils'
+import { cn, getInitials } from '@/lib/utils'
 import NotificationBell from './NotificationBell'
 import LanguageSwitcher from './LanguageSwitcher'
 
@@ -47,22 +47,24 @@ export default function Navbar() {
   ]
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full glass border-b border-white/20">
       <div className="container flex h-16 items-center gap-4 px-4">
         {/* Mobile menu button */}
         <Button
           variant="ghost"
           size="icon"
-          className="md:hidden"
+          className="md:hidden hover:bg-primary/10"
           onClick={toggleMobileMenu}
         >
           <Menu className="h-5 w-5" />
         </Button>
 
         {/* Logo */}
-        <Link href={isAuthenticated ? '/feed' : '/'} className="flex items-center gap-2">
-          <BookOpen className="h-6 w-6 text-primary" />
-          <span className="hidden font-bold sm:inline-block">
+        <Link href={isAuthenticated ? '/feed' : '/'} className="flex items-center gap-3 group">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
+            <BookOpen className="h-5 w-5 text-white" />
+          </div>
+          <span className="hidden font-bold sm:inline-block bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
             {t.landing.title}
           </span>
         </Link>
@@ -76,9 +78,12 @@ export default function Navbar() {
               return (
                 <Link key={link.href} href={link.href}>
                   <Button
-                    variant={isActive ? 'secondary' : 'ghost'}
+                    variant="ghost"
                     size="sm"
-                    className="gap-2"
+                    className={cn(
+                      "gap-2 rounded-xl transition-all",
+                      isActive && "bg-primary/10 text-primary font-medium"
+                    )}
                   >
                     <Icon className="h-4 w-4" />
                     {link.label}
@@ -92,11 +97,11 @@ export default function Navbar() {
         {/* Search bar */}
         {isAuthenticated && (
           <div className="flex-1 max-w-md ml-auto">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <div className="relative group">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
               <Input
                 placeholder={t.common.search}
-                className="pl-10"
+                className="pl-10 rounded-xl bg-muted/50 border-0 focus:bg-white focus:ring-2 focus:ring-primary/20 transition-all"
               />
             </div>
           </div>
@@ -108,18 +113,18 @@ export default function Navbar() {
             <>
               {/* Create button */}
               <Link href="/materials/create">
-                <Button size="sm" className="hidden sm:flex gap-2">
+                <Button size="sm" className="hidden sm:flex gap-2 rounded-xl btn-gradient text-white shadow-md hover:shadow-lg">
                   <Plus className="h-4 w-4" />
                   {t.common.create}
                 </Button>
-                <Button size="icon" variant="ghost" className="sm:hidden">
+                <Button size="icon" variant="ghost" className="sm:hidden hover:bg-primary/10 rounded-xl">
                   <Plus className="h-5 w-5" />
                 </Button>
               </Link>
 
               {/* Messages */}
               <Link href="/messages">
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="rounded-xl hover:bg-primary/10 relative">
                   <MessageSquare className="h-5 w-5" />
                 </Button>
               </Link>
@@ -133,56 +138,71 @@ export default function Navbar() {
               {/* User menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative">
-                    <Avatar className="h-8 w-8">
+                  <Button variant="ghost" size="icon" className="relative rounded-xl hover:bg-primary/10">
+                    <Avatar className="h-8 w-8 ring-2 ring-primary/20 ring-offset-2 ring-offset-background">
                       <AvatarImage src={user?.avatar || undefined} />
-                      <AvatarFallback>
+                      <AvatarFallback className="bg-gradient-to-br from-primary to-blue-600 text-white text-sm font-medium">
                         {user?.displayName ? getInitials(user.displayName) : 'U'}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium">{user?.displayName}</p>
-                      <p className="text-xs text-muted-foreground">@{user?.username}</p>
+                <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-xl border-0 glass-card">
+                  <DropdownMenuLabel className="p-4">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={user?.avatar || undefined} />
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-blue-600 text-white">
+                          {user?.displayName ? getInitials(user.displayName) : 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <p className="text-sm font-semibold">{user?.displayName}</p>
+                        <p className="text-xs text-muted-foreground">@{user?.username}</p>
+                      </div>
                     </div>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href={`/profile/${user?.username}`}>
-                      {t.nav.myProfile}
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/my-materials">
-                      {t.nav.myMaterials}
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/analytics">
-                      {t.nav.analytics}
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/achievements">
-                      {t.nav.achievements}
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings">
-                      {t.nav.settings}
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={signOut}
-                  >
-                    {t.nav.logout}
-                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-border/50" />
+                  <div className="p-1">
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                      <Link href={`/profile/${user?.username}`} className="flex items-center gap-2">
+                        {t.nav.myProfile}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                      <Link href="/my-materials" className="flex items-center gap-2">
+                        {t.nav.myMaterials}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                      <Link href="/analytics" className="flex items-center gap-2">
+                        {t.nav.analytics}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                      <Link href="/achievements" className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-amber-500 mr-1" />
+                        {t.nav.achievements}
+                      </Link>
+                    </DropdownMenuItem>
+                  </div>
+                  <DropdownMenuSeparator className="bg-border/50" />
+                  <div className="p-1">
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                      <Link href="/settings">
+                        {t.nav.settings}
+                      </Link>
+                    </DropdownMenuItem>
+                  </div>
+                  <DropdownMenuSeparator className="bg-border/50" />
+                  <div className="p-1">
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive focus:bg-destructive/10 rounded-lg cursor-pointer"
+                      onClick={signOut}
+                    >
+                      {t.nav.logout}
+                    </DropdownMenuItem>
+                  </div>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
@@ -190,10 +210,10 @@ export default function Navbar() {
             <>
               <LanguageSwitcher />
               <Link href="/login">
-                <Button variant="ghost">{t.nav.login}</Button>
+                <Button variant="ghost" className="rounded-xl">{t.nav.login}</Button>
               </Link>
               <Link href="/register">
-                <Button>{t.nav.register}</Button>
+                <Button className="rounded-xl btn-gradient text-white shadow-md">{t.nav.register}</Button>
               </Link>
             </>
           )}
