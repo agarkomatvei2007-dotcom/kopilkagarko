@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import {
   Heart,
@@ -50,6 +51,7 @@ interface MaterialCardProps {
 
 export default function MaterialCard({ material, showAuthor = true }: MaterialCardProps) {
   const { user } = useAuth()
+  const router = useRouter()
   const [liked, setLiked] = useState(false)
   const [likesCount, setLikesCount] = useState(material.stats.likes)
   const [isLikeLoading, setIsLikeLoading] = useState(false)
@@ -147,10 +149,13 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
 
           {/* Author */}
           {showAuthor && (
-            <Link
-              href={`/profile/${material.authorId}`}
-              className="flex items-center gap-2 hover:opacity-80"
-              onClick={(e) => e.stopPropagation()}
+            <div
+              className="flex items-center gap-2 hover:opacity-80 cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                router.push(`/profile/${material.authorId}`)
+              }}
             >
               <Avatar className="h-6 w-6">
                 <AvatarImage src={material.authorAvatar || undefined} />
@@ -164,7 +169,7 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
               <span className="text-xs text-muted-foreground">
                 {formatRelativeTime(material.createdAt.toDate())}
               </span>
-            </Link>
+            </div>
           )}
         </CardContent>
 
