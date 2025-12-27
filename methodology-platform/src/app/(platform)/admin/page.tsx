@@ -51,8 +51,24 @@ import {
 import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
-import { getAdminStats, getUsers, getActivities, getLatestMaterials, updateUser, deleteMaterial } from '@/lib/firebase/firestore'
-import { Loader2 } from 'lucide-react'
+import {
+  getAdminStats,
+  getUsers,
+  getActivities,
+  getLatestMaterials,
+  deleteMaterial,
+  deleteUser,
+  banUser,
+  toggleMaterialVisibility,
+} from '@/lib/firebase/firestore'
+import { Loader2, EyeOff, UserX, Mail, Calendar, Award } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import type { User, Activity, Material } from '@/types'
 
 // Admin emails - add your admin emails here
@@ -106,6 +122,8 @@ export default function AdminPage() {
   const [reports, setReports] = useState<ReportData[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
   const [materials, setMaterials] = useState<Material[]>([])
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [userDetailsOpen, setUserDetailsOpen] = useState(false)
 
   const txt = {
     ru: {
@@ -337,6 +355,9 @@ export default function AdminPage() {
       if (selectedItem.type === 'material') {
         await deleteMaterial(selectedItem.id)
         setMaterials(materials.filter(m => m.id !== selectedItem.id))
+      } else if (selectedItem.type === 'user') {
+        await deleteUser(selectedItem.id)
+        setUsers(users.filter(u => u.id !== selectedItem.id))
       }
       toast({
         title: text.deleted,
@@ -356,8 +377,8 @@ export default function AdminPage() {
 
   const handleBanUser = async (userId: string) => {
     try {
-      await updateUser(userId, { isBanned: true } as any)
-      setUsers(users.map(u => u.id === userId ? { ...u, isBanned: true } as any : u))
+      await banUser(userId, true)
+      setUsers(users.map(u => u.id === userId ? { ...u, isBanned: true } : u))
       toast({
         title: text.userBanned,
         description: text.userBannedDesc,
@@ -366,6 +387,7 @@ export default function AdminPage() {
       console.error('Error banning user:', error)
       toast({
         title: language === 'ru' ? 'Ошибка' : 'Қате',
+        description: language === 'ru' ? 'Не удалось заблокировать пользователя' : 'Пайдаланушыны бұғаттау мүмкін болмады',
         variant: 'destructive',
       })
     }
@@ -373,13 +395,35 @@ export default function AdminPage() {
 
   const handleUnbanUser = async (userId: string) => {
     try {
-      await updateUser(userId, { isBanned: false } as any)
-      setUsers(users.map(u => u.id === userId ? { ...u, isBanned: false } as any : u))
+      await banUser(userId, false)
+      setUsers(users.map(u => u.id === userId ? { ...u, isBanned: false } : u))
       toast({
         title: language === 'ru' ? 'Пользователь разблокирован' : 'Пайдаланушы бұғаттан шығарылды',
       })
     } catch (error) {
       console.error('Error unbanning user:', error)
+      toast({
+        title: language === 'ru' ? 'Ошибка' : 'Қате',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleToggleVisibility = async (materialId: string) => {
+    try {
+      const newVisibility = await toggleMaterialVisibility(materialId)
+      setMaterials(materials.map(m => m.id === materialId ? { ...m, isPublic: newVisibility } : m))
+      toast({
+        title: newVisibility
+          ? (language === 'ru' ? 'Материал опубликован' : 'Материал жарияланды')
+          : (language === 'ru' ? 'Материал скрыт' : 'Материал жасырылды'),
+      })
+    } catch (error) {
+      console.error('Error toggling visibility:', error)
+      toast({
+        title: language === 'ru' ? 'Ошибка' : 'Қате',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -628,7 +672,10 @@ export default function AdminPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => router.push(`/profile/${u.username || u.id}`)}>
+                            <DropdownMenuItem onClick={() => {
+                              setSelectedUser(u)
+                              setUserDetailsOpen(true)
+                            }}>
                               <Eye className="h-4 w-4 mr-2" />
                               {text.viewProfile}
                             </DropdownMenuItem>
@@ -706,6 +753,19 @@ export default function AdminPage() {
                               <DropdownMenuItem onClick={() => router.push(`/materials/${material.id}`)}>
                                 <Eye className="h-4 w-4 mr-2" />
                                 {language === 'ru' ? 'Просмотр' : 'Қарау'}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleToggleVisibility(material.id)}>
+                                {material.isPublic ? (
+                                  <>
+                                    <EyeOff className="h-4 w-4 mr-2" />
+                                    {language === 'ru' ? 'Скрыть' : 'Жасыру'}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    {language === 'ru' ? 'Опубликовать' : 'Жариялау'}
+                                  </>
+                                )}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 className="text-destructive"
@@ -857,6 +917,133 @@ export default function AdminPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* User Details Modal */}
+      <Dialog open={userDetailsOpen} onOpenChange={setUserDetailsOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              {selectedUser && (
+                <>
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={selectedUser.avatar || undefined} />
+                    <AvatarFallback>{selectedUser.displayName?.[0] || '?'}</AvatarFallback>
+                  </Avatar>
+                  {selectedUser.displayName}
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'ru' ? 'Подробная информация о пользователе' : 'Пайдаланушы туралы толық ақпарат'}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Mail className="h-3 w-3" />
+                    Email
+                  </p>
+                  <p className="text-sm font-medium">{selectedUser.email}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Username</p>
+                  <p className="text-sm font-medium">@{selectedUser.username}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    {language === 'ru' ? 'Регистрация' : 'Тіркелу'}
+                  </p>
+                  <p className="text-sm font-medium">
+                    {selectedUser.createdAt?.toDate().toLocaleDateString(language === 'kk' ? 'kk-KZ' : 'ru-RU')}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Award className="h-3 w-3" />
+                    {language === 'ru' ? 'Уровень' : 'Деңгей'}
+                  </p>
+                  <p className="text-sm font-medium">{selectedUser.level || 1} ({selectedUser.points || 0} {language === 'ru' ? 'очков' : 'ұпай'})</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 text-center p-4 bg-muted rounded-lg">
+                <div>
+                  <p className="text-lg font-bold">{selectedUser.stats?.materialsCount || 0}</p>
+                  <p className="text-xs text-muted-foreground">{language === 'ru' ? 'Материалов' : 'Материалдар'}</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold">{selectedUser.stats?.followersCount || 0}</p>
+                  <p className="text-xs text-muted-foreground">{language === 'ru' ? 'Подписчиков' : 'Жазылушылар'}</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold">{selectedUser.stats?.totalViews || 0}</p>
+                  <p className="text-xs text-muted-foreground">{language === 'ru' ? 'Просмотров' : 'Көрулер'}</p>
+                </div>
+              </div>
+
+              {selectedUser.bio && (
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">{language === 'ru' ? 'О себе' : 'Өзі туралы'}</p>
+                  <p className="text-sm">{selectedUser.bio}</p>
+                </div>
+              )}
+
+              {selectedUser.subjects && selectedUser.subjects.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">{language === 'ru' ? 'Предметы' : 'Пәндер'}</p>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedUser.subjects.map((subject, i) => (
+                      <Badge key={i} variant="secondary" className="text-xs">{subject}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setUserDetailsOpen(false)
+                    router.push(`/profile/${selectedUser.username || selectedUser.id}`)
+                  }}
+                >
+                  {language === 'ru' ? 'Открыть профиль' : 'Профильді ашу'}
+                </Button>
+                {selectedUser.isBanned ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      handleUnbanUser(selectedUser.id)
+                      setUserDetailsOpen(false)
+                    }}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    {text.unban}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      handleBanUser(selectedUser.id)
+                      setUserDetailsOpen(false)
+                    }}
+                  >
+                    <Ban className="h-4 w-4 mr-2" />
+                    {text.ban}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

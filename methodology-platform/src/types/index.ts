@@ -51,6 +51,10 @@ export interface User {
   // Settings
   settings: UserSettings
 
+  // Admin
+  isAdmin?: boolean
+  isBanned?: boolean
+
   createdAt: Timestamp
   updatedAt: Timestamp
 }

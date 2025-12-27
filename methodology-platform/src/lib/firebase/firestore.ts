@@ -1480,3 +1480,78 @@ export async function seedAchievements(): Promise<void> {
     }
   }
 }
+
+// ==================== ADMIN FUNCTIONS ====================
+
+export async function deleteUser(userId: string): Promise<void> {
+  const db = requireDb()
+
+  // Delete user's materials
+  const materialsQuery = query(collection(db, 'materials'), where('authorId', '==', userId))
+  const materialsSnap = await getDocs(materialsQuery)
+  for (const doc of materialsSnap.docs) {
+    await deleteMaterial(doc.id)
+  }
+
+  // Delete user's collections
+  const collectionsQuery = query(collection(db, 'collections'), where('ownerId', '==', userId))
+  const collectionsSnap = await getDocs(collectionsQuery)
+  for (const docSnap of collectionsSnap.docs) {
+    await deleteDoc(doc(db, 'collections', docSnap.id))
+  }
+
+  // Delete user's notifications
+  const notificationsSnap = await getDocs(collection(db, 'users', userId, 'notifications'))
+  for (const docSnap of notificationsSnap.docs) {
+    await deleteDoc(doc(db, 'users', userId, 'notifications', docSnap.id))
+  }
+
+  // Delete user document
+  await deleteDoc(doc(db, 'users', userId))
+}
+
+export async function setUserAdmin(userId: string, isAdmin: boolean): Promise<void> {
+  await updateUser(userId, { isAdmin })
+}
+
+export async function banUser(userId: string, isBanned: boolean): Promise<void> {
+  await updateUser(userId, { isBanned })
+}
+
+export async function toggleMaterialVisibility(materialId: string): Promise<boolean> {
+  const material = await getMaterial(materialId)
+  if (!material) throw new Error('Material not found')
+
+  const newVisibility = !material.isPublic
+  await updateMaterial(materialId, { isPublic: newVisibility })
+  return newVisibility
+}
+
+export async function getAllMaterials(limitCount = 100): Promise<Material[]> {
+  const q = query(
+    collection(requireDb(), 'materials'),
+    orderBy('createdAt', 'desc'),
+    limit(limitCount)
+  )
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Material))
+}
+
+export async function searchUsers(searchQuery: string): Promise<User[]> {
+  // Search by username or displayName
+  const q = query(
+    collection(requireDb(), 'users'),
+    orderBy('displayName'),
+    limit(50)
+  )
+  const snapshot = await getDocs(q)
+  const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User))
+
+  // Filter locally (Firestore doesn't support LIKE queries)
+  const lowerQuery = searchQuery.toLowerCase()
+  return users.filter(u =>
+    u.displayName?.toLowerCase().includes(lowerQuery) ||
+    u.username?.toLowerCase().includes(lowerQuery) ||
+    u.email?.toLowerCase().includes(lowerQuery)
+  )
+}
