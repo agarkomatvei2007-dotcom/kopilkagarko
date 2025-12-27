@@ -1169,6 +1169,57 @@ export async function getUserEnrolledCourses(userId: string): Promise<Course[]> 
   return enrolledCourses
 }
 
+// Get enrollment data with progress
+export interface EnrollmentData {
+  userId: string
+  progress: number
+  completedLessons: string[]
+  enrolledAt: Timestamp
+}
+
+export async function getEnrollmentData(courseId: string, userId: string): Promise<EnrollmentData | null> {
+  const enrollmentRef = doc(requireDb(), 'courses', courseId, 'enrollments', userId)
+  const docSnap = await getDoc(enrollmentRef)
+
+  if (docSnap.exists()) {
+    return docSnap.data() as EnrollmentData
+  }
+  return null
+}
+
+export async function markLessonComplete(courseId: string, lessonId: string, userId: string): Promise<void> {
+  const enrollmentRef = doc(requireDb(), 'courses', courseId, 'enrollments', userId)
+  const enrollment = await getEnrollmentData(courseId, userId)
+
+  if (!enrollment) {
+    throw new Error('User is not enrolled in this course')
+  }
+
+  // Check if lesson is already completed
+  if (enrollment.completedLessons.includes(lessonId)) {
+    return
+  }
+
+  // Get total lessons count
+  const lessons = await getCourseLessons(courseId)
+  const newCompletedLessons = [...enrollment.completedLessons, lessonId]
+  const newProgress = Math.round((newCompletedLessons.length / lessons.length) * 100)
+
+  await updateDoc(enrollmentRef, {
+    completedLessons: newCompletedLessons,
+    progress: newProgress,
+  })
+
+  // Add points for completing a lesson
+  await addPointsToUser(userId, 5)
+}
+
+export async function isLessonCompleted(courseId: string, lessonId: string, userId: string): Promise<boolean> {
+  const enrollment = await getEnrollmentData(courseId, userId)
+  if (!enrollment) return false
+  return enrollment.completedLessons.includes(lessonId)
+}
+
 // ==================== COMMUNITIES ====================
 
 export interface Community {

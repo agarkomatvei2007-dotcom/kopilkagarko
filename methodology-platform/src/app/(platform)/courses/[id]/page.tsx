@@ -31,7 +31,7 @@ import {
 import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
-import { getCourse, getCourseLessons, enrollInCourse, isEnrolledInCourse, getUser } from '@/lib/firebase/firestore'
+import { getCourse, getCourseLessons, enrollInCourse, isEnrolledInCourse, getUser, getEnrollmentData, type EnrollmentData } from '@/lib/firebase/firestore'
 import { getInitials } from '@/lib/utils'
 import type { Course, Lesson, User } from '@/types'
 
@@ -46,6 +46,7 @@ export default function CourseDetailPage() {
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [instructor, setInstructor] = useState<User | null>(null)
   const [isEnrolled, setIsEnrolled] = useState(false)
+  const [enrollmentData, setEnrollmentData] = useState<EnrollmentData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isEnrolling, setIsEnrolling] = useState(false)
   const [openModules, setOpenModules] = useState<string[]>([])
@@ -129,10 +130,15 @@ export default function CourseDetailPage() {
           setInstructor(instructorData)
         }
 
-        // Check if user is enrolled
+        // Check if user is enrolled and get progress
         if (user) {
           const enrolled = await isEnrolledInCourse(courseId, user.id)
           setIsEnrolled(enrolled)
+
+          if (enrolled) {
+            const enrollment = await getEnrollmentData(courseId, user.id)
+            setEnrollmentData(enrollment)
+          }
         }
       } catch (error) {
         console.error('Error loading course:', error)
@@ -156,6 +162,9 @@ export default function CourseDetailPage() {
     try {
       await enrollInCourse(course.id, user.id)
       setIsEnrolled(true)
+      // Get enrollment data after enrolling
+      const enrollment = await getEnrollmentData(course.id, user.id)
+      setEnrollmentData(enrollment)
       toast({ title: text.enrolled })
     } catch (error) {
       console.error('Error enrolling:', error)
@@ -180,8 +189,31 @@ export default function CourseDetailPage() {
   }] : []
 
   const totalLessons = lessons.length
-  const completedLessons = 0 // TODO: track from user progress
-  const progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0
+  const completedLessons = enrollmentData?.completedLessons?.length || 0
+  const progress = enrollmentData?.progress || 0
+
+  // Find the next lesson to continue
+  const nextLesson = lessons.find(lesson => !enrollmentData?.completedLessons?.includes(lesson.id))
+
+  const handleContinueLearning = () => {
+    if (nextLesson && course) {
+      router.push(`/courses/${course.id}/lessons/${nextLesson.id}`)
+    } else if (lessons.length > 0 && course) {
+      // All completed, go to first lesson
+      router.push(`/courses/${course.id}/lessons/${lessons[0].id}`)
+    }
+  }
+
+  const handleLessonClick = (lesson: Lesson) => {
+    if (!course) return
+    if (isEnrolled) {
+      router.push(`/courses/${course.id}/lessons/${lesson.id}`)
+    }
+  }
+
+  const isLessonComplete = (lessonId: string) => {
+    return enrollmentData?.completedLessons?.includes(lessonId) || false
+  }
 
   if (isLoading) {
     return (
@@ -304,20 +336,38 @@ export default function CourseDetailPage() {
                             {module.lessons.map((lesson, index) => (
                               <div
                                 key={lesson.id}
-                                className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                                onClick={() => handleLessonClick(lesson)}
+                                className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
+                                  isEnrolled
+                                    ? 'cursor-pointer hover:bg-muted/50'
+                                    : index === 0
+                                      ? 'cursor-pointer hover:bg-muted/50'
+                                      : ''
+                                }`}
                               >
                                 <div className="flex items-center gap-3">
                                   {isEnrolled ? (
-                                    <PlayCircle className="h-5 w-5 text-primary" />
+                                    isLessonComplete(lesson.id) ? (
+                                      <CheckCircle className="h-5 w-5 text-green-500" />
+                                    ) : (
+                                      <PlayCircle className="h-5 w-5 text-primary" />
+                                    )
                                   ) : index === 0 ? (
                                     <PlayCircle className="h-5 w-5 text-primary" />
                                   ) : (
                                     <Lock className="h-5 w-5 text-muted-foreground" />
                                   )}
-                                  <span>{lesson.title}</span>
+                                  <span className={isLessonComplete(lesson.id) ? 'text-muted-foreground' : ''}>
+                                    {lesson.title}
+                                  </span>
                                   {!isEnrolled && index === 0 && (
                                     <Badge variant="outline" className="text-xs">
                                       {text.free}
+                                    </Badge>
+                                  )}
+                                  {isLessonComplete(lesson.id) && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      {text.completed}
                                     </Badge>
                                   )}
                                 </div>
@@ -371,7 +421,9 @@ export default function CourseDetailPage() {
                 <>
                   <Progress value={progress} className="h-2" />
                   <p className="text-sm text-center text-muted-foreground">{progress}% {text.completed}</p>
-                  <Button className="w-full">{text.continueLearn}</Button>
+                  <Button className="w-full" onClick={handleContinueLearning}>
+                    {text.continueLearn}
+                  </Button>
                 </>
               ) : (
                 <>

@@ -11,8 +11,13 @@ import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
-import { getCourses, getUserEnrolledCourses } from '@/lib/firebase/firestore'
+import { getCourses, getUserEnrolledCourses, getEnrollmentData, type EnrollmentData } from '@/lib/firebase/firestore'
 import type { Course } from '@/types'
+
+interface CourseWithProgress extends Course {
+  enrollmentProgress?: number
+  completedLessons?: number
+}
 
 export default function CoursesPage() {
   const { user } = useAuth()
@@ -20,7 +25,7 @@ export default function CoursesPage() {
   const [activeTab, setActiveTab] = useState('all')
   const [allCourses, setAllCourses] = useState<Course[]>([])
   const [myCourses, setMyCourses] = useState<Course[]>([])
-  const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([])
+  const [enrolledCourses, setEnrolledCourses] = useState<CourseWithProgress[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   const txt = {
@@ -75,9 +80,19 @@ export default function CoursesPage() {
         if (user) {
           // Filter my courses (where I'm the instructor)
           setMyCourses(courses.filter(c => c.instructorId === user.id))
-          // Get enrolled courses
+          // Get enrolled courses with progress
           const enrolled = await getUserEnrolledCourses(user.id)
-          setEnrolledCourses(enrolled)
+          const enrolledWithProgress: CourseWithProgress[] = await Promise.all(
+            enrolled.map(async (course) => {
+              const enrollment = await getEnrollmentData(course.id, user.id)
+              return {
+                ...course,
+                enrollmentProgress: enrollment?.progress || 0,
+                completedLessons: enrollment?.completedLessons?.length || 0,
+              }
+            })
+          )
+          setEnrolledCourses(enrolledWithProgress)
         }
       } catch (error) {
         console.error('Error loading courses:', error)
@@ -97,7 +112,7 @@ export default function CoursesPage() {
     )
   }
 
-  const renderCourseCard = (course: Course, showProgress = false) => (
+  const renderCourseCard = (course: CourseWithProgress, showProgress = false) => (
     <Link href={`/courses/${course.id}`} key={course.id}>
       <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
         <CardHeader className="pb-2">
@@ -121,9 +136,12 @@ export default function CoursesPage() {
             <div className="mt-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span>{text.progress}</span>
-                <span>0%</span>
+                <span>{course.enrollmentProgress || 0}%</span>
               </div>
-              <Progress value={0} />
+              <Progress value={course.enrollmentProgress || 0} />
+              <p className="text-xs text-muted-foreground">
+                {course.completedLessons || 0} / {course.lessonsCount} {text.lessons}
+              </p>
             </div>
           )}
         </CardContent>
