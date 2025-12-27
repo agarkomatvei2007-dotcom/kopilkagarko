@@ -14,6 +14,9 @@ import {
   FileAudio,
   HelpCircle,
   X,
+  Sparkles,
+  Check,
+  RefreshCw,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -51,6 +54,14 @@ const materialSchema = z.object({
 
 type MaterialFormData = z.infer<typeof materialSchema>
 
+interface QuizQuestion {
+  question: string
+  options: string[]
+  correctAnswer: number
+  explanation: string
+  difficulty: 'easy' | 'medium' | 'hard'
+}
+
 export default function CreateMaterialPage() {
   const router = useRouter()
   const { user } = useAuth()
@@ -64,6 +75,13 @@ export default function CreateMaterialPage() {
   const [files, setFiles] = useState<File[]>([])
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Quiz state
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([])
+  const [quizTopic, setQuizTopic] = useState('')
+  const [quizCount, setQuizCount] = useState('10')
+  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false)
+  const [showQuizAnswers, setShowQuizAnswers] = useState(false)
 
   // Translations
   const txt = {
@@ -114,6 +132,26 @@ export default function CreateMaterialPage() {
     success: language === 'ru' ? 'Материал создан!' : 'Материал жасалды!',
     successDesc: language === 'ru' ? 'Ваш материал успешно опубликован' : 'Материалыңыз сәтті жарияланды',
     createError: language === 'ru' ? 'Не удалось создать материал' : 'Материал жасау мүмкін болмады',
+    // Quiz translations
+    quizTopic: language === 'ru' ? 'Тема для генерации вопросов' : 'Сұрақтар генерациялау тақырыбы',
+    quizTopicPlaceholder: language === 'ru' ? 'Например: Квадратные уравнения' : 'Мысалы: Квадрат теңдеулер',
+    quizCount: language === 'ru' ? 'Количество вопросов' : 'Сұрақтар саны',
+    generateQuiz: language === 'ru' ? 'Сгенерировать тест' : 'Тест жасау',
+    generatingQuiz: language === 'ru' ? 'Генерирую...' : 'Жасалуда...',
+    regenerateQuiz: language === 'ru' ? 'Сгенерировать заново' : 'Қайта жасау',
+    showAnswers: language === 'ru' ? 'Показать ответы' : 'Жауаптарды көрсету',
+    hideAnswers: language === 'ru' ? 'Скрыть ответы' : 'Жауаптарды жасыру',
+    quizGenerated: language === 'ru' ? 'Тест сгенерирован!' : 'Тест жасалды!',
+    quizError: language === 'ru' ? 'Ошибка генерации теста' : 'Тест жасау қатесі',
+    fillQuizTopic: language === 'ru' ? 'Введите тему для генерации' : 'Генерациялау тақырыбын енгізіңіз',
+    selectSubjectFirst: language === 'ru' ? 'Сначала выберите предмет' : 'Алдымен пәнді таңдаңыз',
+    correctAnswer: language === 'ru' ? 'Правильный ответ' : 'Дұрыс жауап',
+    explanation: language === 'ru' ? 'Объяснение' : 'Түсіндірме',
+    difficultyLabels: {
+      easy: language === 'ru' ? 'Лёгкий' : 'Оңай',
+      medium: language === 'ru' ? 'Средний' : 'Орташа',
+      hard: language === 'ru' ? 'Сложный' : 'Қиын',
+    },
   }
 
   const materialTypes = [
@@ -176,6 +214,63 @@ export default function CreateMaterialPage() {
     setFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
+  const handleGenerateQuiz = async () => {
+    const subject = watch('subject')
+    if (!subject) {
+      toast({
+        title: txt.error,
+        description: txt.selectSubjectFirst,
+        variant: 'destructive',
+      })
+      return
+    }
+    if (!quizTopic.trim()) {
+      toast({
+        title: txt.error,
+        description: txt.fillQuizTopic,
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setIsGeneratingQuiz(true)
+    setQuizQuestions([])
+
+    try {
+      const response = await fetch('/api/ai/generate-quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: quizTopic,
+          subject,
+          grade: selectedGrades[0] || 1,
+          questionsCount: parseInt(quizCount),
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate quiz')
+      }
+
+      setQuizQuestions(data.questions)
+      toast({
+        title: txt.quizGenerated,
+        description: `${data.questions.length} ${language === 'ru' ? 'вопросов' : 'сұрақ'}`,
+      })
+    } catch (error) {
+      console.error('Error generating quiz:', error)
+      toast({
+        title: txt.quizError,
+        description: error instanceof Error ? error.message : txt.quizError,
+        variant: 'destructive',
+      })
+    } finally {
+      setIsGeneratingQuiz(false)
+    }
+  }
+
   const onSubmit = async (data: MaterialFormData) => {
     if (!user) return
     if (selectedGrades.length === 0) {
@@ -226,6 +321,11 @@ export default function CreateMaterialPage() {
       // Add video URL for video type
       if (data.type === 'video' && data.videoUrl) {
         contentObj.videoUrl = data.videoUrl
+      }
+
+      // Add quiz questions for quiz type
+      if (data.type === 'quiz' && quizQuestions.length > 0) {
+        contentObj.questions = quizQuestions
       }
 
       // Add files if any were uploaded
@@ -454,6 +554,124 @@ export default function CreateMaterialPage() {
                   placeholder="https://youtube.com/watch?v=..."
                   {...register('videoUrl')}
                 />
+              </div>
+            )}
+
+            {/* Quiz generator */}
+            {selectedType === 'quiz' && (
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>{txt.quizTopic}</Label>
+                    <Input
+                      placeholder={txt.quizTopicPlaceholder}
+                      value={quizTopic}
+                      onChange={(e) => setQuizTopic(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{txt.quizCount}</Label>
+                    <Select value={quizCount} onValueChange={setQuizCount}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="15">15</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  onClick={handleGenerateQuiz}
+                  disabled={isGeneratingQuiz}
+                  className="w-full"
+                >
+                  {isGeneratingQuiz ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {txt.generatingQuiz}
+                    </>
+                  ) : quizQuestions.length > 0 ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      {txt.regenerateQuiz}
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      {txt.generateQuiz}
+                    </>
+                  )}
+                </Button>
+
+                {/* Generated questions */}
+                {quizQuestions.length > 0 && (
+                  <div className="border rounded-lg p-4 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">
+                        {quizQuestions.length} {language === 'ru' ? 'вопросов' : 'сұрақ'}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowQuizAnswers(!showQuizAnswers)}
+                      >
+                        {showQuizAnswers ? txt.hideAnswers : txt.showAnswers}
+                      </Button>
+                    </div>
+                    <div className="space-y-4 max-h-96 overflow-y-auto">
+                      {quizQuestions.map((q, index) => (
+                        <div key={index} className="border-b pb-3 last:border-0">
+                          <div className="flex items-start gap-2 mb-2">
+                            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium">
+                              {index + 1}
+                            </span>
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">{q.question}</p>
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                q.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
+                                q.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-red-100 text-red-700'
+                              }`}>
+                                {txt.difficultyLabels[q.difficulty]}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="ml-8 space-y-1">
+                            {q.options.map((option, optIndex) => {
+                              const isCorrect = optIndex === q.correctAnswer
+                              const letter = String.fromCharCode(65 + optIndex)
+                              return (
+                                <div
+                                  key={optIndex}
+                                  className={`text-sm p-1.5 rounded ${
+                                    showQuizAnswers && isCorrect ? 'bg-green-50 border border-green-200' : ''
+                                  }`}
+                                >
+                                  <span className="font-medium mr-1">{letter})</span>
+                                  {option}
+                                  {showQuizAnswers && isCorrect && (
+                                    <Check className="inline ml-1 h-3 w-3 text-green-600" />
+                                  )}
+                                </div>
+                              )
+                            })}
+                            {showQuizAnswers && (
+                              <p className="text-xs text-muted-foreground mt-2 p-2 bg-muted rounded">
+                                {txt.explanation}: {q.explanation}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
