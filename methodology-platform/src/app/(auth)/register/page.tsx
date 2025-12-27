@@ -5,12 +5,12 @@ import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Loader2 } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Loader2, Mail, Lock, User, AtSign, ArrowRight } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth, useRequireGuest } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
@@ -24,8 +24,8 @@ export default function RegisterPage() {
 
   const txt = {
     ru: {
-      title: 'Регистрация',
-      description: 'Создайте аккаунт для доступа к платформе',
+      title: 'Создать аккаунт',
+      description: 'Присоединяйтесь к сообществу педагогов',
       displayName: 'Имя',
       displayNamePlaceholder: 'Иван Петров',
       username: 'Имя пользователя',
@@ -34,9 +34,9 @@ export default function RegisterPage() {
       emailPlaceholder: 'teacher@college.ru',
       password: 'Пароль',
       confirmPassword: 'Подтверждение пароля',
-      register: 'Зарегистрироваться',
-      or: 'или',
-      signInGoogle: 'Войти через Google',
+      register: 'Создать аккаунт',
+      or: 'или продолжить с',
+      signInGoogle: 'Google',
       haveAccount: 'Уже есть аккаунт?',
       signIn: 'Войти',
       accountCreated: 'Аккаунт создан!',
@@ -55,8 +55,8 @@ export default function RegisterPage() {
       passwordMismatch: 'Пароли не совпадают',
     },
     kk: {
-      title: 'Тіркелу',
-      description: 'Платформаға кіру үшін аккаунт жасаңыз',
+      title: 'Аккаунт жасау',
+      description: 'Педагогтар қауымдастығына қосылыңыз',
       displayName: 'Аты-жөні',
       displayNamePlaceholder: 'Иван Петров',
       username: 'Пайдаланушы аты',
@@ -65,9 +65,9 @@ export default function RegisterPage() {
       emailPlaceholder: 'teacher@college.kz',
       password: 'Құпия сөз',
       confirmPassword: 'Құпия сөзді растау',
-      register: 'Тіркелу',
-      or: 'немесе',
-      signInGoogle: 'Google арқылы кіру',
+      register: 'Аккаунт жасау',
+      or: 'немесе жалғастыру',
+      signInGoogle: 'Google',
       haveAccount: 'Аккаунтыңыз бар ма?',
       signIn: 'Кіру',
       accountCreated: 'Аккаунт жасалды!',
@@ -152,139 +152,206 @@ export default function RegisterPage() {
   }
 
   return (
-    <Card>
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl text-center">{text.title}</CardTitle>
-        <CardDescription className="text-center">
+    <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 p-8">
+      <div className="text-center mb-8">
+        <motion.h1
+          className="text-3xl font-bold text-gray-900 mb-2"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          {text.title}
+        </motion.h1>
+        <motion.p
+          className="text-gray-500"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+        >
           {text.description}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        </motion.p>
+      </div>
+
+      <motion.form
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-4"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="displayName">{text.displayName}</Label>
-            <Input
-              id="displayName"
-              placeholder={text.displayNamePlaceholder}
-              {...register('displayName')}
-              disabled={isSubmitting || isLoading}
-            />
+            <Label htmlFor="displayName" className="text-gray-700 font-medium">{text.displayName}</Label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Input
+                id="displayName"
+                placeholder={text.displayNamePlaceholder}
+                className="pl-10 h-12 rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                {...register('displayName')}
+                disabled={isSubmitting || isLoading}
+              />
+            </div>
             {errors.displayName && (
-              <p className="text-sm text-destructive">{errors.displayName.message}</p>
+              <p className="text-xs text-red-500">{errors.displayName.message}</p>
             )}
           </div>
+
           <div className="space-y-2">
-            <Label htmlFor="username">{text.username}</Label>
-            <Input
-              id="username"
-              placeholder={text.usernamePlaceholder}
-              {...register('username')}
-              disabled={isSubmitting || isLoading}
-            />
+            <Label htmlFor="username" className="text-gray-700 font-medium">{text.username}</Label>
+            <div className="relative">
+              <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Input
+                id="username"
+                placeholder={text.usernamePlaceholder}
+                className="pl-10 h-12 rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                {...register('username')}
+                disabled={isSubmitting || isLoading}
+              />
+            </div>
             {errors.username && (
-              <p className="text-sm text-destructive">{errors.username.message}</p>
+              <p className="text-xs text-red-500">{errors.username.message}</p>
             )}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">{text.email}</Label>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-gray-700 font-medium">{text.email}</Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <Input
               id="email"
               type="email"
               placeholder={text.emailPlaceholder}
+              className="pl-10 h-12 rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
               {...register('email')}
               disabled={isSubmitting || isLoading}
             />
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email.message}</p>
-            )}
           </div>
+          {errors.email && (
+            <p className="text-sm text-red-500">{errors.email.message}</p>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="password">{text.password}</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="******"
-              {...register('password')}
-              disabled={isSubmitting || isLoading}
-            />
+            <Label htmlFor="password" className="text-gray-700 font-medium">{text.password}</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                className="pl-10 h-12 rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                {...register('password')}
+                disabled={isSubmitting || isLoading}
+              />
+            </div>
             {errors.password && (
-              <p className="text-sm text-destructive">{errors.password.message}</p>
+              <p className="text-xs text-red-500">{errors.password.message}</p>
             )}
           </div>
+
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">{text.confirmPassword}</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="******"
-              {...register('confirmPassword')}
-              disabled={isSubmitting || isLoading}
-            />
+            <Label htmlFor="confirmPassword" className="text-gray-700 font-medium">{text.confirmPassword}</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                className="pl-10 h-12 rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                {...register('confirmPassword')}
+                disabled={isSubmitting || isLoading}
+              />
+            </div>
             {errors.confirmPassword && (
-              <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+              <p className="text-xs text-red-500">{errors.confirmPassword.message}</p>
             )}
           </div>
+        </div>
+
+        <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} className="pt-2">
           <Button
             type="submit"
-            className="w-full"
+            className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-medium shadow-lg shadow-emerald-500/25"
             disabled={isSubmitting || isLoading}
           >
-            {(isSubmitting || isLoading) && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            {(isSubmitting || isLoading) ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <>
+                {text.register}
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </>
             )}
-            {text.register}
           </Button>
-        </form>
+        </motion.div>
+      </motion.form>
 
+      <motion.div
+        className="mt-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
+            <span className="w-full border-t border-gray-200" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
+            <span className="bg-white px-4 text-gray-400 font-medium">
               {text.or}
             </span>
           </div>
         </div>
 
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={handleGoogleSignIn}
-          disabled={isGoogleLoading || isLoading}
-        >
-          {isGoogleLoading && (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          )}
-          <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-            <path
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-              fill="#4285F4"
-            />
-            <path
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              fill="#34A853"
-            />
-            <path
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-              fill="#FBBC05"
-            />
-            <path
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-              fill="#EA4335"
-            />
-          </svg>
-          {text.signInGoogle}
-        </Button>
-      </CardContent>
-      <CardFooter className="flex justify-center">
-        <p className="text-sm text-muted-foreground">
-          {text.haveAccount}{' '}
-          <Link href="/login" className="text-primary hover:underline">
-            {text.signIn}
-          </Link>
-        </p>
-      </CardFooter>
-    </Card>
+        <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} className="mt-6">
+          <Button
+            variant="outline"
+            className="w-full h-12 rounded-xl border-gray-200 hover:bg-gray-50 font-medium"
+            onClick={handleGoogleSignIn}
+            disabled={isGoogleLoading || isLoading}
+          >
+            {isGoogleLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <>
+                <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
+                  <path
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    fill="#4285F4"
+                  />
+                  <path
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    fill="#34A853"
+                  />
+                  <path
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    fill="#FBBC05"
+                  />
+                  <path
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    fill="#EA4335"
+                  />
+                </svg>
+                {text.signInGoogle}
+              </>
+            )}
+          </Button>
+        </motion.div>
+      </motion.div>
+
+      <motion.p
+        className="text-center text-gray-500 mt-8"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+      >
+        {text.haveAccount}{' '}
+        <Link href="/login" className="text-emerald-600 hover:text-emerald-700 font-semibold">
+          {text.signIn}
+        </Link>
+      </motion.p>
+    </div>
   )
 }

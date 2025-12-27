@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { collection, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '@/lib/firebase/config'
-import { Loader2, Filter, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Filter, X, Home, TrendingUp, Users, Sparkles } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -181,169 +182,321 @@ export default function FeedPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-[50vh] flex flex-col items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative"
+        >
+          <div className="w-16 h-16 rounded-full border-4 border-emerald-100 animate-spin border-t-emerald-500" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Sparkles className="h-6 w-6 text-emerald-500" />
+          </div>
+        </motion.div>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="mt-4 text-gray-500"
+        >
+          {language === 'ru' ? 'Загрузка ленты...' : 'Лента жүктелуде...'}
+        </motion.p>
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto py-6 px-4">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">{t.pages.feed.title}</h1>
-        <div className="flex items-center gap-2">
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters}>
-              <X className="h-4 w-4 mr-1" />
-              {language === 'ru' ? 'Сбросить' : 'Тастау'}
-            </Button>
-          )}
-          <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Filter className="h-4 w-4" />
-                {t.pages.feed.filters}
-                {hasActiveFilters && (
-                  <span className="ml-1 bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
-                    {(selectedSubject ? 1 : 0) + selectedGrades.length + selectedTypes.length}
-                  </span>
-                )}
-              </Button>
-            </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>{language === 'ru' ? 'Фильтры' : 'Сүзгілер'}</SheetTitle>
-                <SheetDescription>
-                  {language === 'ru' ? 'Настройте фильтры для поиска материалов' : 'Материалдарды іздеу үшін сүзгілерді баптаңыз'}
-                </SheetDescription>
-              </SheetHeader>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <div className="container mx-auto py-8 px-4 lg:px-6">
+        {/* Header */}
+        <motion.div
+          className="flex items-center justify-between mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
+              <Home className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">{t.pages.feed.title}</h1>
+              <p className="text-gray-500 text-sm">
+                {language === 'ru' ? 'Свежие материалы от педагогов' : 'Педагогтардан жаңа материалдар'}
+              </p>
+            </div>
+          </div>
 
-              <div className="space-y-6 py-6">
-                {/* Subject filter */}
-                <div className="space-y-2">
-                  <Label>{language === 'ru' ? 'Предмет' : 'Пән'}</Label>
-                  <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={language === 'ru' ? 'Все предметы' : 'Барлық пәндер'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">{language === 'ru' ? 'Все предметы' : 'Барлық пәндер'}</SelectItem>
-                      {SUBJECTS.map(subject => (
-                        <SelectItem key={subject} value={subject}>{subject}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Grade filter */}
-                <div className="space-y-2">
-                  <Label>{language === 'ru' ? 'Классы' : 'Сыныптар'}</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {GRADES.map(grade => (
-                      <Button
-                        key={grade}
-                        variant={selectedGrades.includes(grade) ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => toggleGrade(grade)}
-                        className="w-10 h-10"
-                      >
-                        {grade}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Type filter */}
-                <div className="space-y-2">
-                  <Label>{language === 'ru' ? 'Тип материала' : 'Материал түрі'}</Label>
-                  <div className="space-y-2">
-                    {MATERIAL_TYPES.map(type => (
-                      <div key={type.value} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={type.value}
-                          checked={selectedTypes.includes(type.value)}
-                          onCheckedChange={() => toggleType(type.value)}
-                        />
-                        <label htmlFor={type.value} className="text-sm cursor-pointer">
-                          {language === 'ru' ? type.labelRu : type.labelKk}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <SheetFooter>
-                <Button variant="outline" onClick={clearFilters}>
+          <div className="flex items-center gap-2">
+            {hasActiveFilters && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="text-gray-500 hover:text-gray-700 rounded-xl"
+                >
+                  <X className="h-4 w-4 mr-1" />
                   {language === 'ru' ? 'Сбросить' : 'Тастау'}
                 </Button>
-                <SheetClose asChild>
-                  <Button>{language === 'ru' ? 'Применить' : 'Қолдану'}</Button>
-                </SheetClose>
-              </SheetFooter>
-            </SheetContent>
-          </Sheet>
-        </div>
+              </motion.div>
+            )}
+
+            <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+              <SheetTrigger asChild>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button variant="outline" size="sm" className="gap-2 rounded-xl border-gray-200 hover:border-emerald-300 hover:bg-emerald-50">
+                    <Filter className="h-4 w-4" />
+                    {t.pages.feed.filters}
+                    {hasActiveFilters && (
+                      <span className="ml-1 bg-emerald-500 text-white rounded-full px-2 py-0.5 text-xs font-medium">
+                        {(selectedSubject ? 1 : 0) + selectedGrades.length + selectedTypes.length}
+                      </span>
+                    )}
+                  </Button>
+                </motion.div>
+              </SheetTrigger>
+              <SheetContent className="rounded-l-3xl">
+                <SheetHeader>
+                  <SheetTitle className="text-xl">{language === 'ru' ? 'Фильтры' : 'Сүзгілер'}</SheetTitle>
+                  <SheetDescription>
+                    {language === 'ru' ? 'Настройте фильтры для поиска материалов' : 'Материалдарды іздеу үшін сүзгілерді баптаңыз'}
+                  </SheetDescription>
+                </SheetHeader>
+
+                <div className="space-y-6 py-6">
+                  {/* Subject filter */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold text-gray-700">{language === 'ru' ? 'Предмет' : 'Пән'}</Label>
+                    <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                      <SelectTrigger className="rounded-xl border-gray-200">
+                        <SelectValue placeholder={language === 'ru' ? 'Все предметы' : 'Барлық пәндер'} />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        <SelectItem value="">{language === 'ru' ? 'Все предметы' : 'Барлық пәндер'}</SelectItem>
+                        {SUBJECTS.map(subject => (
+                          <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Grade filter */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold text-gray-700">{language === 'ru' ? 'Классы' : 'Сыныптар'}</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {GRADES.map(grade => (
+                        <motion.div key={grade} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button
+                            variant={selectedGrades.includes(grade) ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => toggleGrade(grade)}
+                            className={`w-10 h-10 rounded-xl ${selectedGrades.includes(grade) ? 'bg-emerald-500 hover:bg-emerald-600' : 'border-gray-200'}`}
+                          >
+                            {grade}
+                          </Button>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Type filter */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold text-gray-700">{language === 'ru' ? 'Тип материала' : 'Материал түрі'}</Label>
+                    <div className="space-y-2">
+                      {MATERIAL_TYPES.map(type => (
+                        <div key={type.value} className="flex items-center space-x-3 p-2 rounded-xl hover:bg-gray-50 transition-colors">
+                          <Checkbox
+                            id={type.value}
+                            checked={selectedTypes.includes(type.value)}
+                            onCheckedChange={() => toggleType(type.value)}
+                            className="border-gray-300 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                          />
+                          <label htmlFor={type.value} className="text-sm cursor-pointer font-medium text-gray-700">
+                            {language === 'ru' ? type.labelRu : type.labelKk}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <SheetFooter className="gap-2">
+                  <Button variant="outline" onClick={clearFilters} className="rounded-xl">
+                    {language === 'ru' ? 'Сбросить' : 'Тастау'}
+                  </Button>
+                  <SheetClose asChild>
+                    <Button className="rounded-xl bg-emerald-500 hover:bg-emerald-600">
+                      {language === 'ru' ? 'Применить' : 'Қолдану'}
+                    </Button>
+                  </SheetClose>
+                </SheetFooter>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </motion.div>
+
+        {/* Tabs */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="bg-white border border-gray-100 p-1 rounded-2xl mb-8 shadow-sm">
+              <TabsTrigger
+                value="all"
+                className="rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-white px-6 py-2.5 transition-all"
+              >
+                <Home className="h-4 w-4 mr-2" />
+                {t.pages.feed.allMaterials}
+              </TabsTrigger>
+              <TabsTrigger
+                value="following"
+                className="rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-white px-6 py-2.5 transition-all"
+              >
+                <Users className="h-4 w-4 mr-2" />
+                {t.pages.feed.following}
+              </TabsTrigger>
+              <TabsTrigger
+                value="popular"
+                className="rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-white px-6 py-2.5 transition-all"
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                {t.pages.feed.popular}
+              </TabsTrigger>
+            </TabsList>
+
+            <AnimatePresence mode="wait">
+              <TabsContent value="all" className="mt-0">
+                {filteredMaterials.length === 0 ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-center py-20"
+                  >
+                    <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-6">
+                      <Home className="h-10 w-10 text-gray-400" />
+                    </div>
+                    <p className="text-xl font-semibold text-gray-900 mb-2">
+                      {hasActiveFilters
+                        ? (language === 'ru' ? 'Материалы не найдены' : 'Материалдар табылмады')
+                        : t.pages.feed.noMaterials}
+                    </p>
+                    <p className="text-gray-500">
+                      {hasActiveFilters
+                        ? (language === 'ru' ? 'Попробуйте изменить фильтры' : 'Сүзгілерді өзгертіп көріңіз')
+                        : ''}
+                    </p>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+                  >
+                    {filteredMaterials.map((material, index) => (
+                      <motion.div
+                        key={material.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <MaterialCard material={material} />
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="following" className="mt-0">
+                {filteredFollowingMaterials.length === 0 ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-center py-20"
+                  >
+                    <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-6">
+                      <Users className="h-10 w-10 text-gray-400" />
+                    </div>
+                    {hasActiveFilters ? (
+                      <>
+                        <p className="text-xl font-semibold text-gray-900 mb-2">
+                          {language === 'ru' ? 'Материалы не найдены' : 'Материалдар табылмады'}
+                        </p>
+                        <p className="text-gray-500">
+                          {language === 'ru' ? 'Попробуйте изменить фильтры' : 'Сүзгілерді өзгертіп көріңіз'}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xl font-semibold text-gray-900 mb-2">{t.pages.feed.noFollowing}</p>
+                        <p className="text-gray-500">{t.pages.feed.noFollowingHint}</p>
+                      </>
+                    )}
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+                  >
+                    {filteredFollowingMaterials.map((material, index) => (
+                      <motion.div
+                        key={material.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <MaterialCard material={material} />
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="popular" className="mt-0">
+                {applyFilters([...materials].sort((a, b) => b.stats.likes - a.stats.likes)).length === 0 ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-center py-20"
+                  >
+                    <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-6">
+                      <TrendingUp className="h-10 w-10 text-gray-400" />
+                    </div>
+                    <p className="text-xl font-semibold text-gray-900 mb-2">
+                      {language === 'ru' ? 'Материалы не найдены' : 'Материалдар табылмады'}
+                    </p>
+                    <p className="text-gray-500">
+                      {language === 'ru' ? 'Попробуйте изменить фильтры' : 'Сүзгілерді өзгертіп көріңіз'}
+                    </p>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+                  >
+                    {applyFilters([...materials].sort((a, b) => b.stats.likes - a.stats.likes)).map((material, index) => (
+                      <motion.div
+                        key={material.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <MaterialCard material={material} />
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </TabsContent>
+            </AnimatePresence>
+          </Tabs>
+        </motion.div>
       </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="all">{t.pages.feed.allMaterials}</TabsTrigger>
-          <TabsTrigger value="following">{t.pages.feed.following}</TabsTrigger>
-          <TabsTrigger value="popular">{t.pages.feed.popular}</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all">
-          {filteredMaterials.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              {hasActiveFilters
-                ? (language === 'ru' ? 'Материалы не найдены. Попробуйте изменить фильтры.' : 'Материалдар табылмады. Сүзгілерді өзгертіп көріңіз.')
-                : t.pages.feed.noMaterials}
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredMaterials.map((material) => (
-                <MaterialCard key={material.id} material={material} />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="following">
-          {filteredFollowingMaterials.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              {hasActiveFilters ? (
-                <p>{language === 'ru' ? 'Материалы не найдены. Попробуйте изменить фильтры.' : 'Материалдар табылмады. Сүзгілерді өзгертіп көріңіз.'}</p>
-              ) : (
-                <>
-                  <p className="mb-2">{t.pages.feed.noFollowing}</p>
-                  <p className="text-sm">{t.pages.feed.noFollowingHint}</p>
-                </>
-              )}
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredFollowingMaterials.map((material) => (
-                <MaterialCard key={material.id} material={material} />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="popular">
-          {applyFilters([...materials].sort((a, b) => b.stats.likes - a.stats.likes)).length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              {language === 'ru' ? 'Материалы не найдены. Попробуйте изменить фильтры.' : 'Материалдар табылмады. Сүзгілерді өзгертіп көріңіз.'}
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {applyFilters([...materials].sort((a, b) => b.stats.likes - a.stats.likes)).map((material) => (
-                <MaterialCard key={material.id} material={material} />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
     </div>
   )
 }
