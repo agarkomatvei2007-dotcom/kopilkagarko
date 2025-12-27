@@ -49,6 +49,7 @@ interface MaterialCardProps {
 }
 
 export default function MaterialCard({ material, showAuthor = true }: MaterialCardProps) {
+  console.log('DEBUG MaterialCard: material.thumbnail =', material.thumbnail)
   const { user } = useAuth()
   const router = useRouter()
   const [liked, setLiked] = useState(false)

@@ -204,9 +204,11 @@ export default function CreateMaterialPage() {
       }
 
       let thumbnailUrl = null
+      console.log('DEBUG: thumbnailFile =', thumbnailFile)
       if (thumbnailFile) {
         try {
           thumbnailUrl = await uploadThumbnail(tempId, thumbnailFile)
+          console.log('DEBUG: thumbnailUrl =', thumbnailUrl)
         } catch (uploadError) {
           console.warn('Thumbnail upload failed:', uploadError)
         }
@@ -231,6 +233,7 @@ export default function CreateMaterialPage() {
         contentObj.files = uploadedFiles
       }
 
+      console.log('DEBUG: Creating material with thumbnail:', thumbnailUrl)
       const materialId = await createMaterial({
         title: data.title,
         description: data.description,
