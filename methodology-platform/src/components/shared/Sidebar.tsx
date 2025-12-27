@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Home,
-  Compass,
   FolderOpen,
   BookmarkIcon,
   Users,
@@ -37,7 +36,6 @@ export default function Sidebar() {
 
   const mainNavItems = [
     { href: '/feed', label: t.nav.feed, icon: Home },
-    { href: '/explore', label: t.nav.explore, icon: Compass },
     { href: '/ai-assistant', label: language === 'ru' ? 'ИИ-ассистент' : 'ЖИ-көмекші', icon: Bot },
     { href: '/my-materials', label: t.nav.myMaterials, icon: FolderOpen },
     { href: '/collections', label: t.nav.collections, icon: BookmarkIcon },

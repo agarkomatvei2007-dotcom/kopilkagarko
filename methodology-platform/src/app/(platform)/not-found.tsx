@@ -26,7 +26,7 @@ export default function NotFound() {
               </Link>
             </Button>
             <Button asChild variant="outline">
-              <Link href="/explore">
+              <Link href="/feed">
                 <Search className="mr-2 h-4 w-4" />
                 Найти материалы
               </Link>

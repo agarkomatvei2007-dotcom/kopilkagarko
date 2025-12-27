@@ -384,7 +384,7 @@ export default function LandingPage() {
                   </Button>
                 </motion.div>
               </Link>
-              <Link href="/explore">
+              <Link href="/feed">
                 <motion.div
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
@@ -525,7 +525,7 @@ export default function LandingPage() {
                 {language === 'ru' ? 'Самые популярные материалы этой недели' : 'Осы аптаның ең танымал материалдары'}
               </p>
             </div>
-            <Link href="/explore">
+            <Link href="/feed">
               <motion.div
                 whileHover={{ scale: 1.02, x: 5 }}
                 whileTap={{ scale: 0.98 }}
