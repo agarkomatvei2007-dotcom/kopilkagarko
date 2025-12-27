@@ -212,15 +212,22 @@ export default function CreateMaterialPage() {
         }
       }
 
+      // Build content object without undefined values (Firebase doesn't support undefined)
+      const contentObj: { text?: string; videoUrl?: string; files: typeof uploadedFiles } = {
+        files: uploadedFiles,
+      }
+      if (data.type === 'text' && content) {
+        contentObj.text = content
+      }
+      if (data.type === 'video' && data.videoUrl) {
+        contentObj.videoUrl = data.videoUrl
+      }
+
       const materialId = await createMaterial({
         title: data.title,
         description: data.description,
         type: data.type as MaterialType,
-        content: {
-          text: data.type === 'text' ? content : undefined,
-          videoUrl: data.type === 'video' ? (data.videoUrl || undefined) : undefined,
-          files: uploadedFiles,
-        },
+        content: contentObj,
         subject: data.subject,
         grades: selectedGrades.sort((a, b) => a - b),
         tags,
