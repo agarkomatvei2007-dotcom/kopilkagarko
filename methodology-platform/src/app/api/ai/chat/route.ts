@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+const GROQ_API_KEY = process.env.GROQ_API_KEY
 
 const SYSTEM_PROMPT = `Ты - методический ИИ-ассистент для преподавателей колледжей и СПО (среднего профессионального образования) Казахстана.
 
@@ -28,8 +28,8 @@ interface Message {
 
 export async function POST(request: NextRequest) {
   try {
-    if (!GEMINI_API_KEY) {
-      console.error('GEMINI_API_KEY is not set in environment variables')
+    if (!GROQ_API_KEY) {
+      console.error('GROQ_API_KEY is not set in environment variables')
       return NextResponse.json(
         { error: 'API_KEY_NOT_CONFIGURED', message: 'ИИ-ассистент временно недоступен. API ключ не настроен.' },
         { status: 503 }
@@ -48,88 +48,60 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Build conversation history for Gemini
-    const contents = []
-
-    // Add system prompt as first user message (Gemini doesn't have system role)
-    contents.push({
-      role: 'user',
-      parts: [{ text: SYSTEM_PROMPT }]
-    })
-    contents.push({
-      role: 'model',
-      parts: [{ text: 'Понял! Я готов помочь преподавателям с методическими вопросами. Чем могу помочь?' }]
-    })
+    // Build messages array for Groq (OpenAI-compatible format)
+    const messages = [
+      {
+        role: 'system',
+        content: SYSTEM_PROMPT
+      }
+    ]
 
     // Add conversation history
     if (history && Array.isArray(history)) {
       for (const msg of history) {
-        contents.push({
-          role: msg.role === 'user' ? 'user' : 'model',
-          parts: [{ text: msg.content }]
+        messages.push({
+          role: msg.role,
+          content: msg.content
         })
       }
     }
 
     // Add current message
-    contents.push({
+    messages.push({
       role: 'user',
-      parts: [{ text: message }]
+      content: message
     })
 
-    // Call Gemini API
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents,
-          generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 2048,
-          },
-          safetySettings: [
-            {
-              category: 'HARM_CATEGORY_HARASSMENT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_HATE_SPEECH',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            }
-          ]
-        }),
-      }
-    )
+    // Call Groq API
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-70b-versatile',
+        messages,
+        temperature: 0.7,
+        max_tokens: 2048,
+        top_p: 0.95,
+      }),
+    })
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Gemini API error:', errorText)
+      console.error('Groq API error:', errorText)
 
-      // Parse error for better messaging
       let errorMessage = 'Ошибка при обращении к ИИ'
       try {
         const errorData = JSON.parse(errorText)
         if (errorData.error?.message) {
-          if (errorData.error.message.includes('API_KEY_INVALID')) {
-            errorMessage = 'Неверный API ключ Gemini. Проверьте ключ в настройках.'
-          } else if (errorData.error.message.includes('QUOTA_EXCEEDED')) {
-            errorMessage = 'Превышен лимит запросов к API. Попробуйте позже.'
+          if (errorData.error.message.includes('invalid_api_key')) {
+            errorMessage = 'Неверный API ключ Groq. Проверьте ключ в настройках.'
+          } else if (errorData.error.message.includes('rate_limit')) {
+            errorMessage = 'Превышен лимит запросов. Попробуйте через минуту.'
           } else {
-            errorMessage = `Ошибка Gemini: ${errorData.error.message}`
+            errorMessage = `Ошибка Groq: ${errorData.error.message}`
           }
         }
       } catch {
@@ -137,14 +109,13 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json(
-        { error: 'GEMINI_ERROR', message: errorMessage, details: errorText },
+        { error: 'GROQ_ERROR', message: errorMessage, details: errorText },
         { status: 500 }
       )
     }
 
     const data = await response.json()
-
-    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text
+    const aiResponse = data.choices?.[0]?.message?.content
 
     if (!aiResponse) {
       return NextResponse.json(

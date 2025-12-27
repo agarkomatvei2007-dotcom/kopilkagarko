@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateLessonPlan } from '@/lib/gemini/client'
+import { generateLessonPlan } from '@/lib/groq/client'
 
 export async function POST(request: NextRequest) {
   try {
