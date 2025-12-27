@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import {
   Heart,
   MessageCircle,
@@ -55,6 +54,7 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
   const [liked, setLiked] = useState(false)
   const [likesCount, setLikesCount] = useState(material.stats.likes)
   const [isLikeLoading, setIsLikeLoading] = useState(false)
+  const [imageError, setImageError] = useState(false)
 
   // Check if user liked this material
   useState(() => {
@@ -96,12 +96,13 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
       <Card className="h-full hover:shadow-md transition-shadow overflow-hidden group">
         {/* Thumbnail */}
         <div className="relative aspect-video bg-muted">
-          {material.thumbnail && material.thumbnail.length > 0 ? (
-            <Image
+          {material.thumbnail && material.thumbnail.length > 0 && !imageError ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
               src={material.thumbnail}
               alt={material.title}
-              fill
-              className="object-cover"
+              className="absolute inset-0 w-full h-full object-cover"
+              onError={() => setImageError(true)}
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
