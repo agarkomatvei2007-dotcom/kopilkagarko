@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { motion } from 'framer-motion'
 import {
   BookOpen,
   Search,
@@ -34,34 +33,25 @@ export default function Navbar() {
   const { toggleMobileMenu } = useUIStore()
 
   return (
-    <motion.header
-      className="sticky top-0 z-50 w-full"
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
+    <header className="sticky top-0 z-50 w-full">
       <div className="bg-white/80 backdrop-blur-xl border-b border-gray-100">
         <div className="flex h-16 items-center gap-4 px-4 lg:px-6 max-w-screen-2xl mx-auto">
           {/* Mobile menu button */}
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden rounded-xl hover:bg-gray-100"
+            className="lg:hidden rounded-xl hover:bg-emerald-50"
             onClick={toggleMobileMenu}
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-5 w-5 text-gray-600" />
           </Button>
 
           {/* Logo */}
-          <Link href={isAuthenticated ? '/feed' : '/'} className="flex items-center gap-2.5 group">
-            <motion.div
-              className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20"
-              whileHover={{ scale: 1.05, rotate: 5 }}
-              whileTap={{ scale: 0.95 }}
-            >
+          <Link href={isAuthenticated ? '/feed' : '/'} className="flex items-center gap-2.5 group flex-shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 transition-transform group-hover:scale-105">
               <BookOpen className="h-5 w-5 text-white" />
-            </motion.div>
-            <span className="hidden sm:inline-block font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">
+            </div>
+            <span className="hidden sm:inline-block font-bold text-gray-900 group-hover:text-emerald-600 transition-colors whitespace-nowrap">
               {t.landing.title}
             </span>
           </Link>
@@ -88,27 +78,23 @@ export default function Navbar() {
               <>
                 {/* Create button */}
                 <Link href="/materials/create">
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Button
-                      size="sm"
-                      className="hidden sm:flex gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl shadow-lg shadow-emerald-500/20"
-                    >
-                      <Plus className="h-4 w-4" />
-                      {t.common.create}
-                    </Button>
-                  </motion.div>
-                  <Button size="icon" variant="ghost" className="sm:hidden rounded-xl">
-                    <Plus className="h-5 w-5" />
+                  <Button
+                    size="sm"
+                    className="hidden sm:flex gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <Plus className="h-4 w-4" />
+                    {t.common.create}
+                  </Button>
+                  <Button size="icon" variant="ghost" className="sm:hidden rounded-xl hover:bg-emerald-50">
+                    <Plus className="h-5 w-5 text-gray-600" />
                   </Button>
                 </Link>
 
                 {/* Messages */}
                 <Link href="/messages">
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button variant="ghost" size="icon" className="rounded-xl hover:bg-gray-100">
-                      <MessageSquare className="h-5 w-5 text-gray-600" />
-                    </Button>
-                  </motion.div>
+                  <Button variant="ghost" size="icon" className="rounded-xl hover:bg-emerald-50 transition-colors">
+                    <MessageSquare className="h-5 w-5 text-gray-600" />
+                  </Button>
                 </Link>
 
                 {/* Notifications */}
@@ -120,47 +106,45 @@ export default function Navbar() {
                 {/* User menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button variant="ghost" size="icon" className="ml-1 rounded-xl">
-                        <Avatar className="h-8 w-8 ring-2 ring-gray-100">
-                          <AvatarImage src={user?.avatar || undefined} />
-                          <AvatarFallback className="text-xs bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-medium">
-                            {user?.displayName ? getInitials(user.displayName) : 'U'}
-                          </AvatarFallback>
-                        </Avatar>
-                      </Button>
-                    </motion.div>
+                    <Button variant="ghost" size="icon" className="ml-1 rounded-xl hover:bg-emerald-50">
+                      <Avatar className="h-8 w-8 ring-2 ring-emerald-100">
+                        <AvatarImage src={user?.avatar || undefined} />
+                        <AvatarFallback className="text-xs bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-medium">
+                          {user?.displayName ? getInitials(user.displayName) : 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 rounded-xl border-gray-100 shadow-xl">
+                  <DropdownMenuContent align="end" className="w-56 rounded-xl border-emerald-100 shadow-xl">
                     <DropdownMenuLabel className="font-normal py-3">
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-semibold text-gray-900">{user?.displayName}</p>
-                        <p className="text-xs text-gray-500">@{user?.username}</p>
+                        <p className="text-xs text-emerald-600">@{user?.username}</p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50">
                       <Link href={`/profile/${user?.username}`} className="py-2">
                         {t.nav.myProfile}
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50">
                       <Link href="/my-materials" className="py-2">
                         {t.nav.myMaterials}
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50">
                       <Link href="/analytics" className="py-2">
                         {t.nav.analytics}
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50">
                       <Link href="/achievements" className="py-2">
                         {t.nav.achievements}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50">
                       <Link href="/settings" className="py-2">
                         {t.nav.settings}
                       </Link>
@@ -179,23 +163,21 @@ export default function Navbar() {
               <>
                 <LanguageSwitcher />
                 <Link href="/login">
-                  <Button variant="ghost" size="sm" className="rounded-xl">{t.nav.login}</Button>
+                  <Button variant="ghost" size="sm" className="rounded-xl hover:bg-emerald-50">{t.nav.login}</Button>
                 </Link>
                 <Link href="/register">
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Button
-                      size="sm"
-                      className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl shadow-lg shadow-emerald-500/20"
-                    >
-                      {t.nav.register}
-                    </Button>
-                  </motion.div>
+                  <Button
+                    size="sm"
+                    className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    {t.nav.register}
+                  </Button>
                 </Link>
               </>
             )}
           </div>
         </div>
       </div>
-    </motion.header>
+    </header>
   )
 }

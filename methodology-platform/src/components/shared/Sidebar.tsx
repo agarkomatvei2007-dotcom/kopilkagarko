@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { motion } from 'framer-motion'
 import {
   Home,
   Compass,
@@ -17,7 +16,6 @@ import {
   Shield,
   Bot,
   Sparkles,
-  ClipboardList,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -41,7 +39,6 @@ export default function Sidebar() {
     { href: '/feed', label: t.nav.feed, icon: Home },
     { href: '/explore', label: t.nav.explore, icon: Compass },
     { href: '/ai-assistant', label: language === 'ru' ? 'ИИ-ассистент' : 'ЖИ-көмекші', icon: Bot },
-    { href: '/quiz-generator', label: language === 'ru' ? 'Генератор тестов' : 'Тест генераторы', icon: ClipboardList },
     { href: '/my-materials', label: t.nav.myMaterials, icon: FolderOpen },
     { href: '/collections', label: t.nav.collections, icon: BookmarkIcon },
     { href: '/courses', label: t.nav.courses, icon: GraduationCap },
@@ -63,59 +60,42 @@ export default function Sidebar() {
   const levelProgress = user ? calculateLevelProgress(user.points) : 0
   const isAdmin = firebaseUser?.email && ADMIN_EMAILS.includes(firebaseUser.email)
 
-  const NavLink = ({ href, label, icon: Icon, isActive, index }: { href: string; label: string; icon: React.ElementType; isActive: boolean; index: number }) => (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.05 }}
-    >
-      <Link href={href}>
-        <motion.div whileHover={{ x: 4 }} whileTap={{ scale: 0.98 }}>
-          <Button
-            variant="ghost"
-            className={cn(
-              'w-full justify-start gap-3 h-11 font-medium rounded-xl transition-all',
-              isActive
-                ? 'bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 hover:from-emerald-100 hover:to-teal-100'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-            )}
-          >
-            <div className={cn(
-              'p-1.5 rounded-lg',
-              isActive ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm' : 'bg-gray-100 text-gray-500'
-            )}>
-              <Icon className="h-4 w-4" strokeWidth={2} />
-            </div>
-            {label}
-            {isActive && (
-              <motion.div
-                className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500"
-                layoutId="activeIndicator"
-              />
-            )}
-          </Button>
-        </motion.div>
-      </Link>
-    </motion.div>
+  const NavLink = ({ href, label, icon: Icon, isActive }: { href: string; label: string; icon: React.ElementType; isActive: boolean }) => (
+    <Link href={href}>
+      <Button
+        variant="ghost"
+        className={cn(
+          'w-full justify-start gap-3 h-11 font-medium rounded-xl transition-all',
+          isActive
+            ? 'bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 hover:from-emerald-100 hover:to-teal-100'
+            : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50'
+        )}
+      >
+        <div className={cn(
+          'p-1.5 rounded-lg',
+          isActive ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm' : 'bg-emerald-100 text-emerald-600'
+        )}>
+          <Icon className="h-4 w-4" strokeWidth={2} />
+        </div>
+        {label}
+        {isActive && (
+          <div className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500" />
+        )}
+      </Button>
+    </Link>
   )
 
   return (
-    <motion.aside
-      className="hidden lg:flex flex-col w-64 border-r border-gray-100 bg-white h-[calc(100vh-4rem)] sticky top-16"
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.3 }}
-    >
+    <aside className="hidden lg:flex flex-col w-64 border-r border-gray-100 bg-white h-[calc(100vh-4rem)] sticky top-16">
       <ScrollArea className="flex-1 py-6">
         <nav className="space-y-1 px-3">
-          {mainNavItems.map((item, i) => (
+          {mainNavItems.map((item) => (
             <NavLink
               key={item.href}
               href={item.href}
               label={item.label}
               icon={item.icon}
               isActive={pathname.startsWith(item.href)}
-              index={i}
             />
           ))}
         </nav>
@@ -123,18 +103,17 @@ export default function Sidebar() {
         <div className="my-6 mx-4 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
 
         <nav className="space-y-1 px-3">
-          <p className="px-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <p className="px-3 text-[11px] font-semibold text-emerald-600 uppercase tracking-wider mb-3 flex items-center gap-2">
             <Users className="h-3.5 w-3.5" />
             {language === 'ru' ? 'Сообщество' : 'Қауымдастық'}
           </p>
-          {socialNavItems.map((item, i) => (
+          {socialNavItems.map((item) => (
             <NavLink
               key={item.href}
               href={item.href}
               label={item.label}
               icon={item.icon}
               isActive={pathname.startsWith(item.href)}
-              index={i + mainNavItems.length}
             />
           ))}
         </nav>
@@ -142,14 +121,13 @@ export default function Sidebar() {
         <div className="my-6 mx-4 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
 
         <nav className="space-y-1 px-3">
-          {bottomNavItems.map((item, i) => (
+          {bottomNavItems.map((item) => (
             <NavLink
               key={item.href}
               href={item.href}
               label={item.label}
               icon={item.icon}
               isActive={pathname.startsWith(item.href)}
-              index={i + mainNavItems.length + socialNavItems.length}
             />
           ))}
         </nav>
@@ -164,7 +142,6 @@ export default function Sidebar() {
                 label={t.nav.adminPanel}
                 icon={Shield}
                 isActive={pathname.startsWith('/admin')}
-                index={0}
               />
             </nav>
           </>
@@ -173,39 +150,30 @@ export default function Sidebar() {
 
       {/* Level progress */}
       {user && (
-        <motion.div
-          className="border-t border-gray-100 p-4"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-4 border border-gray-100">
+        <div className="border-t border-gray-100 p-4">
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 border border-emerald-100">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-orange-500/20">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
                 <Sparkles className="h-4 w-4 text-white" />
               </div>
               <div>
-                <div className="text-sm font-semibold text-gray-900">
+                <div className="text-sm font-semibold text-emerald-800">
                   {language === 'ru' ? 'Уровень' : 'Деңгей'} {user.level}
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-emerald-600">
                   {user.points} XP
                 </div>
               </div>
             </div>
             <div className="relative">
-              <Progress value={levelProgress} className="h-2 bg-gray-100" />
-              <div
-                className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 opacity-20"
-                style={{ width: `${levelProgress}%` }}
-              />
+              <Progress value={levelProgress} className="h-2 bg-emerald-100" />
             </div>
-            <p className="text-xs text-gray-400 mt-2 text-center">
+            <p className="text-xs text-emerald-600 mt-2 text-center">
               {100 - levelProgress}% {language === 'ru' ? 'до следующего уровня' : 'келесі деңгейге дейін'}
             </p>
           </div>
-        </motion.div>
+        </div>
       )}
-    </motion.aside>
+    </aside>
   )
 }
