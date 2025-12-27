@@ -22,6 +22,8 @@ import {
   FileImage,
   FileAudio,
   HelpCircle,
+  Check,
+  X,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -75,6 +77,11 @@ export default function MaterialPage() {
   const [following, setFollowing] = useState(false)
   const [newComment, setNewComment] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Quiz state
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({})
+  const [quizSubmitted, setQuizSubmitted] = useState(false)
+  const [quizScore, setQuizScore] = useState(0)
 
   useEffect(() => {
     const loadMaterial = async () => {
@@ -165,6 +172,35 @@ export default function MaterialPage() {
       await navigator.clipboard.writeText(url)
       toast({ title: 'Ссылка скопирована' })
     }
+  }
+
+  const handleSelectAnswer = (questionIndex: number, optionIndex: number) => {
+    if (quizSubmitted) return
+    setSelectedAnswers(prev => ({ ...prev, [questionIndex]: optionIndex }))
+  }
+
+  const handleSubmitQuiz = () => {
+    if (!material?.content.questions) return
+
+    let correct = 0
+    material.content.questions.forEach((q: { correctAnswer: number }, index: number) => {
+      if (selectedAnswers[index] === q.correctAnswer) {
+        correct++
+      }
+    })
+
+    setQuizScore(correct)
+    setQuizSubmitted(true)
+    toast({
+      title: 'Тест завершён!',
+      description: `Правильных ответов: ${correct} из ${material.content.questions.length}`,
+    })
+  }
+
+  const handleResetQuiz = () => {
+    setSelectedAnswers({})
+    setQuizSubmitted(false)
+    setQuizScore(0)
   }
 
   if (isLoading) {
@@ -266,6 +302,122 @@ export default function MaterialPage() {
               className="prose max-w-none"
               dangerouslySetInnerHTML={{ __html: material.content.text }}
             />
+          )}
+
+          {/* Quiz content */}
+          {material.type === 'quiz' && material.content.questions && material.content.questions.length > 0 && (
+            <div className="space-y-6">
+              {/* Quiz header with score */}
+              {quizSubmitted && (
+                <div className={`p-4 rounded-lg border-2 ${
+                  quizScore === material.content.questions.length
+                    ? 'bg-green-50 border-green-400'
+                    : quizScore >= material.content.questions.length / 2
+                      ? 'bg-yellow-50 border-yellow-400'
+                      : 'bg-red-50 border-red-400'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-lg">Результат: {quizScore} из {material.content.questions.length}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {Math.round((quizScore / material.content.questions.length) * 100)}% правильных ответов
+                      </p>
+                    </div>
+                    <Button onClick={handleResetQuiz} variant="outline">
+                      Пройти заново
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Questions */}
+              {material.content.questions.map((question: {
+                question: string
+                options: string[]
+                correctAnswer: number
+                explanation?: string
+                difficulty?: string
+              }, qIndex: number) => {
+                const isAnswered = selectedAnswers[qIndex] !== undefined
+                const isCorrect = quizSubmitted && selectedAnswers[qIndex] === question.correctAnswer
+                const isWrong = quizSubmitted && isAnswered && selectedAnswers[qIndex] !== question.correctAnswer
+
+                return (
+                  <div key={qIndex} className="border rounded-lg p-4">
+                    <div className="flex items-start gap-3 mb-4">
+                      <span className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${
+                        quizSubmitted
+                          ? isCorrect ? 'bg-green-500' : isWrong ? 'bg-red-500' : 'bg-gray-400'
+                          : 'bg-primary'
+                      }`}>
+                        {quizSubmitted ? (isCorrect ? <Check className="h-5 w-5" /> : isWrong ? <X className="h-5 w-5" /> : qIndex + 1) : qIndex + 1}
+                      </span>
+                      <div className="flex-1">
+                        <p className="font-medium text-lg">{question.question}</p>
+                        {question.difficulty && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            question.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
+                            question.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {question.difficulty === 'easy' ? 'Лёгкий' : question.difficulty === 'medium' ? 'Средний' : 'Сложный'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-2 sm:grid-cols-2 ml-11">
+                      {question.options.map((option: string, oIndex: number) => {
+                        const isSelected = selectedAnswers[qIndex] === oIndex
+                        const isCorrectOption = question.correctAnswer === oIndex
+                        const showCorrect = quizSubmitted && isCorrectOption
+                        const showWrong = quizSubmitted && isSelected && !isCorrectOption
+
+                        return (
+                          <button
+                            key={oIndex}
+                            type="button"
+                            onClick={() => handleSelectAnswer(qIndex, oIndex)}
+                            disabled={quizSubmitted}
+                            className={`p-3 rounded-lg border-2 text-left transition-all ${
+                              showCorrect
+                                ? 'bg-green-50 border-green-400'
+                                : showWrong
+                                  ? 'bg-red-50 border-red-400'
+                                  : isSelected
+                                    ? 'bg-primary/10 border-primary'
+                                    : 'border-muted hover:border-primary/50'
+                            } ${quizSubmitted ? 'cursor-default' : 'cursor-pointer'}`}
+                          >
+                            <span className="font-bold mr-2">{String.fromCharCode(65 + oIndex)}.</span>
+                            {option}
+                            {showCorrect && <Check className="inline ml-2 h-4 w-4 text-green-600" />}
+                            {showWrong && <X className="inline ml-2 h-4 w-4 text-red-600" />}
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    {quizSubmitted && question.explanation && (
+                      <div className="mt-3 ml-11 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <p className="text-sm"><strong>Объяснение:</strong> {question.explanation}</p>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+
+              {/* Submit button */}
+              {!quizSubmitted && (
+                <Button
+                  onClick={handleSubmitQuiz}
+                  className="w-full"
+                  disabled={Object.keys(selectedAnswers).length < material.content.questions.length}
+                >
+                  Завершить тест ({Object.keys(selectedAnswers).length}/{material.content.questions.length} ответов)
+                </Button>
+              )}
+            </div>
           )}
 
           {/* Files */}
