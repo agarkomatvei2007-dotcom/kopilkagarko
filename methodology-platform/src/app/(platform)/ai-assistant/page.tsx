@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Bot, Send, Loader2, Trash2, Sparkles, BookOpen, FileText, HelpCircle } from 'lucide-react'
+import { Bot, Send, Loader2, Trash2, Sparkles, BookOpen, FileText, HelpCircle, Navigation, GraduationCap, Users, BarChart3 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,18 +18,34 @@ interface Message {
 }
 
 const QUICK_PROMPTS = {
-  ru: [
-    { icon: BookOpen, text: 'Как составить план урока?' },
-    { icon: FileText, text: 'Помоги написать КТП' },
-    { icon: HelpCircle, text: 'Методы активного обучения' },
-    { icon: Sparkles, text: 'Идеи для интерактивного урока' },
-  ],
-  kk: [
-    { icon: BookOpen, text: 'Сабақ жоспарын қалай құруға болады?' },
-    { icon: FileText, text: 'КТЖ жазуға көмектес' },
-    { icon: HelpCircle, text: 'Белсенді оқыту әдістері' },
-    { icon: Sparkles, text: 'Интерактивті сабаққа идеялар' },
-  ],
+  ru: {
+    platform: [
+      { icon: Navigation, text: 'Как опубликовать материал?' },
+      { icon: GraduationCap, text: 'Как создать курс?' },
+      { icon: Users, text: 'Как вступить в сообщество?' },
+      { icon: BarChart3, text: 'Где посмотреть мою статистику?' },
+    ],
+    methodology: [
+      { icon: BookOpen, text: 'Как составить план урока?' },
+      { icon: FileText, text: 'Помоги написать КТП' },
+      { icon: HelpCircle, text: 'Методы активного обучения' },
+      { icon: Sparkles, text: 'Идеи для интерактивного урока' },
+    ],
+  },
+  kk: {
+    platform: [
+      { icon: Navigation, text: 'Материалды қалай жариялауға болады?' },
+      { icon: GraduationCap, text: 'Курсты қалай құруға болады?' },
+      { icon: Users, text: 'Қауымдастыққа қалай кіруге болады?' },
+      { icon: BarChart3, text: 'Менің статистикамды қайдан көруге болады?' },
+    ],
+    methodology: [
+      { icon: BookOpen, text: 'Сабақ жоспарын қалай құруға болады?' },
+      { icon: FileText, text: 'КТЖ жазуға көмектес' },
+      { icon: HelpCircle, text: 'Белсенді оқыту әдістері' },
+      { icon: Sparkles, text: 'Интерактивті сабаққа идеялар' },
+    ],
+  },
 }
 
 export default function AIAssistantPage() {
@@ -48,16 +64,17 @@ export default function AIAssistantPage() {
       placeholder: 'Задайте вопрос...',
       clearChat: 'Очистить чат',
       loginRequired: 'Войдите, чтобы использовать ИИ-ассистента',
-      welcome: 'Привет! Я ваш методический ИИ-ассистент. Могу помочь с:',
+      welcome: 'Привет! Я ваш ИИ-ассистент платформы "Методическая копилка". Могу помочь с:',
       welcomeItems: [
+        'Навигацией по платформе и её функциям',
+        'Публикацией материалов и созданием курсов',
         'Планированием уроков и занятий',
-        'Методическими рекомендациями',
         'Документацией (КТП, планы, отчёты)',
-        'Работой со студентами',
-        'Современными методами обучения',
+        'Методическими рекомендациями',
       ],
       askAnything: 'Задайте любой вопрос или выберите тему:',
-      quickPrompts: 'Быстрые вопросы',
+      platformHelp: 'Помощь по платформе',
+      methodologyHelp: 'Методика преподавания',
       error: 'Произошла ошибка. Попробуйте ещё раз.',
       thinking: 'Думаю...',
     },
@@ -67,16 +84,17 @@ export default function AIAssistantPage() {
       placeholder: 'Сұрақ қойыңыз...',
       clearChat: 'Чатты тазалау',
       loginRequired: 'ЖИ-көмекшіні пайдалану үшін кіріңіз',
-      welcome: 'Сәлем! Мен сіздің әдістемелік ЖИ-көмекшіңізбін. Көмектесе аламын:',
+      welcome: 'Сәлем! Мен "Әдістемелік қоржын" платформасының ЖИ-көмекшісімін. Көмектесе аламын:',
       welcomeItems: [
+        'Платформа бойынша навигация',
+        'Материалдарды жариялау және курстар құру',
         'Сабақтар мен сабақтарды жоспарлау',
-        'Әдістемелік ұсыныстар',
         'Құжаттама (КТЖ, жоспарлар, есептер)',
-        'Студенттермен жұмыс',
-        'Қазіргі заманғы оқыту әдістері',
+        'Әдістемелік ұсыныстар',
       ],
       askAnything: 'Кез келген сұрақ қойыңыз немесе тақырыпты таңдаңыз:',
-      quickPrompts: 'Жылдам сұрақтар',
+      platformHelp: 'Платформа бойынша көмек',
+      methodologyHelp: 'Оқыту әдістемесі',
       error: 'Қате орын алды. Қайталап көріңіз.',
       thinking: 'Ойланамын...',
     },
@@ -202,21 +220,41 @@ export default function AIAssistantPage() {
                   </div>
                 </div>
 
-                {/* Quick prompts */}
-                <div className="pl-11">
-                  <p className="text-sm font-medium mb-3">{text.quickPrompts}:</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {prompts.map((prompt, i) => (
-                      <Button
-                        key={i}
-                        variant="outline"
-                        className="justify-start h-auto py-3 px-4"
-                        onClick={() => sendMessage(prompt.text)}
-                      >
-                        <prompt.icon className="h-4 w-4 mr-2 shrink-0" />
-                        <span className="text-left text-sm">{prompt.text}</span>
-                      </Button>
-                    ))}
+                {/* Quick prompts - Platform */}
+                <div className="pl-11 space-y-4">
+                  <div>
+                    <p className="text-sm font-medium mb-3">{text.platformHelp}:</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {prompts.platform.map((prompt, i) => (
+                        <Button
+                          key={i}
+                          variant="outline"
+                          className="justify-start h-auto py-3 px-4"
+                          onClick={() => sendMessage(prompt.text)}
+                        >
+                          <prompt.icon className="h-4 w-4 mr-2 shrink-0" />
+                          <span className="text-left text-sm">{prompt.text}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Quick prompts - Methodology */}
+                  <div>
+                    <p className="text-sm font-medium mb-3">{text.methodologyHelp}:</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {prompts.methodology.map((prompt, i) => (
+                        <Button
+                          key={i}
+                          variant="outline"
+                          className="justify-start h-auto py-3 px-4"
+                          onClick={() => sendMessage(prompt.text)}
+                        >
+                          <prompt.icon className="h-4 w-4 mr-2 shrink-0" />
+                          <span className="text-left text-sm">{prompt.text}</span>
+                        </Button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
