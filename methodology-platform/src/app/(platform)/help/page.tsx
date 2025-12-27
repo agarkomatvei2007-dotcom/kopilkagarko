@@ -1,18 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   HelpCircle,
   Book,
   MessageCircle,
   Mail,
-  ChevronDown,
   Search,
   FileText,
   Users,
   Shield,
   Zap,
+  Phone,
+  Send,
 } from 'lucide-react'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,59 +24,34 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion'
-import { useToast } from '@/hooks/use-toast'
 import { useLanguage } from '@/hooks/useLanguage'
-import { useAuth } from '@/hooks/useAuth'
-import { createChat } from '@/lib/firebase/firestore'
 
 export default function HelpPage() {
   const { language } = useLanguage()
-  const { user } = useAuth()
-  const { toast } = useToast()
-  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
-  const [isCreatingChat, setIsCreatingChat] = useState(false)
 
-  const SUPPORT_ID = 'support'
-  const SUPPORT_EMAIL = 'support@kopilka.kz'
+  // Contact info
+  const CONTACT_EMAIL = 'agarkomatvei2007@gmail.com'
+  const CONTACT_TELEGRAM = 'yxungymlover911'
+  const CONTACT_WHATSAPP = '87089398060'
+  const CONTACT_PHONE = '+7 708 939 80 60'
 
-  const handleOpenChat = async () => {
-    if (!user) {
-      toast({
-        title: language === 'ru' ? 'Требуется авторизация' : 'Авторизация қажет',
-        description: language === 'ru' ? 'Войдите, чтобы написать в поддержку' : 'Қолдауға жазу үшін кіріңіз',
-        variant: 'destructive',
-      })
-      return
-    }
-
-    setIsCreatingChat(true)
-    try {
-      const chatId = await createChat(
-        user.id,
-        user.displayName || 'Пользователь',
-        user.avatar || null,
-        SUPPORT_ID,
-        'Поддержка Kopilka',
-        null
-      )
-      router.push(`/messages?chat=${chatId}`)
-    } catch (error) {
-      console.error('Error creating support chat:', error)
-      toast({
-        title: language === 'ru' ? 'Ошибка' : 'Қате',
-        description: language === 'ru' ? 'Не удалось создать чат' : 'Чат жасау мүмкін болмады',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsCreatingChat(false)
-    }
+  const handleTelegram = () => {
+    window.open(`https://t.me/${CONTACT_TELEGRAM}`, '_blank')
   }
 
-  const handleSendEmail = () => {
-    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
+  const handleWhatsApp = () => {
+    window.open(`https://wa.me/${CONTACT_WHATSAPP}`, '_blank')
+  }
+
+  const handleEmail = () => {
+    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(
       language === 'ru' ? 'Вопрос по платформе Kopilka' : 'Kopilka платформасы бойынша сұрақ'
     )}`
+  }
+
+  const handlePhone = () => {
+    window.location.href = `tel:${CONTACT_WHATSAPP}`
   }
 
   const txt = {
@@ -97,9 +72,14 @@ export default function HelpPage() {
       noResults: 'Ничего не найдено. Попробуйте изменить запрос.',
       notFound: 'Не нашли ответ?',
       contactUs: 'Свяжитесь с нами любым удобным способом',
-      writeChat: 'Написать в чат',
-      usuallyReply: 'Обычно отвечаем за час',
-      sendEmail: 'Отправить email',
+      telegram: 'Telegram',
+      telegramDesc: 'Быстрый ответ',
+      whatsapp: 'WhatsApp',
+      whatsappDesc: 'Написать сообщение',
+      email: 'Email',
+      emailDesc: 'Отправить письмо',
+      phone: 'Позвонить',
+      phoneDesc: 'Прямой звонок',
       faqItems: [
         {
           question: 'Как создать материал?',
@@ -152,9 +132,14 @@ export default function HelpPage() {
       noResults: 'Ештеңе табылмады. Сұрауды өзгертіп көріңіз.',
       notFound: 'Жауап таппадыңыз ба?',
       contactUs: 'Кез келген ыңғайлы тәсілмен бізбен байланысыңыз',
-      writeChat: 'Чатқа жазу',
-      usuallyReply: 'Әдетте бір сағат ішінде жауап береміз',
-      sendEmail: 'Email жіберу',
+      telegram: 'Telegram',
+      telegramDesc: 'Жылдам жауап',
+      whatsapp: 'WhatsApp',
+      whatsappDesc: 'Хабарлама жазу',
+      email: 'Email',
+      emailDesc: 'Хат жіберу',
+      phone: 'Қоңырау шалу',
+      phoneDesc: 'Тікелей қоңырау',
       faqItems: [
         {
           question: 'Материалды қалай жасауға болады?',
@@ -300,25 +285,42 @@ export default function HelpPage() {
           <CardDescription>{text.contactUs}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Button
               variant="outline"
-              className="h-auto py-4 flex flex-col items-center gap-2"
-              onClick={handleOpenChat}
-              disabled={isCreatingChat}
+              className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-blue-50 hover:border-blue-300 transition-colors"
+              onClick={handleTelegram}
             >
-              <MessageCircle className="h-6 w-6" />
-              <span>{text.writeChat}</span>
-              <span className="text-xs text-muted-foreground">{text.usuallyReply}</span>
+              <Send className="h-6 w-6 text-blue-500" />
+              <span className="font-medium">{text.telegram}</span>
+              <span className="text-xs text-muted-foreground">{text.telegramDesc}</span>
             </Button>
             <Button
               variant="outline"
-              className="h-auto py-4 flex flex-col items-center gap-2"
-              onClick={handleSendEmail}
+              className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-green-50 hover:border-green-300 transition-colors"
+              onClick={handleWhatsApp}
             >
-              <Mail className="h-6 w-6" />
-              <span>{text.sendEmail}</span>
-              <span className="text-xs text-muted-foreground">{SUPPORT_EMAIL}</span>
+              <MessageCircle className="h-6 w-6 text-green-500" />
+              <span className="font-medium">{text.whatsapp}</span>
+              <span className="text-xs text-muted-foreground">{text.whatsappDesc}</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-red-50 hover:border-red-300 transition-colors"
+              onClick={handleEmail}
+            >
+              <Mail className="h-6 w-6 text-red-500" />
+              <span className="font-medium">{text.email}</span>
+              <span className="text-xs text-muted-foreground">{text.emailDesc}</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-emerald-50 hover:border-emerald-300 transition-colors"
+              onClick={handlePhone}
+            >
+              <Phone className="h-6 w-6 text-emerald-500" />
+              <span className="font-medium">{text.phone}</span>
+              <span className="text-xs text-muted-foreground">{CONTACT_PHONE}</span>
             </Button>
           </div>
         </CardContent>
