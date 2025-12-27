@@ -213,14 +213,22 @@ export default function CreateMaterialPage() {
       }
 
       // Build content object without undefined values (Firebase doesn't support undefined)
-      const contentObj: { text?: string; videoUrl?: string; files: typeof uploadedFiles } = {
-        files: uploadedFiles,
-      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const contentObj: Record<string, any> = {}
+
+      // Add text content for text type
       if (data.type === 'text' && content) {
         contentObj.text = content
       }
+
+      // Add video URL for video type
       if (data.type === 'video' && data.videoUrl) {
         contentObj.videoUrl = data.videoUrl
+      }
+
+      // Add files if any were uploaded
+      if (uploadedFiles && uploadedFiles.length > 0) {
+        contentObj.files = uploadedFiles
       }
 
       const materialId = await createMaterial({
@@ -234,7 +242,7 @@ export default function CreateMaterialPage() {
         difficulty: data.difficulty as MaterialDifficulty,
         duration: null,
         standards: [],
-        thumbnail: thumbnailUrl,
+        thumbnail: thumbnailUrl ?? null,
         images: [],
         isPublic: data.isPublic,
         isPremium: false,
@@ -242,7 +250,7 @@ export default function CreateMaterialPage() {
         allowDownload: data.allowDownload,
         authorId: user.id,
         authorName: user.displayName || (language === 'ru' ? 'Пользователь' : 'Пайдаланушы'),
-        authorAvatar: user.avatar || null,
+        authorAvatar: user.avatar ?? null,
         aiGenerated: false,
         aiTags: [],
       })
