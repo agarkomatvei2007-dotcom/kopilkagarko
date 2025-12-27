@@ -370,7 +370,7 @@ export default function FeedPage() {
             </TabsList>
 
             <AnimatePresence mode="wait">
-              <TabsContent value="all" className="mt-0">
+              <TabsContent key="tab-all" value="all" className="mt-0">
                 {filteredMaterials.length === 0 ? (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -411,7 +411,7 @@ export default function FeedPage() {
                 )}
               </TabsContent>
 
-              <TabsContent value="following" className="mt-0">
+              <TabsContent key="tab-following" value="following" className="mt-0">
                 {filteredFollowingMaterials.length === 0 ? (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -457,7 +457,7 @@ export default function FeedPage() {
                 )}
               </TabsContent>
 
-              <TabsContent value="popular" className="mt-0">
+              <TabsContent key="tab-popular" value="popular" className="mt-0">
                 {applyFilters([...materials].sort((a, b) => b.stats.likes - a.stats.likes)).length === 0 ? (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
