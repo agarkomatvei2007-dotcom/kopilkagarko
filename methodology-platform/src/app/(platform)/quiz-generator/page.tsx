@@ -17,7 +17,7 @@ import {
 import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
-import { SUBJECTS, GRADES, GRADE_LABELS } from '@/types'
+import { SUBJECTS, GRADES } from '@/types'
 import { cn } from '@/lib/utils'
 
 interface QuizQuestion {
@@ -249,7 +249,7 @@ export default function QuizGeneratorPage() {
                 <SelectContent>
                   {GRADES.map((g) => (
                     <SelectItem key={g} value={g.toString()}>
-                      {GRADE_LABELS[language][g]}
+                      {g} {language === 'ru' ? 'курс' : 'курс'}
                     </SelectItem>
                   ))}
                 </SelectContent>
