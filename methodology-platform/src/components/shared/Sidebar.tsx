@@ -17,6 +17,7 @@ import {
   Shield,
   Bot,
   Sparkles,
+  ClipboardList,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -40,6 +41,7 @@ export default function Sidebar() {
     { href: '/feed', label: t.nav.feed, icon: Home },
     { href: '/explore', label: t.nav.explore, icon: Compass },
     { href: '/ai-assistant', label: language === 'ru' ? 'ИИ-ассистент' : 'ЖИ-көмекші', icon: Bot },
+    { href: '/quiz-generator', label: language === 'ru' ? 'Генератор тестов' : 'Тест генераторы', icon: ClipboardList },
     { href: '/my-materials', label: t.nav.myMaterials, icon: FolderOpen },
     { href: '/collections', label: t.nav.collections, icon: BookmarkIcon },
     { href: '/courses', label: t.nav.courses, icon: GraduationCap },
