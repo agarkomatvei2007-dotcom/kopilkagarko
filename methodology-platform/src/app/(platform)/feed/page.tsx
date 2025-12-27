@@ -70,7 +70,7 @@ export default function FeedPage() {
   const [selectedGrades, setSelectedGrades] = useState<number[]>([])
   const [selectedTypes, setSelectedTypes] = useState<string[]>([])
 
-  const hasActiveFilters = selectedSubject || selectedGrades.length > 0 || selectedTypes.length > 0
+  const hasActiveFilters = (selectedSubject && selectedSubject !== 'all') || selectedGrades.length > 0 || selectedTypes.length > 0
 
   const toggleGrade = (grade: number) => {
     setSelectedGrades(prev =>
@@ -97,7 +97,7 @@ export default function FeedPage() {
   const applyFilters = (items: Material[]) => {
     let filtered = items
 
-    if (selectedSubject) {
+    if (selectedSubject && selectedSubject !== 'all') {
       filtered = filtered.filter(m => m.subject === selectedSubject)
     }
 
@@ -275,7 +275,7 @@ export default function FeedPage() {
                         <SelectValue placeholder={language === 'ru' ? 'Все предметы' : 'Барлық пәндер'} />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
-                        <SelectItem value="">{language === 'ru' ? 'Все предметы' : 'Барлық пәндер'}</SelectItem>
+                        <SelectItem value="all">{language === 'ru' ? 'Все предметы' : 'Барлық пәндер'}</SelectItem>
                         {SUBJECTS.map(subject => (
                           <SelectItem key={subject} value={subject}>{subject}</SelectItem>
                         ))}
@@ -399,7 +399,7 @@ export default function FeedPage() {
                   >
                     {filteredMaterials.map((material, index) => (
                       <motion.div
-                        key={material.id}
+                        key={material.id || `material-${index}`}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
@@ -445,7 +445,7 @@ export default function FeedPage() {
                   >
                     {filteredFollowingMaterials.map((material, index) => (
                       <motion.div
-                        key={material.id}
+                        key={material.id || `following-${index}`}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
@@ -482,7 +482,7 @@ export default function FeedPage() {
                   >
                     {applyFilters([...materials].sort((a, b) => b.stats.likes - a.stats.likes)).map((material, index) => (
                       <motion.div
-                        key={material.id}
+                        key={material.id || `popular-${index}`}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
