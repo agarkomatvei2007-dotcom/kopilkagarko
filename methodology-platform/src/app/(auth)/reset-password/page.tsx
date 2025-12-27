@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth, useRequireGuest } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
 
 const resetSchema = z.object({
@@ -21,6 +21,7 @@ const resetSchema = z.object({
 type ResetForm = z.infer<typeof resetSchema>
 
 export default function ResetPasswordPage() {
+  useRequireGuest()
   const { resetPassword } = useAuth()
   const { toast } = useToast()
   const [isSuccess, setIsSuccess] = useState(false)

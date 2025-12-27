@@ -453,6 +453,7 @@ export default function CreateMaterialPage() {
         price: null,
         allowDownload: data.allowDownload,
         authorId: user.id,
+        authorUsername: user.username,
         authorName: user.displayName || (language === 'ru' ? 'Пользователь' : 'Пайдаланушы'),
         authorAvatar: user.avatar ?? null,
         aiGenerated: false,

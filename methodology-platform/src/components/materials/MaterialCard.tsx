@@ -155,7 +155,7 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                router.push(`/profile/${material.authorId}`)
+                router.push(`/profile/${material.authorUsername || material.authorId}`)
               }}
             >
               <Avatar className="h-6 w-6">

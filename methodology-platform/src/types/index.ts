@@ -66,11 +66,20 @@ export interface MaterialFile {
   type: string
 }
 
+export interface MaterialQuizQuestion {
+  question: string
+  options: string[]
+  correctAnswer: number
+  explanation: string
+  difficulty: 'easy' | 'medium' | 'hard'
+}
+
 export interface MaterialContent {
   text?: string
   videoUrl?: string
   fileUrl?: string
   files?: MaterialFile[]
+  questions?: MaterialQuizQuestion[]
 }
 
 export interface MaterialStats {
@@ -113,6 +122,7 @@ export interface Material {
 
   // Author
   authorId: string
+  authorUsername: string
   authorName: string
   authorAvatar: string | null
 

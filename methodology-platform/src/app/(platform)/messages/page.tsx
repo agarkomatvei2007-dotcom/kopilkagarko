@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Search, Send, MoreVertical, Phone, Video, Image, Paperclip, Smile, Loader2, MessageCircle, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -32,6 +33,8 @@ export default function MessagesPage() {
   const { user } = useAuth()
   const { language } = useLanguage()
   const { toast } = useToast()
+  const searchParams = useSearchParams()
+  const chatIdFromUrl = searchParams.get('chat')
   const [chats, setChats] = useState<Chat[]>([])
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -81,7 +84,16 @@ export default function MessagesPage() {
       try {
         const userChats = await getUserChats(user.id)
         setChats(userChats)
-        if (userChats.length > 0 && !selectedChat) {
+
+        // If there's a chat ID in URL, select that chat
+        if (chatIdFromUrl) {
+          const chatFromUrl = userChats.find(c => c.id === chatIdFromUrl)
+          if (chatFromUrl) {
+            setSelectedChat(chatFromUrl)
+          } else if (userChats.length > 0 && !selectedChat) {
+            setSelectedChat(userChats[0])
+          }
+        } else if (userChats.length > 0 && !selectedChat) {
           setSelectedChat(userChats[0])
         }
       } catch (error) {
@@ -95,7 +107,7 @@ export default function MessagesPage() {
     // Refresh chats every 30 seconds
     const interval = setInterval(loadChats, 30000)
     return () => clearInterval(interval)
-  }, [user])
+  }, [user, chatIdFromUrl])
 
   // Load messages when chat is selected
   useEffect(() => {
