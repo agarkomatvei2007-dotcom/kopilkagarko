@@ -96,7 +96,7 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
       <Card className="h-full hover:shadow-md transition-shadow overflow-hidden group">
         {/* Thumbnail */}
         <div className="relative aspect-video bg-muted">
-          {material.thumbnail ? (
+          {material.thumbnail && material.thumbnail.length > 0 ? (
             <Image
               src={material.thumbnail}
               alt={material.title}
