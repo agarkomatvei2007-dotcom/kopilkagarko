@@ -17,6 +17,9 @@ import {
   Share2,
   Send,
   Loader2,
+  Trash2,
+  Crown,
+  Shield,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -25,19 +28,42 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
 import {
   getCommunity,
   getCommunityPosts,
+  getCommunityMembers,
   joinCommunity,
   leaveCommunity,
   isCommunityMember,
   createCommunityPost,
+  togglePostLike,
+  isPostLikedByUser,
+  addPostComment,
+  getPostComments,
+  deletePost,
   getUser,
 } from '@/lib/firebase/firestore'
-import type { Community, CommunityPost } from '@/lib/firebase/firestore'
+import type { Community, CommunityPost, CommunityMember, PostComment } from '@/lib/firebase/firestore'
 import { getInitials, formatRelativeTime } from '@/lib/utils'
 import type { User } from '@/types'
 
@@ -49,12 +75,27 @@ export default function CommunityDetailPage() {
 
   const [community, setCommunity] = useState<Community | null>(null)
   const [posts, setPosts] = useState<CommunityPost[]>([])
+  const [members, setMembers] = useState<CommunityMember[]>([])
   const [owner, setOwner] = useState<User | null>(null)
   const [isMember, setIsMember] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isJoining, setIsJoining] = useState(false)
   const [isPosting, setIsPosting] = useState(false)
   const [newPost, setNewPost] = useState('')
+  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set())
+  const [likingPost, setLikingPost] = useState<string | null>(null)
+
+  // Comments state
+  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set())
+  const [postComments, setPostComments] = useState<Record<string, PostComment[]>>({})
+  const [loadingComments, setLoadingComments] = useState<Set<string>>(new Set())
+  const [newComments, setNewComments] = useState<Record<string, string>>({})
+  const [sendingComment, setSendingComment] = useState<string | null>(null)
+
+  // Delete dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [postToDelete, setPostToDelete] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const txt = {
     ru: {
@@ -66,22 +107,32 @@ export default function CommunityDetailPage() {
       joined: 'Вы вступили в сообщество!',
       left: 'Вы покинули сообщество',
       postsTab: 'Записи',
-      materialsTab: 'Материалы',
       membersTab: 'Участники',
       writeSomething: 'Напишите что-нибудь...',
       publish: 'Опубликовать',
       published: 'Запись опубликована!',
       share: 'Поделиться',
       admin: 'Администратор',
-      rules: 'Правила сообщества',
-      noRules: 'Правила не установлены',
-      materialsPlaceholder: 'Материалы сообщества появятся здесь',
-      membersPlaceholder: 'Список участников появится здесь',
       notFound: 'Сообщество не найдено',
       noPosts: 'Записей пока нет',
       beFirst: 'Станьте первым, кто напишет!',
       loginToJoin: 'Войдите, чтобы вступить',
       loginToPost: 'Войдите, чтобы писать',
+      deletePost: 'Удалить запись',
+      deletePostConfirm: 'Удалить эту запись?',
+      deletePostDesc: 'Это действие нельзя отменить.',
+      deleted: 'Запись удалена',
+      cancel: 'Отмена',
+      delete: 'Удалить',
+      owner: 'Создатель',
+      member: 'Участник',
+      writeComment: 'Написать комментарий...',
+      send: 'Отправить',
+      comments: 'комментариев',
+      showComments: 'Показать комментарии',
+      hideComments: 'Скрыть комментарии',
+      noMembers: 'Участников пока нет',
+      joinedDate: 'Присоединился',
     },
     kk: {
       back: 'Қауымдастықтарға оралу',
@@ -92,22 +143,32 @@ export default function CommunityDetailPage() {
       joined: 'Сіз қауымдастыққа қосылдыңыз!',
       left: 'Сіз қауымдастықтан шықтыңыз',
       postsTab: 'Жазбалар',
-      materialsTab: 'Материалдар',
       membersTab: 'Мүшелер',
       writeSomething: 'Бірдеңе жазыңыз...',
       publish: 'Жариялау',
       published: 'Жазба жарияланды!',
       share: 'Бөлісу',
       admin: 'Әкімші',
-      rules: 'Қауымдастық ережелері',
-      noRules: 'Ережелер белгіленбеген',
-      materialsPlaceholder: 'Қауымдастық материалдары осында пайда болады',
-      membersPlaceholder: 'Мүшелер тізімі осында пайда болады',
       notFound: 'Қауымдастық табылмады',
       noPosts: 'Жазбалар әлі жоқ',
       beFirst: 'Бірінші болып жазыңыз!',
       loginToJoin: 'Қосылу үшін кіріңіз',
       loginToPost: 'Жазу үшін кіріңіз',
+      deletePost: 'Жазбаны жою',
+      deletePostConfirm: 'Бұл жазбаны жою керек пе?',
+      deletePostDesc: 'Бұл әрекетті қайтару мүмкін емес.',
+      deleted: 'Жазба жойылды',
+      cancel: 'Болдырмау',
+      delete: 'Жою',
+      owner: 'Құрушы',
+      member: 'Мүше',
+      writeComment: 'Пікір жазу...',
+      send: 'Жіберу',
+      comments: 'пікір',
+      showComments: 'Пікірлерді көрсету',
+      hideComments: 'Пікірлерді жасыру',
+      noMembers: 'Мүшелер әлі жоқ',
+      joinedDate: 'Қосылды',
     },
   }
 
@@ -138,10 +199,18 @@ export default function CommunityDetailPage() {
           setOwner(ownerData)
         }
 
-        // Check if user is member
+        // Check if user is member and load liked posts
         if (user) {
           const member = await isCommunityMember(communityId, user.id)
           setIsMember(member)
+
+          // Check which posts user has liked
+          const likedSet = new Set<string>()
+          for (const post of communityPosts) {
+            const liked = await isPostLikedByUser(communityId, post.id, user.id)
+            if (liked) likedSet.add(post.id)
+          }
+          setLikedPosts(likedSet)
         }
       } catch (error) {
         console.error('Error loading community:', error)
@@ -206,7 +275,6 @@ export default function CommunityDetailPage() {
         images: [],
       })
 
-      // Reload posts
       const updatedPosts = await getCommunityPosts(community.id)
       setPosts(updatedPosts)
       setCommunity(prev => prev ? { ...prev, postsCount: prev.postsCount + 1 } : null)
@@ -217,6 +285,122 @@ export default function CommunityDetailPage() {
       console.error('Error creating post:', error)
     } finally {
       setIsPosting(false)
+    }
+  }
+
+  const handleLikePost = async (postId: string) => {
+    if (!user || !community) return
+
+    setLikingPost(postId)
+    try {
+      const isNowLiked = await togglePostLike(community.id, postId, user.id)
+
+      if (isNowLiked) {
+        setLikedPosts(prev => new Set([...prev, postId]))
+      } else {
+        setLikedPosts(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(postId)
+          return newSet
+        })
+      }
+
+      setPosts(prev => prev.map(p =>
+        p.id === postId
+          ? { ...p, likes: isNowLiked ? p.likes + 1 : p.likes - 1 }
+          : p
+      ))
+    } catch (error) {
+      console.error('Error liking post:', error)
+    } finally {
+      setLikingPost(null)
+    }
+  }
+
+  const toggleComments = async (postId: string) => {
+    if (expandedComments.has(postId)) {
+      setExpandedComments(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(postId)
+        return newSet
+      })
+    } else {
+      setExpandedComments(prev => new Set([...prev, postId]))
+
+      // Load comments if not already loaded
+      if (!postComments[postId] && community) {
+        setLoadingComments(prev => new Set([...prev, postId]))
+        try {
+          const comments = await getPostComments(community.id, postId)
+          setPostComments(prev => ({ ...prev, [postId]: comments }))
+        } catch (error) {
+          console.error('Error loading comments:', error)
+        } finally {
+          setLoadingComments(prev => {
+            const newSet = new Set(prev)
+            newSet.delete(postId)
+            return newSet
+          })
+        }
+      }
+    }
+  }
+
+  const handleAddComment = async (postId: string) => {
+    if (!user || !community) return
+    const content = newComments[postId]?.trim()
+    if (!content) return
+
+    setSendingComment(postId)
+    try {
+      await addPostComment(community.id, postId, {
+        authorId: user.id,
+        authorName: user.displayName,
+        authorAvatar: user.avatar,
+        content,
+      })
+
+      // Reload comments
+      const comments = await getPostComments(community.id, postId)
+      setPostComments(prev => ({ ...prev, [postId]: comments }))
+      setNewComments(prev => ({ ...prev, [postId]: '' }))
+
+      // Update post comments count
+      setPosts(prev => prev.map(p =>
+        p.id === postId ? { ...p, comments: p.comments + 1 } : p
+      ))
+    } catch (error) {
+      console.error('Error adding comment:', error)
+    } finally {
+      setSendingComment(null)
+    }
+  }
+
+  const handleDeletePost = async () => {
+    if (!community || !postToDelete) return
+
+    setIsDeleting(true)
+    try {
+      await deletePost(community.id, postToDelete)
+      setPosts(prev => prev.filter(p => p.id !== postToDelete))
+      setCommunity(prev => prev ? { ...prev, postsCount: Math.max(0, prev.postsCount - 1) } : null)
+      toast({ title: text.deleted })
+    } catch (error) {
+      console.error('Error deleting post:', error)
+    } finally {
+      setIsDeleting(false)
+      setDeleteDialogOpen(false)
+      setPostToDelete(null)
+    }
+  }
+
+  const loadMembers = async () => {
+    if (!community || members.length > 0) return
+    try {
+      const membersList = await getCommunityMembers(community.id)
+      setMembers(membersList)
+    } catch (error) {
+      console.error('Error loading members:', error)
     }
   }
 
@@ -318,10 +502,9 @@ export default function CommunityDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main content */}
         <div className="lg:col-span-2">
-          <Tabs defaultValue="posts">
+          <Tabs defaultValue="posts" onValueChange={(v) => v === 'members' && loadMembers()}>
             <TabsList className="mb-4">
               <TabsTrigger value="posts">{text.postsTab}</TabsTrigger>
-              <TabsTrigger value="materials">{text.materialsTab}</TabsTrigger>
               <TabsTrigger value="members">{text.membersTab}</TabsTrigger>
             </TabsList>
 
@@ -355,61 +538,162 @@ export default function CommunityDetailPage() {
 
               {/* Posts list */}
               {posts.length > 0 ? (
-                posts.map((post) => (
-                  <Card key={post.id}>
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <Link
-                          href={`/profile/${post.authorId}`}
-                          className="flex items-center gap-3 hover:opacity-80"
-                        >
-                          <Avatar>
-                            <AvatarImage src={post.authorAvatar || undefined} />
-                            <AvatarFallback>{getInitials(post.authorName)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{post.authorName}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatRelativeTime(post.createdAt.toDate())}
-                            </p>
-                          </div>
-                        </Link>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="mb-4 whitespace-pre-wrap">{post.content}</p>
-                      {post.images && post.images.length > 0 && (
-                        <div className="grid grid-cols-2 gap-2 mb-4">
-                          {post.images.map((img, idx) => (
-                            <img
-                              key={idx}
-                              src={img}
-                              alt=""
-                              className="rounded-lg object-cover w-full h-48"
-                            />
-                          ))}
+                posts.map((post) => {
+                  const isLiked = likedPosts.has(post.id)
+                  const isAuthor = user?.id === post.authorId
+                  const commentsExpanded = expandedComments.has(post.id)
+                  const comments = postComments[post.id] || []
+                  const isLoadingComments = loadingComments.has(post.id)
+
+                  return (
+                    <Card key={post.id}>
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <Link
+                            href={`/profile/${post.authorId}`}
+                            className="flex items-center gap-3 hover:opacity-80"
+                          >
+                            <Avatar>
+                              <AvatarImage src={post.authorAvatar || undefined} />
+                              <AvatarFallback>{getInitials(post.authorName)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{post.authorName}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatRelativeTime(post.createdAt.toDate())}
+                              </p>
+                            </div>
+                          </Link>
+                          {(isAuthor || isOwner) && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => {
+                                    setPostToDelete(post.id)
+                                    setDeleteDialogOpen(true)
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  {text.deletePost}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </div>
-                      )}
-                      <div className="flex items-center gap-4">
-                        <Button variant="ghost" size="sm">
-                          <Heart className="h-4 w-4 mr-1" />
-                          {post.likes}
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <MessageSquare className="h-4 w-4 mr-1" />
-                          {post.comments}
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Share2 className="h-4 w-4 mr-1" />
-                          {text.share}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+                      </CardHeader>
+                      <CardContent>
+                        <p className="mb-4 whitespace-pre-wrap">{post.content}</p>
+                        {post.images && post.images.length > 0 && (
+                          <div className="grid grid-cols-2 gap-2 mb-4">
+                            {post.images.map((img, idx) => (
+                              <img
+                                key={idx}
+                                src={img}
+                                alt=""
+                                className="rounded-lg object-cover w-full h-48"
+                              />
+                            ))}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-4 border-t pt-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleLikePost(post.id)}
+                            disabled={!user || likingPost === post.id}
+                            className={isLiked ? 'text-red-500' : ''}
+                          >
+                            {likingPost === post.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                            ) : (
+                              <Heart className={`h-4 w-4 mr-1 ${isLiked ? 'fill-current' : ''}`} />
+                            )}
+                            {post.likes}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleComments(post.id)}
+                          >
+                            <MessageSquare className="h-4 w-4 mr-1" />
+                            {post.comments}
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <Share2 className="h-4 w-4 mr-1" />
+                            {text.share}
+                          </Button>
+                        </div>
+
+                        {/* Comments section */}
+                        {commentsExpanded && (
+                          <div className="mt-4 border-t pt-4 space-y-3">
+                            {isLoadingComments ? (
+                              <div className="flex justify-center py-4">
+                                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                              </div>
+                            ) : (
+                              <>
+                                {comments.map((comment) => (
+                                  <div key={comment.id} className="flex gap-3">
+                                    <Avatar className="h-8 w-8">
+                                      <AvatarImage src={comment.authorAvatar || undefined} />
+                                      <AvatarFallback className="text-xs">
+                                        {getInitials(comment.authorName)}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 bg-muted rounded-lg p-2">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-medium text-sm">{comment.authorName}</span>
+                                        <span className="text-xs text-muted-foreground">
+                                          {formatRelativeTime(comment.createdAt.toDate())}
+                                        </span>
+                                      </div>
+                                      <p className="text-sm">{comment.content}</p>
+                                    </div>
+                                  </div>
+                                ))}
+
+                                {/* Add comment */}
+                                {user && isMember && (
+                                  <div className="flex gap-2 mt-2">
+                                    <Input
+                                      placeholder={text.writeComment}
+                                      value={newComments[post.id] || ''}
+                                      onChange={(e) => setNewComments(prev => ({ ...prev, [post.id]: e.target.value }))}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                          e.preventDefault()
+                                          handleAddComment(post.id)
+                                        }
+                                      }}
+                                    />
+                                    <Button
+                                      size="icon"
+                                      onClick={() => handleAddComment(post.id)}
+                                      disabled={!newComments[post.id]?.trim() || sendingComment === post.id}
+                                    >
+                                      {sendingComment === post.id ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <Send className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )
+                })
               ) : (
                 <Card>
                   <CardContent className="py-12 text-center text-muted-foreground">
@@ -421,20 +705,51 @@ export default function CommunityDetailPage() {
               )}
             </TabsContent>
 
-            <TabsContent value="materials">
-              <Card>
-                <CardContent className="py-12 text-center text-muted-foreground">
-                  <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>{text.materialsPlaceholder}</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
             <TabsContent value="members">
               <Card>
-                <CardContent className="py-12 text-center text-muted-foreground">
-                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>{text.membersPlaceholder}</p>
+                <CardContent className="py-4">
+                  {members.length > 0 ? (
+                    <div className="space-y-3">
+                      {members.map((member) => (
+                        <Link
+                          key={member.id}
+                          href={`/profile/${member.userId}`}
+                          className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Avatar>
+                              <AvatarImage src={member.user?.avatar || undefined} />
+                              <AvatarFallback>
+                                {getInitials(member.user?.displayName || 'U')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium flex items-center gap-2">
+                                {member.user?.displayName || 'Пользователь'}
+                                {member.role === 'owner' && (
+                                  <Crown className="h-4 w-4 text-yellow-500" />
+                                )}
+                                {member.role === 'admin' && (
+                                  <Shield className="h-4 w-4 text-blue-500" />
+                                )}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {member.role === 'owner' ? text.owner : text.member}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {text.joinedDate} {formatRelativeTime(member.joinedAt.toDate())}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>{text.noMembers}</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -464,21 +779,40 @@ export default function CommunityDetailPage() {
           {community.tags && community.tags.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">{text.rules}</CardTitle>
+                <CardTitle className="text-base">Теги</CardTitle>
               </CardHeader>
               <CardContent>
-                <ol className="space-y-2 text-sm">
+                <div className="flex flex-wrap gap-2">
                   {community.tags.map((tag, index) => (
-                    <li key={index}>
-                      <Badge variant="secondary">{tag}</Badge>
-                    </li>
+                    <Badge key={index} variant="secondary">{tag}</Badge>
                   ))}
-                </ol>
+                </div>
               </CardContent>
             </Card>
           )}
         </div>
       </div>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{text.deletePostConfirm}</AlertDialogTitle>
+            <AlertDialogDescription>{text.deletePostDesc}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{text.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePost}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {text.delete}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

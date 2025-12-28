@@ -1201,6 +1201,109 @@ export async function getCommunityPosts(communityId: string, limitCount = 20): P
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunityPost))
 }
 
+// Community members
+export interface CommunityMember {
+  id: string
+  userId: string
+  role: 'owner' | 'admin' | 'member'
+  joinedAt: Timestamp
+  user?: User
+}
+
+export async function getCommunityMembers(communityId: string): Promise<CommunityMember[]> {
+  const q = query(
+    collection(requireDb(), 'communities', communityId, 'members'),
+    orderBy('joinedAt', 'asc')
+  )
+  const snapshot = await getDocs(q)
+  const members = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommunityMember))
+
+  // Load user info for each member
+  for (const member of members) {
+    const userData = await getUser(member.userId)
+    if (userData) {
+      member.user = userData
+    }
+  }
+
+  return members
+}
+
+// Post likes
+export async function togglePostLike(communityId: string, postId: string, userId: string): Promise<boolean> {
+  const likeRef = doc(requireDb(), 'communities', communityId, 'posts', postId, 'likes', userId)
+  const likeSnap = await getDoc(likeRef)
+
+  if (likeSnap.exists()) {
+    await deleteDoc(likeRef)
+    await updateDoc(doc(requireDb(), 'communities', communityId, 'posts', postId), {
+      likes: increment(-1),
+    })
+    return false
+  } else {
+    await setDoc(likeRef, { userId, likedAt: serverTimestamp() })
+    await updateDoc(doc(requireDb(), 'communities', communityId, 'posts', postId), {
+      likes: increment(1),
+    })
+    return true
+  }
+}
+
+export async function isPostLikedByUser(communityId: string, postId: string, userId: string): Promise<boolean> {
+  const likeRef = doc(requireDb(), 'communities', communityId, 'posts', postId, 'likes', userId)
+  const likeSnap = await getDoc(likeRef)
+  return likeSnap.exists()
+}
+
+// Post comments
+export interface PostComment {
+  id: string
+  postId: string
+  authorId: string
+  authorName: string
+  authorAvatar: string | null
+  content: string
+  createdAt: Timestamp
+}
+
+export async function addPostComment(
+  communityId: string,
+  postId: string,
+  data: Omit<PostComment, 'id' | 'postId' | 'createdAt'>
+): Promise<string> {
+  const commentRef = await addDoc(
+    collection(requireDb(), 'communities', communityId, 'posts', postId, 'comments'),
+    {
+      ...data,
+      postId,
+      createdAt: serverTimestamp(),
+    }
+  )
+
+  await updateDoc(doc(requireDb(), 'communities', communityId, 'posts', postId), {
+    comments: increment(1),
+  })
+
+  return commentRef.id
+}
+
+export async function getPostComments(communityId: string, postId: string): Promise<PostComment[]> {
+  const q = query(
+    collection(requireDb(), 'communities', communityId, 'posts', postId, 'comments'),
+    orderBy('createdAt', 'asc')
+  )
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PostComment))
+}
+
+// Delete post
+export async function deletePost(communityId: string, postId: string): Promise<void> {
+  await deleteDoc(doc(requireDb(), 'communities', communityId, 'posts', postId))
+  await updateDoc(doc(requireDb(), 'communities', communityId), {
+    postsCount: increment(-1),
+  })
+}
+
 // ==================== ADMIN STATS ====================
 
 export async function getAdminStats(): Promise<{
