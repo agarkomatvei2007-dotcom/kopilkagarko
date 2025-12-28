@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Search,
   Home,
   FolderOpen,
   BookmarkIcon,
@@ -12,10 +11,8 @@ import {
   BarChart3,
   Settings,
   HelpCircle,
-  GraduationCap,
   Bot,
   Plus,
-  FileText,
   User,
 } from 'lucide-react'
 
@@ -46,7 +43,6 @@ export function CommandPalette() {
       feed: 'Лента',
       myMaterials: 'Мои материалы',
       collections: 'Коллекции',
-      courses: 'Курсы',
       communities: 'Сообщества',
       leaderboard: 'Рейтинг',
       analytics: 'Аналитика',
@@ -54,7 +50,6 @@ export function CommandPalette() {
       help: 'Помощь',
       aiAssistant: 'ИИ-ассистент',
       createMaterial: 'Создать материал',
-      createCourse: 'Создать курс',
       myProfile: 'Мой профиль',
     },
     kk: {
@@ -65,7 +60,6 @@ export function CommandPalette() {
       feed: 'Лента',
       myMaterials: 'Менің материалдарым',
       collections: 'Жинақтар',
-      courses: 'Курстар',
       communities: 'Қауымдастықтар',
       leaderboard: 'Рейтинг',
       analytics: 'Аналитика',
@@ -73,7 +67,6 @@ export function CommandPalette() {
       help: 'Көмек',
       aiAssistant: 'ЖИ-көмекші',
       createMaterial: 'Материал жасау',
-      createCourse: 'Курс жасау',
       myProfile: 'Менің профилім',
     },
   }
@@ -101,7 +94,6 @@ export function CommandPalette() {
     { icon: Home, label: t.feed, href: '/feed' },
     { icon: FolderOpen, label: t.myMaterials, href: '/my-materials' },
     { icon: BookmarkIcon, label: t.collections, href: '/collections' },
-    { icon: GraduationCap, label: t.courses, href: '/courses' },
     { icon: Users, label: t.communities, href: '/communities' },
     { icon: Trophy, label: t.leaderboard, href: '/leaderboard' },
     { icon: BarChart3, label: t.analytics, href: '/analytics' },
@@ -112,7 +104,6 @@ export function CommandPalette() {
 
   const actionItems = [
     { icon: Plus, label: t.createMaterial, href: '/materials/create' },
-    { icon: Plus, label: t.createCourse, href: '/courses/create' },
     { icon: User, label: t.myProfile, href: '/profile/me' },
   ]
 

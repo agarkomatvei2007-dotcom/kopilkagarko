@@ -11,7 +11,6 @@ import {
   BarChart3,
   Settings,
   HelpCircle,
-  GraduationCap,
   Shield,
   Bot,
   Sparkles,
@@ -39,7 +38,6 @@ export default function Sidebar() {
     { href: '/ai-assistant', label: language === 'ru' ? 'ИИ-ассистент' : 'ЖИ-көмекші', icon: Bot },
     { href: '/my-materials', label: t.nav.myMaterials, icon: FolderOpen },
     { href: '/collections', label: t.nav.collections, icon: BookmarkIcon },
-    { href: '/courses', label: t.nav.courses, icon: GraduationCap },
   ]
 
   const socialNavItems = [

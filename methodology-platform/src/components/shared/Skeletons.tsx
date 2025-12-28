@@ -51,40 +51,6 @@ export function MaterialCardSkeleton() {
   )
 }
 
-// Course card skeleton
-export function CourseCardSkeleton() {
-  return (
-    <Card className="h-full overflow-hidden">
-      {/* Cover image */}
-      <Skeleton className="aspect-video w-full" />
-
-      <CardContent className="p-4">
-        {/* Title */}
-        <Skeleton className="h-6 w-3/4 mb-2" />
-
-        {/* Description */}
-        <Skeleton className="h-4 w-full mb-1" />
-        <Skeleton className="h-4 w-4/5 mb-4" />
-
-        {/* Progress */}
-        <div className="flex items-center gap-2 mb-3">
-          <Skeleton className="h-2 flex-1 rounded-full" />
-          <Skeleton className="h-4 w-10" />
-        </div>
-
-        {/* Author */}
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-8 w-8 rounded-full" />
-          <div>
-            <Skeleton className="h-4 w-24 mb-1" />
-            <Skeleton className="h-3 w-16" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
 // Profile header skeleton
 export function ProfileHeaderSkeleton() {
   return (
