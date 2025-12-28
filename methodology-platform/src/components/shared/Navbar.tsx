@@ -26,6 +26,7 @@ import { useUIStore } from '@/stores/uiStore'
 import { getInitials } from '@/lib/utils'
 import NotificationBell from './NotificationBell'
 import LanguageSwitcher from './LanguageSwitcher'
+import { ThemeToggle } from './ThemeToggle'
 
 export default function Navbar() {
   const { user, signOut, isAuthenticated } = useAuth()
@@ -34,16 +35,16 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full">
-      <div className="bg-white/80 backdrop-blur-xl border-b border-gray-100">
+      <div className="bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="flex h-16 items-center gap-4 px-4 lg:px-6 max-w-screen-2xl mx-auto">
           {/* Mobile menu button */}
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden rounded-xl hover:bg-emerald-50"
+            className="lg:hidden rounded-xl"
             onClick={toggleMobileMenu}
           >
-            <Menu className="h-5 w-5 text-gray-600" />
+            <Menu className="h-5 w-5" />
           </Button>
 
           {/* Logo */}
@@ -51,7 +52,7 @@ export default function Navbar() {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 transition-transform group-hover:scale-105">
               <BookOpen className="h-5 w-5 text-white" />
             </div>
-            <span className="hidden sm:inline-block font-bold text-gray-900 group-hover:text-emerald-600 transition-colors whitespace-nowrap">
+            <span className="hidden sm:inline-block font-bold text-foreground group-hover:text-primary transition-colors whitespace-nowrap">
               {t.landing.title}
             </span>
           </Link>
@@ -60,10 +61,10 @@ export default function Navbar() {
           {isAuthenticated && (
             <div className="flex-1 max-w-lg ml-4">
               <div className="relative group">
-                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
+                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
                 <Input
                   placeholder={t.common.search}
-                  className="pl-10 h-10 bg-gray-50 border-0 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  className="pl-10 h-10 bg-muted border-0 rounded-xl focus:bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 />
               </div>
             </div>
@@ -92,8 +93,8 @@ export default function Navbar() {
 
                 {/* Messages */}
                 <Link href="/messages">
-                  <Button variant="ghost" size="icon" className="rounded-xl hover:bg-emerald-50 transition-colors">
-                    <MessageSquare className="h-5 w-5 text-gray-600" />
+                  <Button variant="ghost" size="icon" className="rounded-xl transition-colors">
+                    <MessageSquare className="h-5 w-5" />
                   </Button>
                 </Link>
 
@@ -103,11 +104,14 @@ export default function Navbar() {
                 {/* Language switcher */}
                 <LanguageSwitcher />
 
+                {/* Theme toggle */}
+                <ThemeToggle />
+
                 {/* User menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="ml-1 rounded-xl hover:bg-emerald-50">
-                      <Avatar className="h-8 w-8 ring-2 ring-emerald-100">
+                    <Button variant="ghost" size="icon" className="ml-1 rounded-xl">
+                      <Avatar className="h-8 w-8 ring-2 ring-primary/20">
                         <AvatarImage src={user?.avatar || undefined} />
                         <AvatarFallback className="text-xs bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-medium">
                           {user?.displayName ? getInitials(user.displayName) : 'U'}
@@ -115,43 +119,43 @@ export default function Navbar() {
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 rounded-xl border-emerald-100 shadow-xl">
+                  <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-xl">
                     <DropdownMenuLabel className="font-normal py-3">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-semibold text-gray-900">{user?.displayName}</p>
-                        <p className="text-xs text-emerald-600">@{user?.username}</p>
+                        <p className="text-sm font-semibold">{user?.displayName}</p>
+                        <p className="text-xs text-primary">@{user?.username}</p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50">
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
                       <Link href={`/profile/${user?.username}`} className="py-2">
                         {t.nav.myProfile}
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50">
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
                       <Link href="/my-materials" className="py-2">
                         {t.nav.myMaterials}
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50">
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
                       <Link href="/analytics" className="py-2">
                         {t.nav.analytics}
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50">
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
                       <Link href="/achievements" className="py-2">
                         {t.nav.achievements}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer hover:bg-emerald-50 focus:bg-emerald-50">
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
                       <Link href="/settings" className="py-2">
                         {t.nav.settings}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      className="text-red-600 focus:text-red-600 focus:bg-red-50 rounded-lg cursor-pointer py-2"
+                      className="text-destructive focus:text-destructive rounded-lg cursor-pointer py-2"
                       onClick={signOut}
                     >
                       {t.nav.logout}
@@ -162,6 +166,7 @@ export default function Navbar() {
             ) : (
               <>
                 <LanguageSwitcher />
+                <ThemeToggle />
                 <Link href="/login">
                   <Button variant="ghost" size="sm" className="rounded-xl hover:bg-emerald-50">{t.nav.login}</Button>
                 </Link>

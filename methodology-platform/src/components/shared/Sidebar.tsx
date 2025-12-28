@@ -65,26 +65,26 @@ export default function Sidebar() {
         className={cn(
           'w-full justify-start gap-3 h-11 font-medium rounded-xl transition-all',
           isActive
-            ? 'bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 hover:from-emerald-100 hover:to-teal-100'
-            : 'text-gray-600 hover:text-emerald-700 hover:bg-emerald-50'
+            ? 'bg-primary/10 text-primary hover:bg-primary/15'
+            : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
         )}
       >
         <div className={cn(
           'p-1.5 rounded-lg',
-          isActive ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm' : 'bg-emerald-100 text-emerald-600'
+          isActive ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm' : 'bg-primary/10 text-primary'
         )}>
           <Icon className="h-4 w-4" strokeWidth={2} />
         </div>
         {label}
         {isActive && (
-          <div className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
         )}
       </Button>
     </Link>
   )
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 border-r border-gray-100 bg-white h-[calc(100vh-4rem)] sticky top-16">
+    <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-background h-[calc(100vh-4rem)] sticky top-16">
       <ScrollArea className="flex-1 py-6">
         <nav className="space-y-1 px-3">
           {mainNavItems.map((item) => (
@@ -98,10 +98,10 @@ export default function Sidebar() {
           ))}
         </nav>
 
-        <div className="my-6 mx-4 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+        <div className="my-6 mx-4 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
         <nav className="space-y-1 px-3">
-          <p className="px-3 text-[11px] font-semibold text-emerald-600 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <p className="px-3 text-[11px] font-semibold text-primary uppercase tracking-wider mb-3 flex items-center gap-2">
             <Users className="h-3.5 w-3.5" />
             {language === 'ru' ? 'Сообщество' : 'Қауымдастық'}
           </p>
@@ -116,7 +116,7 @@ export default function Sidebar() {
           ))}
         </nav>
 
-        <div className="my-6 mx-4 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+        <div className="my-6 mx-4 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
         <nav className="space-y-1 px-3">
           {bottomNavItems.map((item) => (
@@ -133,7 +133,7 @@ export default function Sidebar() {
         {/* Admin Panel Link */}
         {isAdmin && (
           <>
-            <div className="my-6 mx-4 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+            <div className="my-6 mx-4 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
             <nav className="space-y-1 px-3">
               <NavLink
                 href="/admin"
@@ -148,25 +148,25 @@ export default function Sidebar() {
 
       {/* Level progress */}
       {user && (
-        <div className="border-t border-gray-100 p-4">
-          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 border border-emerald-100">
+        <div className="border-t border-border p-4">
+          <div className="bg-primary/5 dark:bg-primary/10 rounded-2xl p-4 border border-primary/10">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
                 <Sparkles className="h-4 w-4 text-white" />
               </div>
               <div>
-                <div className="text-sm font-semibold text-emerald-800">
+                <div className="text-sm font-semibold text-foreground">
                   {language === 'ru' ? 'Уровень' : 'Деңгей'} {user.level}
                 </div>
-                <div className="text-xs text-emerald-600">
+                <div className="text-xs text-primary">
                   {user.points} XP
                 </div>
               </div>
             </div>
             <div className="relative">
-              <Progress value={levelProgress} className="h-2 bg-emerald-100" />
+              <Progress value={levelProgress} className="h-2" />
             </div>
-            <p className="text-xs text-emerald-600 mt-2 text-center">
+            <p className="text-xs text-muted-foreground mt-2 text-center">
               {100 - levelProgress}% {language === 'ru' ? 'до следующего уровня' : 'келесі деңгейге дейін'}
             </p>
           </div>
