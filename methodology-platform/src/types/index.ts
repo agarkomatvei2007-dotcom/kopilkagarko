@@ -247,57 +247,6 @@ export interface Message {
   createdAt: Timestamp
 }
 
-// Course types
-export interface CourseStats {
-  enrollments: number
-  rating: number
-  reviews: number
-}
-
-export interface Course {
-  id: string
-  title: string
-  description: string
-  instructorId: string
-  instructorName: string
-
-  subject: string
-  grades: number[]
-
-  thumbnail: string | null
-  price: number | null
-
-  stats: CourseStats
-
-  lessonsCount: number
-
-  createdAt: Timestamp
-  updatedAt: Timestamp
-}
-
-export type LessonContentType = 'video' | 'text' | 'quiz'
-
-export interface LessonContent {
-  type: LessonContentType
-  videoUrl?: string
-  text?: string
-  quiz?: QuizData
-}
-
-export interface Lesson {
-  id: string
-  courseId: string
-  title: string
-  description: string
-  order: number
-
-  content: LessonContent
-
-  duration: number
-
-  createdAt: Timestamp
-}
-
 // Quiz types
 export interface QuizQuestion {
   id: string

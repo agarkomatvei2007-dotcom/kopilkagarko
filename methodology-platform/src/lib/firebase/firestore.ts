@@ -28,8 +28,6 @@ import type {
   Notification,
   Chat,
   Message,
-  Course,
-  Lesson,
   Activity,
   Achievement,
   UserAchievement,
@@ -1026,200 +1024,6 @@ export async function getUnreadChatsCount(userId: string): Promise<number> {
   return count
 }
 
-// ==================== COURSES ====================
-
-export async function createCourse(
-  data: Omit<Course, 'id' | 'stats' | 'lessonsCount' | 'createdAt' | 'updatedAt'>
-): Promise<string> {
-  const docRef = await addDoc(collection(requireDb(), 'courses'), {
-    ...data,
-    stats: {
-      enrollments: 0,
-      rating: 0,
-      reviews: 0,
-    },
-    lessonsCount: 0,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  })
-  return docRef.id
-}
-
-export async function getCourse(courseId: string): Promise<Course | null> {
-  const docSnap = await getDoc(doc(requireDb(), 'courses', courseId))
-  if (docSnap.exists()) {
-    return { id: docSnap.id, ...docSnap.data() } as Course
-  }
-  return null
-}
-
-export async function updateCourse(courseId: string, data: Partial<Course>): Promise<void> {
-  await updateDoc(doc(requireDb(), 'courses', courseId), {
-    ...data,
-    updatedAt: serverTimestamp(),
-  })
-}
-
-export async function deleteCourse(courseId: string): Promise<void> {
-  // Delete all lessons first
-  const lessons = await getCourseLessons(courseId)
-  const batch = writeBatch(requireDb())
-
-  lessons.forEach(lesson => {
-    batch.delete(doc(requireDb(), 'courses', courseId, 'lessons', lesson.id))
-  })
-
-  batch.delete(doc(requireDb(), 'courses', courseId))
-  await batch.commit()
-}
-
-export async function getCourses(
-  filters?: { subject?: string; instructorId?: string },
-  limitCount = 20
-): Promise<Course[]> {
-  const constraints: QueryConstraint[] = [
-    orderBy('createdAt', 'desc'),
-    limit(limitCount),
-  ]
-
-  if (filters?.subject) {
-    constraints.unshift(where('subject', '==', filters.subject))
-  }
-
-  if (filters?.instructorId) {
-    constraints.unshift(where('instructorId', '==', filters.instructorId))
-  }
-
-  const q = query(collection(requireDb(), 'courses'), ...constraints)
-  const snapshot = await getDocs(q)
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course))
-}
-
-export async function addLesson(
-  courseId: string,
-  data: Omit<Lesson, 'id' | 'courseId' | 'createdAt'>
-): Promise<string> {
-  const lessonRef = await addDoc(collection(requireDb(), 'courses', courseId, 'lessons'), {
-    ...data,
-    courseId,
-    createdAt: serverTimestamp(),
-  })
-
-  // Update course lessons count
-  await updateDoc(doc(requireDb(), 'courses', courseId), {
-    lessonsCount: increment(1),
-    updatedAt: serverTimestamp(),
-  })
-
-  return lessonRef.id
-}
-
-export async function getCourseLessons(courseId: string): Promise<Lesson[]> {
-  const q = query(
-    collection(requireDb(), 'courses', courseId, 'lessons'),
-    orderBy('order', 'asc')
-  )
-  const snapshot = await getDocs(q)
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lesson))
-}
-
-export async function getLesson(courseId: string, lessonId: string): Promise<Lesson | null> {
-  const docSnap = await getDoc(doc(requireDb(), 'courses', courseId, 'lessons', lessonId))
-  if (docSnap.exists()) {
-    return { id: docSnap.id, ...docSnap.data() } as Lesson
-  }
-  return null
-}
-
-export async function enrollInCourse(courseId: string, userId: string): Promise<void> {
-  const enrollmentRef = doc(requireDb(), 'courses', courseId, 'enrollments', userId)
-  const existing = await getDoc(enrollmentRef)
-
-  if (!existing.exists()) {
-    await setDoc(enrollmentRef, {
-      userId,
-      progress: 0,
-      completedLessons: [],
-      enrolledAt: serverTimestamp(),
-    })
-
-    await updateDoc(doc(requireDb(), 'courses', courseId), {
-      'stats.enrollments': increment(1),
-    })
-  }
-}
-
-export async function isEnrolledInCourse(courseId: string, userId: string): Promise<boolean> {
-  const enrollmentRef = doc(requireDb(), 'courses', courseId, 'enrollments', userId)
-  const docSnap = await getDoc(enrollmentRef)
-  return docSnap.exists()
-}
-
-export async function getUserEnrolledCourses(userId: string): Promise<Course[]> {
-  // Get all courses and filter by enrollment
-  const courses = await getCourses({}, 100)
-  const enrolledCourses: Course[] = []
-
-  for (const course of courses) {
-    if (await isEnrolledInCourse(course.id, userId)) {
-      enrolledCourses.push(course)
-    }
-  }
-
-  return enrolledCourses
-}
-
-// Get enrollment data with progress
-export interface EnrollmentData {
-  userId: string
-  progress: number
-  completedLessons: string[]
-  enrolledAt: Timestamp
-}
-
-export async function getEnrollmentData(courseId: string, userId: string): Promise<EnrollmentData | null> {
-  const enrollmentRef = doc(requireDb(), 'courses', courseId, 'enrollments', userId)
-  const docSnap = await getDoc(enrollmentRef)
-
-  if (docSnap.exists()) {
-    return docSnap.data() as EnrollmentData
-  }
-  return null
-}
-
-export async function markLessonComplete(courseId: string, lessonId: string, userId: string): Promise<void> {
-  const enrollmentRef = doc(requireDb(), 'courses', courseId, 'enrollments', userId)
-  const enrollment = await getEnrollmentData(courseId, userId)
-
-  if (!enrollment) {
-    throw new Error('User is not enrolled in this course')
-  }
-
-  // Check if lesson is already completed
-  if (enrollment.completedLessons.includes(lessonId)) {
-    return
-  }
-
-  // Get total lessons count
-  const lessons = await getCourseLessons(courseId)
-  const newCompletedLessons = [...enrollment.completedLessons, lessonId]
-  const newProgress = Math.round((newCompletedLessons.length / lessons.length) * 100)
-
-  await updateDoc(enrollmentRef, {
-    completedLessons: newCompletedLessons,
-    progress: newProgress,
-  })
-
-  // Add points for completing a lesson
-  await addPointsToUser(userId, 5)
-}
-
-export async function isLessonCompleted(courseId: string, lessonId: string, userId: string): Promise<boolean> {
-  const enrollment = await getEnrollmentData(courseId, userId)
-  if (!enrollment) return false
-  return enrollment.completedLessons.includes(lessonId)
-}
-
 // ==================== COMMUNITIES ====================
 
 export interface Community {
@@ -1402,20 +1206,17 @@ export async function getCommunityPosts(communityId: string, limitCount = 20): P
 export async function getAdminStats(): Promise<{
   usersCount: number
   materialsCount: number
-  coursesCount: number
   communitiesCount: number
 }> {
-  const [usersSnap, materialsSnap, coursesSnap, communitiesSnap] = await Promise.all([
+  const [usersSnap, materialsSnap, communitiesSnap] = await Promise.all([
     getDocs(collection(requireDb(), 'users')),
     getDocs(collection(requireDb(), 'materials')),
-    getDocs(collection(requireDb(), 'courses')),
     getDocs(collection(requireDb(), 'communities')),
   ])
 
   return {
     usersCount: usersSnap.size,
     materialsCount: materialsSnap.size,
-    coursesCount: coursesSnap.size,
     communitiesCount: communitiesSnap.size,
   }
 }

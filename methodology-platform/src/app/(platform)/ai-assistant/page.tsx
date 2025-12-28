@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Bot, Send, Loader2, Trash2, Sparkles, BookOpen, FileText, HelpCircle, Navigation, GraduationCap, Users, BarChart3 } from 'lucide-react'
+import { Bot, Send, Loader2, Trash2, Sparkles, BookOpen, FileText, HelpCircle, Navigation, Users, BarChart3, FolderOpen } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,7 +21,7 @@ const QUICK_PROMPTS = {
   ru: {
     platform: [
       { icon: Navigation, text: 'Как опубликовать материал?' },
-      { icon: GraduationCap, text: 'Как создать курс?' },
+      { icon: FolderOpen, text: 'Как создать коллекцию?' },
       { icon: Users, text: 'Как вступить в сообщество?' },
       { icon: BarChart3, text: 'Где посмотреть мою статистику?' },
     ],
@@ -35,7 +35,7 @@ const QUICK_PROMPTS = {
   kk: {
     platform: [
       { icon: Navigation, text: 'Материалды қалай жариялауға болады?' },
-      { icon: GraduationCap, text: 'Курсты қалай құруға болады?' },
+      { icon: FolderOpen, text: 'Жинақты қалай құруға болады?' },
       { icon: Users, text: 'Қауымдастыққа қалай кіруге болады?' },
       { icon: BarChart3, text: 'Менің статистикамды қайдан көруге болады?' },
     ],
@@ -67,7 +67,7 @@ export default function AIAssistantPage() {
       welcome: 'Привет! Я ваш ИИ-ассистент платформы "Методическая копилка". Могу помочь с:',
       welcomeItems: [
         'Навигацией по платформе и её функциям',
-        'Публикацией материалов и созданием курсов',
+        'Публикацией и организацией материалов',
         'Планированием уроков и занятий',
         'Документацией (КТП, планы, отчёты)',
         'Методическими рекомендациями',
@@ -87,7 +87,7 @@ export default function AIAssistantPage() {
       welcome: 'Сәлем! Мен "Әдістемелік қоржын" платформасының ЖИ-көмекшісімін. Көмектесе аламын:',
       welcomeItems: [
         'Платформа бойынша навигация',
-        'Материалдарды жариялау және курстар құру',
+        'Материалдарды жариялау және ұйымдастыру',
         'Сабақтар мен сабақтарды жоспарлау',
         'Құжаттама (КТЖ, жоспарлар, есептер)',
         'Әдістемелік ұсыныстар',

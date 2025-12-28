@@ -11,7 +11,6 @@ import {
   Users,
   FileText,
   BookOpen,
-  GraduationCap,
   Loader2,
 } from 'lucide-react'
 
@@ -21,7 +20,7 @@ import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
-import { getMaterialsByAuthor, getUserEnrolledCourses, getUserCommunities } from '@/lib/firebase/firestore'
+import { getMaterialsByAuthor, getUserCommunities } from '@/lib/firebase/firestore'
 import type { Material } from '@/types'
 
 export default function AnalyticsPage() {
@@ -30,7 +29,6 @@ export default function AnalyticsPage() {
 
   const [materials, setMaterials] = useState<Material[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [enrolledCoursesCount, setEnrolledCoursesCount] = useState(0)
   const [communitiesCount, setCommunitiesCount] = useState(0)
 
   const txt = {
@@ -57,7 +55,6 @@ export default function AnalyticsPage() {
       views: 'просмотров',
       likes: 'лайков',
       comments: 'комментариев',
-      enrolledCourses: 'Курсов изучается',
       communities: 'Сообществ',
       level: 'Уровень',
       points: 'Очков опыта',
@@ -88,7 +85,6 @@ export default function AnalyticsPage() {
       views: 'көру',
       likes: 'ұнату',
       comments: 'пікір',
-      enrolledCourses: 'Оқытылатын курстар',
       communities: 'Қауымдастықтар',
       level: 'Деңгей',
       points: 'Тәжірибе ұпайлары',
@@ -111,10 +107,6 @@ export default function AnalyticsPage() {
         // Load user's materials
         const { materials: userMaterials } = await getMaterialsByAuthor(user.id, undefined, 50)
         setMaterials(userMaterials)
-
-        // Load enrolled courses count
-        const courses = await getUserEnrolledCourses(user.id)
-        setEnrolledCoursesCount(courses.length)
 
         // Load communities count
         const communities = await getUserCommunities(user.id)
@@ -426,21 +418,13 @@ export default function AnalyticsPage() {
               <CardDescription>{text.audienceDesc}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="p-4 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-2 mb-2">
                     <Users className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">{text.followers}</span>
                   </div>
                   <p className="text-2xl font-bold">{stats.totalFollowers}</p>
-                </div>
-
-                <div className="p-4 rounded-lg bg-muted/50">
-                  <div className="flex items-center gap-2 mb-2">
-                    <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{text.enrolledCourses}</span>
-                  </div>
-                  <p className="text-2xl font-bold">{enrolledCoursesCount}</p>
                 </div>
 
                 <div className="p-4 rounded-lg bg-muted/50">
