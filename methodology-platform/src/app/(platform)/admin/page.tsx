@@ -6,13 +6,11 @@ import {
   Shield,
   Users,
   FileText,
-  Flag,
   Settings,
   BarChart3,
   Trash2,
   Ban,
   CheckCircle,
-  XCircle,
   Eye,
   Search,
   AlertTriangle,
@@ -22,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -52,7 +51,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
 import {
-  getAdminStats,
+  getAdminStatsExtended,
   getUsers,
   getActivities,
   getLatestMaterials,
@@ -60,6 +59,9 @@ import {
   deleteUser,
   banUser,
   toggleMaterialVisibility,
+  getPlatformSettings,
+  updatePlatformSettings,
+  type PlatformSettings,
 } from '@/lib/firebase/firestore'
 import { Loader2, EyeOff, UserX, Mail, Calendar, Award } from 'lucide-react'
 import {
@@ -77,8 +79,8 @@ const ADMIN_EMAILS = ['admin@kopilka.ru', 'agarkomatvei2007@gmail.com']
 interface AdminStats {
   totalUsers: number
   totalMaterials: number
-  totalReports: number
-  activeToday: number
+  usersThisWeek: number
+  materialsThisWeek: number
 }
 
 interface UserData {
@@ -89,17 +91,6 @@ interface UserData {
   createdAt: Date
   isBanned: boolean
   materialsCount: number
-}
-
-interface ReportData {
-  id: string
-  type: 'material' | 'user' | 'comment'
-  targetId: string
-  targetTitle: string
-  reason: string
-  reporterName: string
-  createdAt: Date
-  status: 'pending' | 'resolved' | 'dismissed'
 }
 
 export default function AdminPage() {
@@ -115,15 +106,20 @@ export default function AdminPage() {
   const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0,
     totalMaterials: 0,
-    totalReports: 0,
-    activeToday: 0,
+    usersThisWeek: 0,
+    materialsThisWeek: 0,
   })
   const [users, setUsers] = useState<User[]>([])
-  const [reports, setReports] = useState<ReportData[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
   const [materials, setMaterials] = useState<Material[]>([])
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [userDetailsOpen, setUserDetailsOpen] = useState(false)
+  const [platformSettings, setPlatformSettings] = useState<PlatformSettings>({
+    allowRegistration: true,
+    requireModeration: false,
+    emailNotifications: true,
+  })
+  const [savingSettings, setSavingSettings] = useState(false)
 
   const txt = {
     ru: {
@@ -298,14 +294,18 @@ export default function AdminPage() {
       if (!isAdmin) return
 
       try {
-        // Load stats
-        const adminStats = await getAdminStats()
+        // Load stats with weekly counts
+        const adminStats = await getAdminStatsExtended()
         setStats({
           totalUsers: adminStats.usersCount,
           totalMaterials: adminStats.materialsCount,
-          totalReports: 0, // No reports collection yet
-          activeToday: adminStats.usersCount, // Placeholder
+          usersThisWeek: adminStats.usersThisWeek,
+          materialsThisWeek: adminStats.materialsThisWeek,
         })
+
+        // Load platform settings
+        const settings = await getPlatformSettings()
+        setPlatformSettings(settings)
 
         // Load users
         const allUsers = await getUsers('createdAt', 50)
@@ -440,10 +440,24 @@ export default function AdminPage() {
     }
   }
 
-  const handleResolveReport = (reportId: string, action: 'resolve' | 'dismiss') => {
-    toast({
-      title: action === 'resolve' ? text.reportResolved : text.reportDismissed,
-    })
+  const handleToggleSetting = async (key: keyof PlatformSettings) => {
+    setSavingSettings(true)
+    try {
+      const newValue = !platformSettings[key]
+      await updatePlatformSettings({ [key]: newValue })
+      setPlatformSettings(prev => ({ ...prev, [key]: newValue }))
+      toast({
+        title: language === 'ru' ? 'Настройки сохранены' : 'Параметрлер сақталды',
+      })
+    } catch (error) {
+      console.error('Error updating settings:', error)
+      toast({
+        title: language === 'ru' ? 'Ошибка сохранения' : 'Сақтау қатесі',
+        variant: 'destructive',
+      })
+    } finally {
+      setSavingSettings(false)
+    }
   }
 
   const formatActivityText = (activity: Activity) => {
@@ -488,7 +502,9 @@ export default function AdminPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalUsers}</div>
-            <p className="text-xs text-muted-foreground">+12 {text.perWeek}</p>
+            <p className="text-xs text-muted-foreground">
+              {stats.usersThisWeek > 0 ? `+${stats.usersThisWeek}` : '0'} {text.perWeek}
+            </p>
           </CardContent>
         </Card>
 
@@ -499,29 +515,35 @@ export default function AdminPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalMaterials}</div>
-            <p className="text-xs text-muted-foreground">+34 {text.perWeek}</p>
+            <p className="text-xs text-muted-foreground">
+              {stats.materialsThisWeek > 0 ? `+${stats.materialsThisWeek}` : '0'} {text.perWeek}
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{text.reports}</CardTitle>
-            <Flag className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalReports}</div>
-            <p className="text-xs text-muted-foreground">{text.pending}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{text.activeToday}</CardTitle>
+            <CardTitle className="text-sm font-medium">{language === 'ru' ? 'Активность' : 'Белсенділік'}</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeToday}</div>
-            <p className="text-xs text-muted-foreground">{text.usersOnline}</p>
+            <div className="text-2xl font-bold">{activities.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {language === 'ru' ? 'недавних действий' : 'соңғы әрекеттер'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{language === 'ru' ? 'Всего материалов' : 'Барлық материалдар'}</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{materials.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {language === 'ru' ? 'в системе' : 'жүйеде'}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -531,7 +553,6 @@ export default function AdminPage() {
           <TabsTrigger value="overview">{text.overview}</TabsTrigger>
           <TabsTrigger value="users">{text.usersTab}</TabsTrigger>
           <TabsTrigger value="materials">{text.materialsTab}</TabsTrigger>
-          <TabsTrigger value="reports">{text.reportsTab}</TabsTrigger>
           <TabsTrigger value="settings">{text.settings}</TabsTrigger>
         </TabsList>
 
@@ -793,81 +814,6 @@ export default function AdminPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="reports" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>{text.reportsTab}</CardTitle>
-              <CardDescription>{text.reportsReview}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {reports.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{text.type}</TableHead>
-                      <TableHead>{text.object}</TableHead>
-                      <TableHead>{text.reason}</TableHead>
-                      <TableHead>{text.from}</TableHead>
-                      <TableHead>{text.statusLabel}</TableHead>
-                      <TableHead>{text.actions}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {reports.map((report) => (
-                      <TableRow key={report.id}>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {report.type === 'material' ? text.material :
-                             report.type === 'user' ? text.userType : text.comment}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{report.targetTitle}</TableCell>
-                        <TableCell>{report.reason}</TableCell>
-                        <TableCell>{report.reporterName}</TableCell>
-                        <TableCell>
-                          {report.status === 'pending' ? (
-                            <Badge variant="secondary">{text.pendingStatus}</Badge>
-                          ) : report.status === 'resolved' ? (
-                            <Badge variant="default">{text.resolved}</Badge>
-                          ) : (
-                            <Badge variant="outline">{text.dismissed}</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {report.status === 'pending' && (
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleResolveReport(report.id, 'resolve')}
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                {text.accept}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleResolveReport(report.id, 'dismiss')}
-                              >
-                                <XCircle className="h-4 w-4 mr-1" />
-                                {text.reject}
-                              </Button>
-                            </div>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <p className="text-center text-muted-foreground py-8">
-                  {text.noReports}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="settings" className="mt-6">
           <Card>
             <CardHeader>
@@ -880,21 +826,33 @@ export default function AdminPage() {
                   <h4 className="font-medium">{text.userRegistration}</h4>
                   <p className="text-sm text-muted-foreground">{text.allowRegistration}</p>
                 </div>
-                <Badge variant="default">{text.enabled}</Badge>
+                <Switch
+                  checked={platformSettings.allowRegistration}
+                  onCheckedChange={() => handleToggleSetting('allowRegistration')}
+                  disabled={savingSettings}
+                />
               </div>
               <div className="flex items-center justify-between p-4 border rounded">
                 <div>
                   <h4 className="font-medium">{text.materialsModSettings}</h4>
                   <p className="text-sm text-muted-foreground">{text.checkBeforePublish}</p>
                 </div>
-                <Badge variant="secondary">{text.disabled}</Badge>
+                <Switch
+                  checked={platformSettings.requireModeration}
+                  onCheckedChange={() => handleToggleSetting('requireModeration')}
+                  disabled={savingSettings}
+                />
               </div>
               <div className="flex items-center justify-between p-4 border rounded">
                 <div>
                   <h4 className="font-medium">{text.emailNotifications}</h4>
                   <p className="text-sm text-muted-foreground">{text.sendEmailNotifications}</p>
                 </div>
-                <Badge variant="default">{text.enabled}</Badge>
+                <Switch
+                  checked={platformSettings.emailNotifications}
+                  onCheckedChange={() => handleToggleSetting('emailNotifications')}
+                  disabled={savingSettings}
+                />
               </div>
             </CardContent>
           </Card>

@@ -23,7 +23,17 @@ import {
 import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
-import { getUserChats, getChatMessages, sendMessage, markMessagesAsRead } from '@/lib/firebase/firestore'
+import { getUserChats, getChatMessages, sendMessage, markMessagesAsRead, clearChat, deleteChat } from '@/lib/firebase/firestore'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { getInitials, formatRelativeTime } from '@/lib/utils'
 import type { Chat, Message } from '@/types'
 
@@ -43,6 +53,9 @@ export default function MessagesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
   const [emojiOpen, setEmojiOpen] = useState(false)
+  const [clearDialogOpen, setClearDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [isClearing, setIsClearing] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
@@ -59,6 +72,17 @@ export default function MessagesPage() {
       noChatsDescription: 'Начните общение с другими преподавателями на платформе',
       selectChat: 'Выберите чат',
       selectChatDescription: 'Выберите чат из списка слева, чтобы начать общение',
+      clearChat: 'Очистить чат',
+      deleteChat: 'Удалить чат',
+      clearChatTitle: 'Очистить историю?',
+      clearChatDesc: 'Все сообщения будут удалены. Это действие нельзя отменить.',
+      deleteChatTitle: 'Удалить чат?',
+      deleteChatDesc: 'Чат и все сообщения будут удалены навсегда.',
+      cancel: 'Отмена',
+      clear: 'Очистить',
+      delete: 'Удалить',
+      chatCleared: 'Чат очищен',
+      chatDeleted: 'Чат удалён',
     },
     kk: {
       title: 'Хабарламалар',
@@ -71,6 +95,17 @@ export default function MessagesPage() {
       noChatsDescription: 'Платформадағы басқа оқытушылармен сөйлесуді бастаңыз',
       selectChat: 'Чат таңдаңыз',
       selectChatDescription: 'Сөйлесуді бастау үшін сол жақтағы тізімнен чатты таңдаңыз',
+      clearChat: 'Чатты тазалау',
+      deleteChat: 'Чатты жою',
+      clearChatTitle: 'Тарихты тазалау керек пе?',
+      clearChatDesc: 'Барлық хабарламалар жойылады. Бұл әрекетті қайтару мүмкін емес.',
+      deleteChatTitle: 'Чатты жою керек пе?',
+      deleteChatDesc: 'Чат және барлық хабарламалар мәңгілікке жойылады.',
+      cancel: 'Болдырмау',
+      clear: 'Тазалау',
+      delete: 'Жою',
+      chatCleared: 'Чат тазаланды',
+      chatDeleted: 'Чат жойылды',
     },
   }
 
@@ -197,6 +232,46 @@ export default function MessagesPage() {
     setEmojiOpen(false)
   }
 
+  const handleClearChat = async () => {
+    if (!selectedChat) return
+
+    setIsClearing(true)
+    try {
+      await clearChat(selectedChat.id)
+      setMessages([])
+      // Update local chat state
+      setChats(prev => prev.map(c =>
+        c.id === selectedChat.id
+          ? { ...c, lastMessage: null }
+          : c
+      ))
+      toast({ title: text.chatCleared })
+    } catch (error) {
+      console.error('Error clearing chat:', error)
+    } finally {
+      setIsClearing(false)
+      setClearDialogOpen(false)
+    }
+  }
+
+  const handleDeleteChat = async () => {
+    if (!selectedChat) return
+
+    setIsClearing(true)
+    try {
+      await deleteChat(selectedChat.id)
+      setChats(prev => prev.filter(c => c.id !== selectedChat.id))
+      setSelectedChat(null)
+      setMessages([])
+      toast({ title: text.chatDeleted })
+    } catch (error) {
+      console.error('Error deleting chat:', error)
+    } finally {
+      setIsClearing(false)
+      setDeleteDialogOpen(false)
+    }
+  }
+
   const getOtherUser = (chat: Chat) => {
     if (!user) return null
     const otherUserId = chat.participants.find(id => id !== user.id)
@@ -321,11 +396,14 @@ export default function MessagesPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        {language === 'ru' ? 'Очистить чат' : 'Чатты тазалау'}
+                      <DropdownMenuItem onClick={() => setClearDialogOpen(true)}>
+                        {text.clearChat}
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
-                        {language === 'ru' ? 'Удалить чат' : 'Чатты жою'}
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => setDeleteDialogOpen(true)}
+                      >
+                        {text.deleteChat}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -429,6 +507,44 @@ export default function MessagesPage() {
           </div>
         </div>
       )}
+
+      {/* Clear Chat Dialog */}
+      <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{text.clearChatTitle}</AlertDialogTitle>
+            <AlertDialogDescription>{text.clearChatDesc}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isClearing}>{text.cancel}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClearChat} disabled={isClearing}>
+              {isClearing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {text.clear}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Chat Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{text.deleteChatTitle}</AlertDialogTitle>
+            <AlertDialogDescription>{text.deleteChatDesc}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isClearing}>{text.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteChat}
+              disabled={isClearing}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isClearing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {text.delete}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

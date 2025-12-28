@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
-import { getNotifications, markAllNotificationsAsRead } from '@/lib/firebase/firestore'
+import { getNotifications, markAllNotificationsAsRead, markNotificationAsRead, deleteNotification } from '@/lib/firebase/firestore'
 import type { Notification } from '@/types'
 
 const notificationIcons: Record<string, React.ReactNode> = {
@@ -152,15 +152,31 @@ export default function NotificationsPage() {
     }
   }
 
-  const handleMarkAsRead = (notificationId: string) => {
+  const handleMarkAsRead = async (notificationId: string) => {
     setNotifications(notifications.map(n =>
       n.id === notificationId ? { ...n, isRead: true } : n
     ))
+
+    if (user) {
+      try {
+        await markNotificationAsRead(user.id, notificationId)
+      } catch (error) {
+        console.error('Error marking notification as read:', error)
+      }
+    }
   }
 
-  const handleDelete = (notificationId: string) => {
+  const handleDelete = async (notificationId: string) => {
     setNotifications(notifications.filter(n => n.id !== notificationId))
     toast({ title: text.deleted })
+
+    if (user) {
+      try {
+        await deleteNotification(user.id, notificationId)
+      } catch (error) {
+        console.error('Error deleting notification:', error)
+      }
+    }
   }
 
   if (!user) {

@@ -625,6 +625,10 @@ export async function markAllNotificationsAsRead(userId: string): Promise<void> 
   await batch.commit()
 }
 
+export async function deleteNotification(userId: string, notificationId: string): Promise<void> {
+  await deleteDoc(doc(requireDb(), 'users', userId, 'notifications', notificationId))
+}
+
 export async function getUnreadNotificationsCount(userId: string): Promise<number> {
   const q = query(
     collection(requireDb(), 'users', userId, 'notifications'),
@@ -1022,6 +1026,43 @@ export async function getUnreadChatsCount(userId: string): Promise<number> {
   }
 
   return count
+}
+
+export async function clearChat(chatId: string): Promise<void> {
+  const db = requireDb()
+  const messagesRef = collection(db, 'chats', chatId, 'messages')
+  const messagesSnap = await getDocs(messagesRef)
+
+  const batch = writeBatch(db)
+  messagesSnap.docs.forEach(docSnap => {
+    batch.delete(doc(db, 'chats', chatId, 'messages', docSnap.id))
+  })
+
+  // Reset last message
+  batch.update(doc(db, 'chats', chatId), {
+    lastMessage: null,
+    updatedAt: serverTimestamp(),
+  })
+
+  await batch.commit()
+}
+
+export async function deleteChat(chatId: string): Promise<void> {
+  const db = requireDb()
+
+  // Delete all messages first
+  const messagesRef = collection(db, 'chats', chatId, 'messages')
+  const messagesSnap = await getDocs(messagesRef)
+
+  const batch = writeBatch(db)
+  messagesSnap.docs.forEach(docSnap => {
+    batch.delete(doc(db, 'chats', chatId, 'messages', docSnap.id))
+  })
+
+  // Delete the chat document
+  batch.delete(doc(db, 'chats', chatId))
+
+  await batch.commit()
 }
 
 // ==================== COMMUNITIES ====================
@@ -1509,4 +1550,93 @@ export async function searchUsers(searchQuery: string): Promise<User[]> {
     u.username?.toLowerCase().includes(lowerQuery) ||
     u.email?.toLowerCase().includes(lowerQuery)
   )
+}
+
+// ==================== PLATFORM SETTINGS ====================
+
+export interface PlatformSettings {
+  allowRegistration: boolean
+  requireModeration: boolean
+  emailNotifications: boolean
+}
+
+export async function getPlatformSettings(): Promise<PlatformSettings> {
+  const docSnap = await getDoc(doc(requireDb(), 'settings', 'platform'))
+  if (docSnap.exists()) {
+    return docSnap.data() as PlatformSettings
+  }
+  // Default settings
+  return {
+    allowRegistration: true,
+    requireModeration: false,
+    emailNotifications: true,
+  }
+}
+
+export async function updatePlatformSettings(settings: Partial<PlatformSettings>): Promise<void> {
+  const settingsRef = doc(requireDb(), 'settings', 'platform')
+  const docSnap = await getDoc(settingsRef)
+
+  if (docSnap.exists()) {
+    await updateDoc(settingsRef, {
+      ...settings,
+      updatedAt: serverTimestamp(),
+    })
+  } else {
+    await setDoc(settingsRef, {
+      allowRegistration: true,
+      requireModeration: false,
+      emailNotifications: true,
+      ...settings,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    })
+  }
+}
+
+// ==================== EXTENDED ADMIN STATS ====================
+
+export async function getAdminStatsExtended(): Promise<{
+  usersCount: number
+  materialsCount: number
+  communitiesCount: number
+  usersThisWeek: number
+  materialsThisWeek: number
+}> {
+  const db = requireDb()
+  const oneWeekAgo = new Date()
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+  const weekAgoTimestamp = Timestamp.fromDate(oneWeekAgo)
+
+  const [usersSnap, materialsSnap, communitiesSnap] = await Promise.all([
+    getDocs(collection(db, 'users')),
+    getDocs(collection(db, 'materials')),
+    getDocs(collection(db, 'communities')),
+  ])
+
+  // Count new items this week
+  let usersThisWeek = 0
+  let materialsThisWeek = 0
+
+  usersSnap.docs.forEach(doc => {
+    const data = doc.data()
+    if (data.createdAt && data.createdAt > weekAgoTimestamp) {
+      usersThisWeek++
+    }
+  })
+
+  materialsSnap.docs.forEach(doc => {
+    const data = doc.data()
+    if (data.createdAt && data.createdAt > weekAgoTimestamp) {
+      materialsThisWeek++
+    }
+  })
+
+  return {
+    usersCount: usersSnap.size,
+    materialsCount: materialsSnap.size,
+    communitiesCount: communitiesSnap.size,
+    usersThisWeek,
+    materialsThisWeek,
+  }
 }
