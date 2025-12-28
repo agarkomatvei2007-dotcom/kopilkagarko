@@ -1,0 +1,118 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // Materials collection
+    match /materials/{materialId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated() && resource.data.authorId == request.auth.uid;
+
+      // Material likes subcollection
+      match /likes/{likeId} {
+        allow read: if true;
+        allow write: if isAuthenticated();
+      }
+
+      // Material comments subcollection
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isAuthenticated();
+        allow update, delete: if isAuthenticated() && resource.data.authorId == request.auth.uid;
+      }
+    }
+
+    // Collections (user bookmarks)
+    match /collections/{collectionId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+    }
+
+    // Communities
+    match /communities/{communityId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+
+      // Community members subcollection
+      match /members/{memberId} {
+        allow read: if true;
+        allow write: if isAuthenticated();
+      }
+
+      // Community posts subcollection
+      match /posts/{postId} {
+        allow read: if true;
+        allow create: if isAuthenticated();
+        allow update: if isAuthenticated();
+        allow delete: if isAuthenticated() &&
+          (resource.data.authorId == request.auth.uid ||
+           get(/databases/$(database)/documents/communities/$(communityId)).data.ownerId == request.auth.uid);
+
+        // Post likes subcollection
+        match /likes/{likeId} {
+          allow read: if true;
+          allow write: if isAuthenticated();
+        }
+
+        // Post comments subcollection
+        match /comments/{commentId} {
+          allow read: if true;
+          allow create: if isAuthenticated();
+          allow update, delete: if isAuthenticated() && resource.data.authorId == request.auth.uid;
+        }
+      }
+    }
+
+    // Notifications
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Chats
+    match /chats/{chatId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+
+      match /messages/{messageId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated();
+      }
+    }
+
+    // Achievements
+    match /achievements/{achievementId} {
+      allow read: if true;
+      allow write: if false; // Only admin can write
+    }
+
+    // Activities (feed)
+    match /activities/{activityId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+    }
+  }
+}
