@@ -45,6 +45,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
 import { useToast } from '@/hooks/use-toast'
@@ -62,6 +72,7 @@ import {
   getPostComments,
   deletePost,
   getUser,
+  updateCommunity,
 } from '@/lib/firebase/firestore'
 import type { Community, CommunityPost, CommunityMember, PostComment } from '@/lib/firebase/firestore'
 import { getInitials, formatRelativeTime } from '@/lib/utils'
@@ -96,6 +107,13 @@ export default function CommunityDetailPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [postToDelete, setPostToDelete] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Settings dialog
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editIsPublic, setEditIsPublic] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
 
   const txt = {
     ru: {
@@ -133,6 +151,15 @@ export default function CommunityDetailPage() {
       hideComments: 'Скрыть комментарии',
       noMembers: 'Участников пока нет',
       joinedDate: 'Присоединился',
+      settings: 'Настройки сообщества',
+      settingsDesc: 'Изменить название, описание и видимость',
+      communityName: 'Название',
+      communityDescription: 'Описание',
+      visibility: 'Видимость',
+      public: 'Публичное',
+      private: 'Приватное',
+      save: 'Сохранить',
+      saved: 'Изменения сохранены',
     },
     kk: {
       back: 'Қауымдастықтарға оралу',
@@ -169,6 +196,15 @@ export default function CommunityDetailPage() {
       hideComments: 'Пікірлерді жасыру',
       noMembers: 'Мүшелер әлі жоқ',
       joinedDate: 'Қосылды',
+      settings: 'Қауымдастық параметрлері',
+      settingsDesc: 'Атауын, сипаттамасын және көрінуін өзгерту',
+      communityName: 'Атауы',
+      communityDescription: 'Сипаттама',
+      visibility: 'Көріну',
+      public: 'Жалпыға қолжетімді',
+      private: 'Жеке',
+      save: 'Сақтау',
+      saved: 'Өзгерістер сақталды',
     },
   }
 
@@ -404,6 +440,39 @@ export default function CommunityDetailPage() {
     }
   }
 
+  const openSettings = () => {
+    if (!community) return
+    setEditName(community.name)
+    setEditDescription(community.description)
+    setEditIsPublic(community.isPublic)
+    setSettingsOpen(true)
+  }
+
+  const handleSaveSettings = async () => {
+    if (!community) return
+
+    setIsSaving(true)
+    try {
+      await updateCommunity(community.id, {
+        name: editName.trim(),
+        description: editDescription.trim(),
+        isPublic: editIsPublic,
+      })
+      setCommunity(prev => prev ? {
+        ...prev,
+        name: editName.trim(),
+        description: editDescription.trim(),
+        isPublic: editIsPublic,
+      } : null)
+      toast({ title: text.saved })
+      setSettingsOpen(false)
+    } catch (error) {
+      console.error('Error saving settings:', error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -473,7 +542,7 @@ export default function CommunityDetailPage() {
           </div>
           <div className="flex gap-2">
             {isOwner ? (
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" onClick={openSettings}>
                 <Settings className="h-4 w-4" />
               </Button>
             ) : isMember ? (
@@ -813,6 +882,60 @@ export default function CommunityDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Settings dialog */}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{text.settings}</DialogTitle>
+            <DialogDescription>{text.settingsDesc}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">{text.communityName}</Label>
+              <Input
+                id="name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">{text.communityDescription}</Label>
+              <Textarea
+                id="description"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                rows={3}
+              />
+            </div>
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div className="flex items-center gap-3">
+                {editIsPublic ? (
+                  <Globe className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                  <Lock className="h-5 w-5 text-muted-foreground" />
+                )}
+                <div>
+                  <p className="font-medium">{text.visibility}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {editIsPublic ? text.public : text.private}
+                  </p>
+                </div>
+              </div>
+              <Switch checked={editIsPublic} onCheckedChange={setEditIsPublic} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSettingsOpen(false)}>
+              {text.cancel}
+            </Button>
+            <Button onClick={handleSaveSettings} disabled={isSaving || !editName.trim()}>
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {text.save}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
