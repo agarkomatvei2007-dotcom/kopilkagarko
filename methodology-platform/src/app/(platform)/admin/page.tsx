@@ -293,36 +293,51 @@ export default function AdminPage() {
     const loadAdminData = async () => {
       if (!isAdmin) return
 
-      try {
-        // Load stats with weekly counts
-        const adminStats = await getAdminStatsExtended()
+      // Load data in parallel, handle each error separately
+      const [statsResult, settingsResult, usersResult, activitiesResult, materialsResult] = await Promise.allSettled([
+        getAdminStatsExtended(),
+        getPlatformSettings(),
+        getUsers('createdAt', 50),
+        getActivities(10),
+        getLatestMaterials(undefined, 50),
+      ])
+
+      if (statsResult.status === 'fulfilled') {
         setStats({
-          totalUsers: adminStats.usersCount,
-          totalMaterials: adminStats.materialsCount,
-          usersThisWeek: adminStats.usersThisWeek,
-          materialsThisWeek: adminStats.materialsThisWeek,
+          totalUsers: statsResult.value.usersCount,
+          totalMaterials: statsResult.value.materialsCount,
+          usersThisWeek: statsResult.value.usersThisWeek,
+          materialsThisWeek: statsResult.value.materialsThisWeek,
         })
-
-        // Load platform settings
-        const settings = await getPlatformSettings()
-        setPlatformSettings(settings)
-
-        // Load users
-        const allUsers = await getUsers('createdAt', 50)
-        setUsers(allUsers)
-
-        // Load activities
-        const recentActivities = await getActivities(10)
-        setActivities(recentActivities)
-
-        // Load materials
-        const { materials: allMaterials } = await getLatestMaterials(undefined, 50)
-        setMaterials(allMaterials)
-      } catch (error) {
-        console.error('Error loading admin data:', error)
-      } finally {
-        setIsLoading(false)
+      } else {
+        console.error('Error loading stats:', statsResult.reason)
       }
+
+      if (settingsResult.status === 'fulfilled') {
+        setPlatformSettings(settingsResult.value)
+      } else {
+        console.error('Error loading settings:', settingsResult.reason)
+      }
+
+      if (usersResult.status === 'fulfilled') {
+        setUsers(usersResult.value)
+      } else {
+        console.error('Error loading users:', usersResult.reason)
+      }
+
+      if (activitiesResult.status === 'fulfilled') {
+        setActivities(activitiesResult.value)
+      } else {
+        console.error('Error loading activities:', activitiesResult.reason)
+      }
+
+      if (materialsResult.status === 'fulfilled') {
+        setMaterials(materialsResult.value.materials)
+      } else {
+        console.error('Error loading materials:', materialsResult.reason)
+      }
+
+      setIsLoading(false)
     }
 
     loadAdminData()

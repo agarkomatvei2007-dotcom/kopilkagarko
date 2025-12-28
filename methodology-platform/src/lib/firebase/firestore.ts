@@ -170,15 +170,18 @@ export async function createMaterial(data: Omit<Material, 'id' | 'stats' | 'crea
   await addPointsToUser(data.authorId, 10)
 
   // Create activity
-  await createActivity({
+  const activityData: Parameters<typeof createActivity>[0] = {
     type: 'material_published',
     actorId: data.authorId,
     actorName: data.authorName,
     actorAvatar: data.authorAvatar ?? null,
     materialId: docRef.id,
     materialTitle: data.title,
-    materialThumbnail: data.thumbnail || undefined,
-  })
+  }
+  if (data.thumbnail) {
+    activityData.materialThumbnail = data.thumbnail
+  }
+  await createActivity(activityData)
 
   return docRef.id
 }
