@@ -177,7 +177,7 @@ export async function createMaterial(data: Omit<Material, 'id' | 'stats' | 'crea
     actorAvatar: data.authorAvatar ?? null,
     materialId: docRef.id,
     materialTitle: data.title,
-    materialThumbnail: data.thumbnail || null,
+    materialThumbnail: data.thumbnail || undefined,
   })
 
   return docRef.id

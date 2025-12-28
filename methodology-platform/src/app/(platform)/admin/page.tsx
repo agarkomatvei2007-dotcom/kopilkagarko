@@ -601,25 +601,9 @@ export default function AdminPage() {
                 <CardDescription>{text.moderationItems}</CardDescription>
               </CardHeader>
               <CardContent>
-                {reports.filter(r => r.status === 'pending').length > 0 ? (
-                  <div className="space-y-2">
-                    {reports.filter(r => r.status === 'pending').map(report => (
-                      <div key={report.id} className="flex items-center justify-between p-2 border rounded">
-                        <div>
-                          <p className="text-sm font-medium">{report.targetTitle}</p>
-                          <p className="text-xs text-muted-foreground">{report.reason}</p>
-                        </div>
-                        <Button size="sm" variant="outline" onClick={() => setActiveTab('reports')}>
-                          {text.review}
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-4">
-                    {text.noAttention}
-                  </p>
-                )}
+                <p className="text-muted-foreground text-center py-4">
+                  {text.noAttention}
+                </p>
               </CardContent>
             </Card>
           </div>
