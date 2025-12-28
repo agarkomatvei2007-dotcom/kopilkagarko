@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -8,7 +8,7 @@ import {
   MessageCircle,
   Eye,
   Download,
-  Bookmark,
+  FolderPlus,
   Share2,
   MoreHorizontal,
   FileText,
@@ -16,6 +16,9 @@ import {
   FileImage,
   FileAudio,
   HelpCircle,
+  Check,
+  Plus,
+  Loader2,
 } from 'lucide-react'
 
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
@@ -28,10 +31,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { useAuth } from '@/hooks/useAuth'
-import { toggleLike, isLikedByUser } from '@/lib/firebase/firestore'
+import { useLanguage } from '@/hooks/useLanguage'
+import { useToast } from '@/hooks/use-toast'
+import { toggleLike, isLikedByUser, getUserCollections, addToCollection } from '@/lib/firebase/firestore'
 import { formatNumber, formatRelativeTime, getInitials, truncate } from '@/lib/utils'
-import type { Material, MaterialType } from '@/types'
+import type { Material, MaterialType, Collection } from '@/types'
 import { MATERIAL_TYPE_LABELS, DIFFICULTY_LABELS } from '@/types'
 
 const typeIcons: Record<MaterialType, React.ReactNode> = {
@@ -50,18 +62,50 @@ interface MaterialCardProps {
 
 export default function MaterialCard({ material, showAuthor = true }: MaterialCardProps) {
   const { user } = useAuth()
+  const { language } = useLanguage()
+  const { toast } = useToast()
   const router = useRouter()
   const [liked, setLiked] = useState(false)
   const [likesCount, setLikesCount] = useState(material.stats.likes)
   const [isLikeLoading, setIsLikeLoading] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const [collectionDialogOpen, setCollectionDialogOpen] = useState(false)
+  const [collections, setCollections] = useState<Collection[]>([])
+  const [collectionsLoading, setCollectionsLoading] = useState(false)
+  const [addingToCollection, setAddingToCollection] = useState<string | null>(null)
+
+  const txt = {
+    ru: {
+      addToCollection: 'В коллекцию',
+      selectCollection: 'Выберите коллекцию',
+      selectCollectionDesc: 'Добавить материал в одну из ваших коллекций',
+      noCollections: 'У вас нет коллекций',
+      createFirst: 'Создайте первую коллекцию в разделе "Коллекции"',
+      added: 'Добавлено в коллекцию',
+      alreadyInCollection: 'Уже в коллекции',
+      error: 'Ошибка',
+      download: 'Скачать',
+    },
+    kk: {
+      addToCollection: 'Жинаққа',
+      selectCollection: 'Жинақты таңдаңыз',
+      selectCollectionDesc: 'Материалды жинақтарыңыздың біріне қосу',
+      noCollections: 'Сізде жинақтар жоқ',
+      createFirst: '"Жинақтар" бөлімінде алғашқы жинақты жасаңыз',
+      added: 'Жинаққа қосылды',
+      alreadyInCollection: 'Жинақта бар',
+      error: 'Қате',
+      download: 'Жүктеу',
+    },
+  }
+  const text = txt[language]
 
   // Check if user liked this material
-  useState(() => {
+  useEffect(() => {
     if (user) {
       isLikedByUser(material.id, user.id).then(setLiked)
     }
-  })
+  }, [user, material.id])
 
   const handleLike = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -88,6 +132,49 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
       })
     } else {
       await navigator.clipboard.writeText(url)
+    }
+  }
+
+  const openCollectionDialog = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!user) return
+
+    setCollectionDialogOpen(true)
+    setCollectionsLoading(true)
+    try {
+      const userCollections = await getUserCollections(user.id)
+      setCollections(userCollections)
+    } catch (error) {
+      console.error('Error loading collections:', error)
+    } finally {
+      setCollectionsLoading(false)
+    }
+  }
+
+  const handleAddToCollection = async (collectionId: string) => {
+    if (!user) return
+
+    const collection = collections.find(c => c.id === collectionId)
+    if (collection?.materialIds?.includes(material.id)) {
+      toast({ title: text.alreadyInCollection })
+      return
+    }
+
+    setAddingToCollection(collectionId)
+    try {
+      await addToCollection(collectionId, material.id)
+      setCollections(collections.map(c =>
+        c.id === collectionId
+          ? { ...c, materialIds: [...(c.materialIds || []), material.id], materialsCount: (c.materialsCount || 0) + 1 }
+          : c
+      ))
+      toast({ title: text.added })
+    } catch (error) {
+      console.error('Error adding to collection:', error)
+      toast({ title: text.error, variant: 'destructive' })
+    } finally {
+      setAddingToCollection(null)
     }
   }
 
@@ -218,19 +305,73 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                  <Bookmark className="h-4 w-4 mr-2" />
-                  Сохранить
+                <DropdownMenuItem onClick={openCollectionDialog}>
+                  <FolderPlus className="h-4 w-4 mr-2" />
+                  {text.addToCollection}
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Download className="h-4 w-4 mr-2" />
-                  Скачать
+                  {text.download}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </CardFooter>
       </Card>
+
+      {/* Collection Dialog */}
+      <Dialog open={collectionDialogOpen} onOpenChange={setCollectionDialogOpen}>
+        <DialogContent className="sm:max-w-md" onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>{text.selectCollection}</DialogTitle>
+            <DialogDescription>{text.selectCollectionDesc}</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {collectionsLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : collections.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>{text.noCollections}</p>
+                <p className="text-sm mt-1">{text.createFirst}</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {collections.map((collection) => {
+                  const isInCollection = collection.materialIds?.includes(material.id)
+                  const isAdding = addingToCollection === collection.id
+                  return (
+                    <button
+                      key={collection.id}
+                      onClick={() => handleAddToCollection(collection.id)}
+                      disabled={isAdding || isInCollection}
+                      className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors disabled:opacity-50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <FolderPlus className="h-5 w-5 text-primary" />
+                        <div className="text-left">
+                          <p className="font-medium">{collection.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {collection.materialsCount || 0} {language === 'ru' ? 'материалов' : 'материал'}
+                          </p>
+                        </div>
+                      </div>
+                      {isAdding ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : isInCollection ? (
+                        <Check className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <Plus className="h-5 w-5" />
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Link>
   )
 }
