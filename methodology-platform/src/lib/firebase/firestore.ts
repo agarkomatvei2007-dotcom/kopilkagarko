@@ -31,6 +31,8 @@ import type {
   Activity,
   Achievement,
   UserAchievement,
+  FriendRequest,
+  Friendship,
 } from '@/types'
 
 // Helper to check if db is available
@@ -1066,6 +1068,222 @@ export async function deleteChat(chatId: string): Promise<void> {
   batch.delete(doc(db, 'chats', chatId))
 
   await batch.commit()
+}
+
+// ==================== FRIENDS & CONTACTS ====================
+
+export async function sendFriendRequest(
+  senderId: string,
+  senderName: string,
+  senderAvatar: string | null,
+  receiverId: string,
+  receiverName: string,
+  receiverAvatar: string | null
+): Promise<string> {
+  const db = requireDb()
+
+  // Check if request already exists
+  const existingRequest = await getPendingFriendRequest(senderId, receiverId)
+  if (existingRequest) {
+    return existingRequest.id
+  }
+
+  // Check if already friends
+  const friendship = await getFriendship(senderId, receiverId)
+  if (friendship) {
+    throw new Error('Already friends')
+  }
+
+  // Check if reverse request exists (they sent us a request)
+  const reverseRequest = await getPendingFriendRequest(receiverId, senderId)
+  if (reverseRequest) {
+    // Auto-accept if they already sent us a request
+    await acceptFriendRequest(reverseRequest.id, receiverId, receiverName, receiverAvatar)
+    return reverseRequest.id
+  }
+
+  const requestRef = await addDoc(collection(db, 'friendRequests'), {
+    senderId,
+    senderName,
+    senderAvatar,
+    receiverId,
+    receiverName,
+    receiverAvatar,
+    status: 'pending',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
+
+  // Create notification for receiver
+  await createNotification(receiverId, {
+    type: 'follow',
+    title: 'Запрос в друзья',
+    message: `${senderName} хочет добавить вас в друзья`,
+    actorId: senderId,
+    actorName: senderName,
+    actorAvatar: senderAvatar,
+    materialId: null,
+    link: '/messages',
+  })
+
+  return requestRef.id
+}
+
+export async function getPendingFriendRequest(
+  senderId: string,
+  receiverId: string
+): Promise<FriendRequest | null> {
+  const q = query(
+    collection(requireDb(), 'friendRequests'),
+    where('senderId', '==', senderId),
+    where('receiverId', '==', receiverId),
+    where('status', '==', 'pending')
+  )
+  const snapshot = await getDocs(q)
+  if (!snapshot.empty) {
+    const doc = snapshot.docs[0]
+    return { id: doc.id, ...doc.data() } as FriendRequest
+  }
+  return null
+}
+
+export async function getIncomingFriendRequests(userId: string): Promise<FriendRequest[]> {
+  const q = query(
+    collection(requireDb(), 'friendRequests'),
+    where('receiverId', '==', userId),
+    where('status', '==', 'pending'),
+    orderBy('createdAt', 'desc')
+  )
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FriendRequest))
+}
+
+export async function getOutgoingFriendRequests(userId: string): Promise<FriendRequest[]> {
+  const q = query(
+    collection(requireDb(), 'friendRequests'),
+    where('senderId', '==', userId),
+    where('status', '==', 'pending'),
+    orderBy('createdAt', 'desc')
+  )
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FriendRequest))
+}
+
+export async function acceptFriendRequest(
+  requestId: string,
+  acceptorId: string,
+  acceptorName: string,
+  acceptorAvatar: string | null
+): Promise<void> {
+  const db = requireDb()
+
+  // Get the request
+  const requestRef = doc(db, 'friendRequests', requestId)
+  const requestSnap = await getDoc(requestRef)
+  if (!requestSnap.exists()) {
+    throw new Error('Request not found')
+  }
+
+  const request = requestSnap.data() as Omit<FriendRequest, 'id'>
+
+  // Update request status
+  await updateDoc(requestRef, {
+    status: 'accepted',
+    updatedAt: serverTimestamp(),
+  })
+
+  // Get sender data for friendship
+  const sender = await getUser(request.senderId)
+  const receiver = await getUser(request.receiverId)
+
+  // Create friendship
+  await addDoc(collection(db, 'friendships'), {
+    users: [request.senderId, request.receiverId],
+    usersData: {
+      [request.senderId]: {
+        name: sender?.displayName || request.senderName,
+        avatar: sender?.avatar || request.senderAvatar,
+        username: sender?.username || '',
+      },
+      [request.receiverId]: {
+        name: receiver?.displayName || acceptorName,
+        avatar: receiver?.avatar || acceptorAvatar,
+        username: receiver?.username || '',
+      },
+    },
+    createdAt: serverTimestamp(),
+  })
+
+  // Create notification for sender
+  await createNotification(request.senderId, {
+    type: 'follow',
+    title: 'Запрос принят',
+    message: `${acceptorName} принял(а) ваш запрос в друзья`,
+    actorId: acceptorId,
+    actorName: acceptorName,
+    actorAvatar: acceptorAvatar,
+    materialId: null,
+    link: '/messages',
+  })
+}
+
+export async function declineFriendRequest(requestId: string): Promise<void> {
+  await updateDoc(doc(requireDb(), 'friendRequests', requestId), {
+    status: 'declined',
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export async function cancelFriendRequest(requestId: string): Promise<void> {
+  await deleteDoc(doc(requireDb(), 'friendRequests', requestId))
+}
+
+export async function getFriendship(userId1: string, userId2: string): Promise<Friendship | null> {
+  const q = query(
+    collection(requireDb(), 'friendships'),
+    where('users', 'array-contains', userId1)
+  )
+  const snapshot = await getDocs(q)
+
+  for (const doc of snapshot.docs) {
+    const friendship = { id: doc.id, ...doc.data() } as Friendship
+    if (friendship.users.includes(userId2)) {
+      return friendship
+    }
+  }
+  return null
+}
+
+export async function getFriends(userId: string): Promise<Friendship[]> {
+  const q = query(
+    collection(requireDb(), 'friendships'),
+    where('users', 'array-contains', userId),
+    orderBy('createdAt', 'desc')
+  )
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Friendship))
+}
+
+export async function removeFriend(friendshipId: string): Promise<void> {
+  await deleteDoc(doc(requireDb(), 'friendships', friendshipId))
+}
+
+export async function getFriendStatus(
+  currentUserId: string,
+  otherUserId: string
+): Promise<'none' | 'friends' | 'pending_sent' | 'pending_received'> {
+  // Check if already friends
+  const friendship = await getFriendship(currentUserId, otherUserId)
+  if (friendship) return 'friends'
+
+  // Check for pending requests
+  const sentRequest = await getPendingFriendRequest(currentUserId, otherUserId)
+  if (sentRequest) return 'pending_sent'
+
+  const receivedRequest = await getPendingFriendRequest(otherUserId, currentUserId)
+  if (receivedRequest) return 'pending_received'
+
+  return 'none'
 }
 
 // ==================== COMMUNITIES ====================

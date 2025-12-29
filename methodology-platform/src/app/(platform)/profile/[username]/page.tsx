@@ -14,6 +14,8 @@ import {
   Settings,
   MessageSquare,
   Loader2,
+  UserPlus,
+  Clock,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -33,13 +35,18 @@ import {
   unfollowUser,
   getUserAchievements,
   getAchievements,
+  getFriendStatus,
+  sendFriendRequest,
+  createChat,
 } from '@/lib/firebase/firestore'
+import { useToast } from '@/hooks/use-toast'
 import { formatDate, formatNumber, getInitials, calculateLevelProgress } from '@/lib/utils'
 import type { User, Material, Achievement, UserAchievement } from '@/types'
 
 export default function ProfilePage() {
   const params = useParams()
   const router = useRouter()
+  const { toast } = useToast()
   const username = params.username as string
   const { user: currentUser } = useAuth()
 
@@ -49,6 +56,7 @@ export default function ProfilePage() {
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [following, setFollowing] = useState(false)
+  const [friendStatus, setFriendStatus] = useState<'none' | 'friends' | 'pending_sent' | 'pending_received'>('none')
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -71,10 +79,14 @@ export default function ProfilePage() {
         setAchievements(allAchievements)
         setUserAchievements(userAchs)
 
-        // Check if following
+        // Check if following and friend status
         if (currentUser && currentUser.id !== userData.id) {
-          const isFollowingUser = await isFollowing(currentUser.id, userData.id)
+          const [isFollowingUser, friendshipStatus] = await Promise.all([
+            isFollowing(currentUser.id, userData.id),
+            getFriendStatus(currentUser.id, userData.id),
+          ])
           setFollowing(isFollowingUser)
+          setFriendStatus(friendshipStatus)
         }
       }
 
@@ -83,6 +95,50 @@ export default function ProfilePage() {
 
     loadProfile()
   }, [username, currentUser])
+
+  const handleAddFriend = async () => {
+    if (!currentUser || !profile) return
+
+    try {
+      await sendFriendRequest(
+        currentUser.id,
+        currentUser.displayName,
+        currentUser.avatar,
+        profile.id,
+        profile.displayName,
+        profile.avatar
+      )
+      setFriendStatus('pending_sent')
+      toast({ title: 'Запрос в друзья отправлен' })
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message === 'Already friends') {
+        toast({ title: 'Вы уже друзья' })
+        setFriendStatus('friends')
+      } else {
+        console.error('Error sending friend request:', error)
+        toast({ title: 'Ошибка', variant: 'destructive' })
+      }
+    }
+  }
+
+  const handleStartChat = async () => {
+    if (!currentUser || !profile) return
+
+    try {
+      const chatId = await createChat(
+        currentUser.id,
+        currentUser.displayName,
+        currentUser.avatar,
+        profile.id,
+        profile.displayName,
+        profile.avatar
+      )
+      router.push(`/messages?chat=${chatId}`)
+    } catch (error) {
+      console.error('Error creating chat:', error)
+      toast({ title: 'Ошибка', variant: 'destructive' })
+    }
+  }
 
   const handleFollow = async () => {
     if (!currentUser || !profile) return
@@ -163,10 +219,30 @@ export default function ProfilePage() {
                     >
                       {following ? 'Отписаться' : 'Подписаться'}
                     </Button>
-                    <Button variant="outline">
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Написать
-                    </Button>
+                    {friendStatus === 'none' && (
+                      <Button variant="outline" onClick={handleAddFriend}>
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        В друзья
+                      </Button>
+                    )}
+                    {friendStatus === 'pending_sent' && (
+                      <Button variant="outline" disabled>
+                        <Clock className="h-4 w-4 mr-2" />
+                        Запрос отправлен
+                      </Button>
+                    )}
+                    {friendStatus === 'pending_received' && (
+                      <Button variant="outline" onClick={() => router.push('/messages')}>
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Ответить на запрос
+                      </Button>
+                    )}
+                    {friendStatus === 'friends' && (
+                      <Button variant="outline" onClick={handleStartChat}>
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Написать
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>

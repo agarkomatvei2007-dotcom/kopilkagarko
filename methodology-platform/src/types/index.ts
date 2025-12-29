@@ -247,6 +247,33 @@ export interface Message {
   createdAt: Timestamp
 }
 
+// Friend types
+export type FriendRequestStatus = 'pending' | 'accepted' | 'declined'
+
+export interface FriendRequest {
+  id: string
+  senderId: string
+  senderName: string
+  senderAvatar: string | null
+  receiverId: string
+  receiverName: string
+  receiverAvatar: string | null
+  status: FriendRequestStatus
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+export interface Friendship {
+  id: string
+  users: string[]
+  usersData: Record<string, {
+    name: string
+    avatar: string | null
+    username: string
+  }>
+  createdAt: Timestamp
+}
+
 // Quiz types
 export interface QuizQuestion {
   id: string
