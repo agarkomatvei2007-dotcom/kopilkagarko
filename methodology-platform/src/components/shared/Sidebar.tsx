@@ -24,11 +24,8 @@ import { useLanguage } from '@/hooks/useLanguage'
 import { useUIStore } from '@/stores/uiStore'
 import { calculateLevelProgress, cn } from '@/lib/utils'
 
-// Admin emails list
-const ADMIN_EMAILS = ['admin@kopilka.ru', 'agarkomatvei2007@gmail.com']
-
 export default function Sidebar() {
-  const { user, firebaseUser } = useAuth()
+  const { user } = useAuth()
   const { t, language } = useLanguage()
   const { sidebarOpen } = useUIStore()
   const pathname = usePathname()
@@ -54,7 +51,7 @@ export default function Sidebar() {
   if (!sidebarOpen) return null
 
   const levelProgress = user ? calculateLevelProgress(user.points) : 0
-  const isAdmin = firebaseUser?.email && ADMIN_EMAILS.includes(firebaseUser.email)
+  const isAdmin = user?.isAdmin === true
 
   const NavLink = ({ href, label, icon: Icon, isActive }: { href: string; label: string; icon: React.ElementType; isActive: boolean }) => (
     <Link href={href}>

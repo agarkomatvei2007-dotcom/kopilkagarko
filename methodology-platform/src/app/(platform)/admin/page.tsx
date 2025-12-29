@@ -73,9 +73,6 @@ import {
 } from '@/components/ui/dialog'
 import type { User, Activity, Material } from '@/types'
 
-// Admin emails - add your admin emails here
-const ADMIN_EMAILS = ['admin@kopilka.ru', 'agarkomatvei2007@gmail.com']
-
 interface AdminStats {
   totalUsers: number
   totalMaterials: number
@@ -94,7 +91,7 @@ interface UserData {
 }
 
 export default function AdminPage() {
-  const { user, firebaseUser } = useAuth()
+  const { user } = useAuth()
   const { language } = useLanguage()
   const router = useRouter()
   const { toast } = useToast()
@@ -280,8 +277,8 @@ export default function AdminPage() {
 
   const text = txt[language]
 
-  // Check if user is admin
-  const isAdmin = firebaseUser?.email && ADMIN_EMAILS.includes(firebaseUser.email)
+  // Check if user is admin from Firestore user data
+  const isAdmin = user?.isAdmin === true
 
   useEffect(() => {
     if (!isAdmin && user) {
