@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import {
   Calendar,
   MapPin,
@@ -39,6 +39,7 @@ import type { User, Material, Achievement, UserAchievement } from '@/types'
 
 export default function ProfilePage() {
   const params = useParams()
+  const router = useRouter()
   const username = params.username as string
   const { user: currentUser } = useAuth()
 
@@ -150,7 +151,7 @@ export default function ProfilePage() {
                 </div>
 
                 {isOwnProfile ? (
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={() => router.push('/settings')}>
                     <Settings className="h-4 w-4 mr-2" />
                     Редактировать
                   </Button>
