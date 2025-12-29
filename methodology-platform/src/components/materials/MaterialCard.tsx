@@ -123,15 +123,22 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
 
   const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     const url = `${window.location.origin}/materials/${material.id}`
-    if (navigator.share) {
-      await navigator.share({
-        title: material.title,
-        text: material.description,
-        url,
-      })
-    } else {
-      await navigator.clipboard.writeText(url)
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: material.title,
+          text: material.description,
+          url,
+        })
+      } else {
+        await navigator.clipboard.writeText(url)
+        toast({ title: language === 'ru' ? 'Ссылка скопирована' : 'Сілтеме көшірілді' })
+      }
+    } catch (error) {
+      // User cancelled share or error occurred
+      console.log('Share cancelled or failed')
     }
   }
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { collection, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '@/lib/firebase/config'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -49,6 +50,7 @@ const MATERIAL_TYPES = [
 export default function FeedPage() {
   const { user } = useAuth()
   const { t, language } = useLanguage()
+  const searchParams = useSearchParams()
   const [materials, setMaterials] = useState<Material[]>([])
   const [followingMaterials, setFollowingMaterials] = useState<Material[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -56,8 +58,8 @@ export default function FeedPage() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
-  // Search and filter state
-  const [searchQuery, setSearchQuery] = useState('')
+  // Search and filter state - initialize from URL param
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
   const [selectedSubject, setSelectedSubject] = useState<string>('')
   const [selectedGrades, setSelectedGrades] = useState<number[]>([])
   const [selectedTypes, setSelectedTypes] = useState<string[]>([])

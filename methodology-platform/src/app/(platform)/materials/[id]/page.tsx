@@ -422,26 +422,90 @@ export default function MaterialPage() {
 
           {/* Files */}
           {material.content.files && material.content.files.length > 0 && (
-            <div className="mt-6 space-y-2">
+            <div className="mt-6 space-y-4">
               <h3 className="font-semibold mb-3">Прикрепленные файлы</h3>
-              {material.content.files.map((file, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm">{file.name}</span>
+              {material.content.files.map((file, index) => {
+                const fileName = file.name?.toLowerCase() || ''
+                const fileUrl = file.url || ''
+                const isVideo = fileName.match(/\.(mp4|webm|ogg|mov|avi)$/) || fileUrl.includes('video')
+                const isPdf = fileName.match(/\.pdf$/) || fileUrl.includes('.pdf')
+                const isAudio = fileName.match(/\.(mp3|wav|ogg|m4a)$/)
+                const isImage = fileName.match(/\.(jpg|jpeg|png|gif|webp|svg)$/)
+
+                return (
+                  <div key={index} className="space-y-2">
+                    {/* Video player */}
+                    {isVideo && (
+                      <div className="aspect-video rounded-lg overflow-hidden bg-black">
+                        <video
+                          src={fileUrl}
+                          controls
+                          className="w-full h-full"
+                          preload="metadata"
+                        >
+                          Ваш браузер не поддерживает видео
+                        </video>
+                      </div>
+                    )}
+
+                    {/* PDF viewer */}
+                    {isPdf && (
+                      <div className="aspect-[4/3] rounded-lg overflow-hidden border">
+                        <iframe
+                          src={`${fileUrl}#view=FitH`}
+                          className="w-full h-full"
+                          title={file.name}
+                        />
+                      </div>
+                    )}
+
+                    {/* Audio player */}
+                    {isAudio && (
+                      <div className="p-4 bg-muted rounded-lg">
+                        <audio src={fileUrl} controls className="w-full">
+                          Ваш браузер не поддерживает аудио
+                        </audio>
+                      </div>
+                    )}
+
+                    {/* Image preview */}
+                    {isImage && (
+                      <div className="rounded-lg overflow-hidden">
+                        <img src={fileUrl} alt={file.name} className="max-w-full h-auto" />
+                      </div>
+                    )}
+
+                    {/* File info and download */}
+                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                      <div className="flex items-center gap-3">
+                        {isVideo ? <Video className="h-5 w-5 text-muted-foreground" /> :
+                         isPdf ? <FileText className="h-5 w-5 text-red-500" /> :
+                         isAudio ? <FileAudio className="h-5 w-5 text-muted-foreground" /> :
+                         isImage ? <FileImage className="h-5 w-5 text-muted-foreground" /> :
+                         <FileText className="h-5 w-5 text-muted-foreground" />}
+                        <span className="text-sm">{file.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isPdf && (
+                          <a href={fileUrl} target="_blank" rel="noopener noreferrer">
+                            <Button variant="ghost" size="sm">
+                              <Eye className="h-4 w-4 mr-1" />
+                              Открыть
+                            </Button>
+                          </a>
+                        )}
+                        {material.allowDownload && (
+                          <a href={fileUrl} download target="_blank" rel="noopener noreferrer">
+                            <Button variant="ghost" size="sm">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </a>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  {material.allowDownload && (
-                    <a href={file.url} download target="_blank" rel="noopener noreferrer">
-                      <Button variant="ghost" size="sm">
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </a>
-                  )}
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
 

@@ -1,6 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   BookOpen,
   Search,
@@ -32,6 +34,14 @@ export default function Navbar() {
   const { user, signOut, isAuthenticated } = useAuth()
   const { t } = useLanguage()
   const { toggleMobileMenu } = useUIStore()
+  const router = useRouter()
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      router.push(`/feed?search=${encodeURIComponent(searchQuery.trim())}`)
+    }
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -64,6 +74,9 @@ export default function Navbar() {
                 <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
                 <Input
                   placeholder={t.common.search}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleSearch}
                   className="pl-10 h-10 bg-muted border-0 rounded-xl focus:bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 />
               </div>

@@ -14,6 +14,7 @@ import {
   Shield,
   Bot,
   Sparkles,
+  MessageSquare,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -39,6 +40,7 @@ export default function Sidebar() {
 
   const socialNavItems = [
     { href: '/communities', label: t.nav.communities, icon: Users },
+    { href: '/messages', label: language === 'ru' ? 'Сообщения' : 'Хабарламалар', icon: MessageSquare },
     { href: '/leaderboard', label: language === 'ru' ? 'Рейтинг' : 'Рейтинг', icon: Trophy },
   ]
 
