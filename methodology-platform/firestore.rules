@@ -5,14 +5,14 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
-
+    
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-
+    
     // Функция проверки админа
-    function isAdmin() {
-      return isAuthenticated() &&
+ function isAdmin() {
+      return isAuthenticated() && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
@@ -22,7 +22,7 @@ service cloud.firestore {
       allow create: if isOwner(userId);
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
-
+      
       // User subcollections
       match /{subcollection}/{docId} {
         allow read: if isOwner(userId) || isAdmin();
@@ -34,9 +34,9 @@ service cloud.firestore {
     match /materials/{materialId} {
       allow read: if true;
       allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() &&
+      allow update, delete: if isAuthenticated() && 
         (resource.data.authorId == request.auth.uid || isAdmin());
-
+      
       match /{subcollection}/{docId} {
         allow read: if true;
         allow write: if isAuthenticated();
@@ -45,53 +45,55 @@ service cloud.firestore {
 
     // Chats
     match /chats/{chatId} {
-      allow read, write: if isAuthenticated() &&
+      allow read, write: if isAuthenticated() && 
         request.auth.uid in resource.data.participants;
       allow create: if isAuthenticated();
-
+      
       match /messages/{messageId} {
         allow read, write: if isAuthenticated();
       }
     }
 
-    // Communities
-    match /communities/{communityId} {
+    // Courses
+    match /courses/{courseId} {
       allow read: if true;
       allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() &&
-        (resource.data.ownerId == request.auth.uid || isAdmin());
-
-      // Members subcollection
-      match /members/{memberId} {
+      allow update, delete: if isAuthenticated() && 
+        (resource.data.instructorId == request.auth.uid || isAdmin());
+      
+      match /{subcollection}/{docId} {
         allow read: if true;
         allow write: if isAuthenticated();
       }
-
-      // Posts subcollection
-      match /posts/{postId} {
-        allow read: if true;
-        allow create: if isAuthenticated();
-        allow update: if isAuthenticated();
-        allow delete: if isAuthenticated() &&
-          (resource.data.authorId == request.auth.uid ||
-           get(/databases/$(database)/documents/communities/$(communityId)).data.ownerId == request.auth.uid ||
-           isAdmin());
-
-        // Post likes
-        match /likes/{likeId} {
-          allow read: if true;
-          allow write: if isAuthenticated();
-        }
-
-        // Post comments
-        match /comments/{commentId} {
-          allow read: if true;
-          allow create: if isAuthenticated();
-          allow update, delete: if isAuthenticated() &&
-            (resource.data.authorId == request.auth.uid || isAdmin());
-        }
-      }
     }
+
+     // Communities
+match /communities/{communityId} {
+  allow read: if true;
+  allow create: if isAuthenticated();
+  allow update, delete: if isAuthenticated() && 
+    (resource.data.ownerId == request.auth.uid || isAdmin());
+  
+  match /members/{memberId} {
+    allow read: if true;
+    allow write: if isAuthenticated();
+  }
+  
+  match /posts/{postId} {
+    allow read: if true;
+    allow write: if isAuthenticated();
+    
+    match /likes/{likeId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    match /comments/{commentId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+  }
+}
 
     // Achievements
     match /achievements/{achievementId} {
@@ -110,23 +112,17 @@ service cloud.firestore {
     match /collections/{collectionId} {
       allow read: if true;
       allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() &&
+      allow update, delete: if isAuthenticated() && 
         (resource.data.ownerId == request.auth.uid || isAdmin());
     }
-
+    
     // Notifications
     match /notifications/{notificationId} {
-      allow read: if isAuthenticated() &&
+      allow read: if isAuthenticated() && 
         resource.data.userId == request.auth.uid;
       allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() &&
+      allow update, delete: if isAuthenticated() && 
         (resource.data.userId == request.auth.uid || isAdmin());
-    }
-
-    // Platform Settings
-    match /settings/{settingId} {
-      allow read: if true;
-      allow write: if isAdmin();
     }
   }
 }
