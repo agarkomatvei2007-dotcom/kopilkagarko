@@ -114,6 +114,9 @@ export default function MessagesPage() {
   // File upload state
   const [isUploading, setIsUploading] = useState(false)
 
+  // Mobile view state
+  const [showChatOnMobile, setShowChatOnMobile] = useState(false)
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
@@ -559,9 +562,9 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] border rounded-lg overflow-hidden">
+    <div className="flex h-[calc(100vh-4rem)] md:h-[calc(100vh-8rem)] border rounded-lg overflow-hidden">
       {/* Left sidebar with tabs */}
-      <div className="w-80 border-r flex flex-col">
+      <div className={`w-full md:w-80 border-r flex flex-col ${showChatOnMobile ? 'hidden md:flex' : 'flex'}`}>
         <Tabs defaultValue="chats" className="flex flex-col h-full">
           <div className="p-4 border-b">
             <h2 className="font-semibold mb-3">{text.title}</h2>
@@ -616,7 +619,10 @@ export default function MessagesPage() {
                   return (
                     <div
                       key={chat.id}
-                      onClick={() => setSelectedChat(chat)}
+                      onClick={() => {
+                        setSelectedChat(chat)
+                        setShowChatOnMobile(true)
+                      }}
                       className={`flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/50 transition-colors ${
                         selectedChat?.id === chat.id ? 'bg-muted' : ''
                       }`}
@@ -855,13 +861,22 @@ export default function MessagesPage() {
 
       {/* Chat window */}
       {selectedChat ? (
-        <div className="flex-1 flex flex-col">
+        <div className={`flex-1 flex flex-col ${showChatOnMobile ? 'flex' : 'hidden md:flex'}`}>
           {/* Chat header */}
           {(() => {
             const otherUser = getOtherUser(selectedChat)
             return (
               <div className="flex items-center justify-between p-4 border-b">
                 <div className="flex items-center gap-3">
+                  {/* Back button for mobile */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="md:hidden"
+                    onClick={() => setShowChatOnMobile(false)}
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
                   <Avatar>
                     <AvatarImage src={otherUser?.avatar || undefined} />
                     <AvatarFallback>{otherUser ? getInitials(otherUser.name) : '?'}</AvatarFallback>
@@ -1008,7 +1023,7 @@ export default function MessagesPage() {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 hidden md:flex items-center justify-center">
           <div className="text-center">
             <MessageCircle className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
             <p className="font-medium">{text.selectChat}</p>

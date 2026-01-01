@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect } from 'react'
+import { useTheme } from 'next-themes'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { BookOpen, Sparkles } from 'lucide-react'
@@ -11,9 +13,21 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   const { language } = useLanguage()
+  const { setTheme, theme } = useTheme()
+
+  // Force light theme on auth pages
+  useEffect(() => {
+    const previousTheme = theme
+    setTheme('light')
+    return () => {
+      if (previousTheme && previousTheme !== 'light') {
+        setTheme(previousTheme)
+      }
+    }
+  }, [])
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-white">
       {/* Left side - decorative */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 relative overflow-hidden">
         {/* Animated background shapes */}
