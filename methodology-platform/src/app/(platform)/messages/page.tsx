@@ -69,6 +69,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { uploadChatFile, isImageFile, formatFileSize } from '@/lib/firebase/storage'
 import { getInitials, formatRelativeTime } from '@/lib/utils'
 import type { Chat, Message, Friendship, FriendRequest, User } from '@/types'
 
@@ -111,6 +112,9 @@ export default function MessagesPage() {
 
   // Processing states for buttons
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(null)
+
+  // File upload state
+  const [isUploading, setIsUploading] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -454,15 +458,47 @@ export default function MessagesPage() {
     imageInputRef.current?.click()
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      toast({
-        title: language === 'ru' ? 'Отправка файлов' : 'Файлдарды жіберу',
-        description: language === 'ru' ? 'Функция будет доступна в ближайшем обновлении' : 'Функция жақын жаңартуда қолжетімді болады',
-      })
+    if (!file || !selectedChat || !user || isUploading) {
+      e.target.value = ''
+      return
     }
-    e.target.value = ''
+
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: language === 'ru' ? 'Файл слишком большой' : 'Файл тым үлкен',
+        description: language === 'ru' ? 'Максимальный размер 10MB' : 'Максималды өлшемі 10MB',
+        variant: 'destructive',
+      })
+      e.target.value = ''
+      return
+    }
+
+    setIsUploading(true)
+    try {
+      const fileUrl = await uploadChatFile(selectedChat.id, file)
+      const fileType = isImageFile(file) ? 'image' : file.type
+      const messageText = isImageFile(file)
+        ? (language === 'ru' ? '📷 Фото' : '📷 Сурет')
+        : `📎 ${file.name} (${formatFileSize(file.size)})`
+
+      await sendMessage(selectedChat.id, user.id, messageText, fileUrl, fileType)
+
+      // Reload messages
+      const chatMessages = await getChatMessages(selectedChat.id)
+      setMessages(chatMessages)
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      toast({
+        title: language === 'ru' ? 'Ошибка загрузки' : 'Жүктеу қатесі',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsUploading(false)
+      e.target.value = ''
+    }
   }
 
   const handleEmojiSelect = (emoji: string) => {
@@ -894,6 +930,33 @@ export default function MessagesPage() {
                         : 'bg-muted'
                     }`}
                   >
+                    {/* Image attachment */}
+                    {message.fileUrl && message.fileType === 'image' && (
+                      <a href={message.fileUrl} target="_blank" rel="noopener noreferrer">
+                        <img
+                          src={message.fileUrl}
+                          alt="Фото"
+                          className="max-w-full rounded-lg mb-2 cursor-pointer hover:opacity-90 transition-opacity"
+                          style={{ maxHeight: '300px' }}
+                        />
+                      </a>
+                    )}
+                    {/* File attachment */}
+                    {message.fileUrl && message.fileType && message.fileType !== 'image' && (
+                      <a
+                        href={message.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`flex items-center gap-2 p-2 rounded-lg mb-2 ${
+                          message.senderId === user.id
+                            ? 'bg-primary-foreground/10 hover:bg-primary-foreground/20'
+                            : 'bg-background/50 hover:bg-background/80'
+                        } transition-colors`}
+                      >
+                        <Paperclip className="h-4 w-4" />
+                        <span className="text-sm underline">{language === 'ru' ? 'Скачать файл' : 'Файлды жүктеу'}</span>
+                      </a>
+                    )}
                     <p className="text-sm">{message.text}</p>
                     <p className={`text-xs mt-1 ${
                       message.senderId === user.id ? 'text-primary-foreground/70' : 'text-muted-foreground'
@@ -923,19 +986,19 @@ export default function MessagesPage() {
               className="hidden"
             />
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={handleFileSelect}>
-                <Paperclip className="h-4 w-4" />
+              <Button variant="ghost" size="icon" onClick={handleFileSelect} disabled={isUploading}>
+                {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
               </Button>
-              <Button variant="ghost" size="icon" onClick={handleImageSelect}>
+              <Button variant="ghost" size="icon" onClick={handleImageSelect} disabled={isUploading}>
                 <Image className="h-4 w-4" />
               </Button>
               <Input
-                placeholder={text.writeMessage}
+                placeholder={isUploading ? (language === 'ru' ? 'Загрузка...' : 'Жүктеу...') : text.writeMessage}
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                 className="flex-1"
-                disabled={isSending}
+                disabled={isSending || isUploading}
               />
               <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
                 <PopoverTrigger asChild>
