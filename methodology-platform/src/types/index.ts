@@ -79,11 +79,11 @@ export interface MaterialQuizQuestion {
 }
 
 export interface MaterialContent {
-  text?: string
-  videoUrl?: string
-  fileUrl?: string
-  files?: MaterialFile[]
-  questions?: MaterialQuizQuestion[]
+  text?: string | null
+  videoUrl?: string | null
+  fileUrl?: string | null
+  files?: MaterialFile[] | null
+  questions?: MaterialQuizQuestion[] | null
 }
 
 export interface MaterialStats {
