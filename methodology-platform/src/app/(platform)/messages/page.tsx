@@ -7,8 +7,6 @@ import {
   Search,
   Send,
   MoreVertical,
-  Phone,
-  Video,
   Image,
   Paperclip,
   Smile,
@@ -436,19 +434,6 @@ export default function MessagesPage() {
     }
   }
 
-  const handlePhoneCall = () => {
-    toast({
-      title: language === 'ru' ? 'Голосовые звонки' : 'Дауыстық қоңыраулар',
-      description: language === 'ru' ? 'Функция будет доступна в ближайшем обновлении' : 'Функция жақын жаңартуда қолжетімді болады',
-    })
-  }
-
-  const handleVideoCall = () => {
-    toast({
-      title: language === 'ru' ? 'Видеозвонки' : 'Бейне қоңыраулар',
-      description: language === 'ru' ? 'Функция будет доступна в ближайшем обновлении' : 'Функция жақын жаңартуда қолжетімді болады',
-    })
-  }
 
   const handleFileSelect = () => {
     fileInputRef.current?.click()
@@ -886,12 +871,6 @@ export default function MessagesPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" onClick={handlePhoneCall}>
-                    <Phone className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={handleVideoCall}>
-                    <Video className="h-4 w-4" />
-                  </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon">
