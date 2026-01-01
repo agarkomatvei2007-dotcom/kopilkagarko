@@ -141,6 +141,15 @@ export default function EditMaterialPage() {
     setIsSubmitting(true)
 
     try {
+      // Sanitize content - replace all undefined with null for Firestore
+      const sanitizedContent = {
+        text: material.type === 'text' ? (content || null) : (material.content.text || null),
+        videoUrl: material.type === 'video' ? (data.videoUrl || null) : (material.content.videoUrl || null),
+        fileUrl: material.content.fileUrl || null,
+        files: material.content.files || null,
+        questions: material.content.questions || null,
+      }
+
       await updateMaterial(materialId, {
         title: data.title,
         description: data.description,
@@ -148,11 +157,7 @@ export default function EditMaterialPage() {
         grades: selectedGrades.sort((a, b) => a - b),
         tags,
         difficulty: data.difficulty as MaterialDifficulty,
-        content: {
-          ...material.content,
-          text: material.type === 'text' ? content : material.content.text,
-          videoUrl: material.type === 'video' ? (data.videoUrl || null) : (material.content.videoUrl || null),
-        },
+        content: sanitizedContent,
         isPublic: data.isPublic,
         allowDownload: data.allowDownload,
       })
