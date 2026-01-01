@@ -151,7 +151,7 @@ export default function EditMaterialPage() {
         content: {
           ...material.content,
           text: material.type === 'text' ? content : material.content.text,
-          videoUrl: material.type === 'video' ? (data.videoUrl || undefined) : material.content.videoUrl,
+          videoUrl: material.type === 'video' ? (data.videoUrl || null) : (material.content.videoUrl || null),
         },
         isPublic: data.isPublic,
         allowDownload: data.allowDownload,
