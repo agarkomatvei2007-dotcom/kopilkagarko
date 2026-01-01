@@ -200,6 +200,8 @@ export async function getMaterial(materialId: string): Promise<Material | null> 
 function sanitizeForFirestore<T>(obj: T): T {
   if (obj === undefined) return null as T
   if (obj === null || typeof obj !== 'object') return obj
+  // Don't process Firestore Timestamps, Dates, or other special types
+  if (obj instanceof Timestamp || obj instanceof Date) return obj
   if (Array.isArray(obj)) {
     return obj.map(item => sanitizeForFirestore(item)) as T
   }
