@@ -109,6 +109,9 @@ export default function MessagesPage() {
   // Remove friend dialog
   const [removeFriendDialog, setRemoveFriendDialog] = useState<{ open: boolean; friendshipId: string; friendName: string }>({ open: false, friendshipId: '', friendName: '' })
 
+  // Processing states for buttons
+  const [processingRequestId, setProcessingRequestId] = useState<string | null>(null)
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
@@ -390,8 +393,9 @@ export default function MessagesPage() {
   }
 
   const handleAcceptRequest = async (request: FriendRequest) => {
-    if (!user) return
+    if (!user || processingRequestId) return
 
+    setProcessingRequestId(request.id)
     try {
       await acceptFriendRequest(request.id, user.id, user.displayName, user.avatar)
       setFriendRequests(prev => prev.filter(r => r.id !== request.id))
@@ -401,6 +405,8 @@ export default function MessagesPage() {
       toast({ title: text.requestAccepted })
     } catch (error) {
       console.error('Error accepting request:', error)
+    } finally {
+      setProcessingRequestId(null)
     }
   }
 
@@ -800,14 +806,20 @@ export default function MessagesPage() {
                       <Button
                         size="sm"
                         onClick={() => handleAcceptRequest(request)}
+                        disabled={processingRequestId === request.id}
                       >
-                        <Check className="h-4 w-4 mr-1" />
+                        {processingRequestId === request.id ? (
+                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                        ) : (
+                          <Check className="h-4 w-4 mr-1" />
+                        )}
                         {text.accept}
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleDeclineRequest(request.id)}
+                        disabled={processingRequestId === request.id}
                       >
                         <X className="h-4 w-4" />
                       </Button>

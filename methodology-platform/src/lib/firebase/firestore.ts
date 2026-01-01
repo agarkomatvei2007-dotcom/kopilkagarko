@@ -1203,6 +1203,22 @@ export async function acceptFriendRequest(
 
   const request = requestSnap.data() as Omit<FriendRequest, 'id'>
 
+  // Check if already accepted
+  if (request.status !== 'pending') {
+    return // Already processed, skip
+  }
+
+  // Check if friendship already exists
+  const existingFriendship = await getFriendship(request.senderId, request.receiverId)
+  if (existingFriendship) {
+    // Just update request status and return
+    await updateDoc(requestRef, {
+      status: 'accepted',
+      updatedAt: serverTimestamp(),
+    })
+    return
+  }
+
   // Update request status
   await updateDoc(requestRef, {
     status: 'accepted',
