@@ -196,10 +196,25 @@ export async function getMaterial(materialId: string): Promise<Material | null> 
   return null
 }
 
+// Helper to replace undefined with null recursively
+function sanitizeForFirestore<T>(obj: T): T {
+  if (obj === undefined) return null as T
+  if (obj === null || typeof obj !== 'object') return obj
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeForFirestore(item)) as T
+  }
+  const result: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    result[key] = sanitizeForFirestore(value)
+  }
+  return result as T
+}
+
 export async function updateMaterial(materialId: string, data: Partial<Material>): Promise<void> {
   const materialRef = doc(requireDb(), 'materials', materialId)
+  const sanitizedData = sanitizeForFirestore(data)
   await updateDoc(materialRef, {
-    ...data,
+    ...sanitizedData,
     updatedAt: serverTimestamp(),
   })
 }
