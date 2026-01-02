@@ -24,6 +24,8 @@ import {
   HelpCircle,
   Check,
   X,
+  FileDown,
+  Printer,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -52,6 +54,7 @@ import {
   unfollowUser,
 } from '@/lib/firebase/firestore'
 import { formatDate, formatNumber, getInitials } from '@/lib/utils'
+import { exportMaterialToPDF, exportQuizToPDF } from '@/lib/pdf/exportMaterial'
 import type { Material, Comment, MaterialType } from '@/types'
 import { MATERIAL_TYPE_LABELS, DIFFICULTY_LABELS, GRADE_LABELS } from '@/types'
 
@@ -82,6 +85,9 @@ export default function MaterialPage() {
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({})
   const [quizSubmitted, setQuizSubmitted] = useState(false)
   const [quizScore, setQuizScore] = useState(0)
+
+  // PDF export state
+  const [isExporting, setIsExporting] = useState(false)
 
   useEffect(() => {
     const loadMaterial = async () => {
@@ -201,6 +207,42 @@ export default function MaterialPage() {
     setSelectedAnswers({})
     setQuizSubmitted(false)
     setQuizScore(0)
+  }
+
+  const handleExportPDF = async () => {
+    if (!material) return
+    setIsExporting(true)
+    try {
+      await exportMaterialToPDF(material)
+      toast({ title: 'PDF успешно создан!' })
+    } catch (error) {
+      console.error('PDF export error:', error)
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось создать PDF',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handlePrintQuiz = async (withAnswers: boolean) => {
+    if (!material) return
+    setIsExporting(true)
+    try {
+      await exportQuizToPDF(material, withAnswers)
+      toast({ title: withAnswers ? 'PDF с ответами создан!' : 'PDF для печати создан!' })
+    } catch (error) {
+      console.error('Quiz PDF export error:', error)
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось создать PDF теста',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   if (isLoading) {
@@ -550,7 +592,7 @@ export default function MaterialPage() {
             {formatNumber(material.stats.views)}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={handleShare}>
             <Share2 className="h-4 w-4 mr-2" />
             Поделиться
@@ -559,6 +601,38 @@ export default function MaterialPage() {
             <Bookmark className="h-4 w-4 mr-2" />
             Сохранить
           </Button>
+
+          {/* PDF Export */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" disabled={isExporting}>
+                {isExporting ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <FileDown className="h-4 w-4 mr-2" />
+                )}
+                PDF
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportPDF}>
+                <FileDown className="h-4 w-4 mr-2" />
+                Скачать материал
+              </DropdownMenuItem>
+              {material.type === 'quiz' && material.content.questions && (
+                <>
+                  <DropdownMenuItem onClick={() => handlePrintQuiz(false)}>
+                    <Printer className="h-4 w-4 mr-2" />
+                    Тест для печати
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handlePrintQuiz(true)}>
+                    <Check className="h-4 w-4 mr-2" />
+                    Тест с ответами
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
