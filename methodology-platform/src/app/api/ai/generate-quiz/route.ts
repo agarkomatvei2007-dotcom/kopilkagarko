@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateQuiz } from '@/lib/groq/client'
+import { protectedApi, sanitizeInput } from '@/lib/security/apiProtection'
+import { RATE_LIMITS } from '@/lib/security/rateLimit'
 
 interface QuizQuestion {
   question: string
@@ -58,59 +60,62 @@ function extractAndParseJSON(text: string): unknown[] | null {
   return null
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { topic, subject, grade, questionsCount = 10 } = body
+async function handler(request: NextRequest) {
+  const body = await request.json()
+  const { topic, subject, grade, questionsCount = 10 } = body
 
-    if (!topic || !subject || !grade) {
-      return NextResponse.json(
-        { error: 'Missing required fields: topic, subject, grade' },
-        { status: 400 }
-      )
-    }
-
-    const quizText = await generateQuiz(topic, subject, grade, questionsCount)
-
-    // Try to parse JSON from the response
-    const parsedQuestions = extractAndParseJSON(quizText)
-
-    if (!parsedQuestions || !Array.isArray(parsedQuestions)) {
-      console.error('Failed to extract quiz JSON from response')
-      return NextResponse.json(
-        { error: 'Не удалось сгенерировать тест. Попробуйте еще раз.' },
-        { status: 500 }
-      )
-    }
-
-    // Validate and sanitize questions
-    const validQuestions: QuizQuestion[] = []
-    for (const q of parsedQuestions) {
-      if (validateQuizQuestion(q)) {
-        validQuestions.push({
-          question: q.question.trim(),
-          options: q.options.map((o: string) => o.trim()),
-          correctAnswer: q.correctAnswer,
-          explanation: q.explanation.trim(),
-          difficulty: q.difficulty,
-        })
-      }
-    }
-
-    if (validQuestions.length === 0) {
-      console.error('No valid questions in response')
-      return NextResponse.json(
-        { error: 'Не удалось сгенерировать корректные вопросы. Попробуйте еще раз.' },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({ questions: validQuestions })
-  } catch (error) {
-    console.error('Error generating quiz:', error)
+  if (!topic || !subject || !grade) {
     return NextResponse.json(
-      { error: 'Ошибка при генерации теста. Попробуйте позже.' },
+      { error: 'Missing required fields: topic, subject, grade' },
+      { status: 400 }
+    )
+  }
+
+  // Санитизация входных данных
+  const safeTopic = sanitizeInput(topic)
+  const safeSubject = sanitizeInput(subject)
+  const safeGrade = Number(grade) || 1
+  const safeCount = Math.min(Math.max(1, Number(questionsCount) || 10), 50) // 1-50 вопросов
+
+  const quizText = await generateQuiz(safeTopic, safeSubject, safeGrade, safeCount)
+
+  // Try to parse JSON from the response
+  const parsedQuestions = extractAndParseJSON(quizText)
+
+  if (!parsedQuestions || !Array.isArray(parsedQuestions)) {
+    console.error('Failed to extract quiz JSON from response')
+    return NextResponse.json(
+      { error: 'Не удалось сгенерировать тест. Попробуйте еще раз.' },
       { status: 500 }
     )
   }
+
+  // Validate and sanitize questions
+  const validQuestions: QuizQuestion[] = []
+  for (const q of parsedQuestions) {
+    if (validateQuizQuestion(q)) {
+      validQuestions.push({
+        question: q.question.trim(),
+        options: q.options.map((o: string) => o.trim()),
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation.trim(),
+        difficulty: q.difficulty,
+      })
+    }
+  }
+
+  if (validQuestions.length === 0) {
+    console.error('No valid questions in response')
+    return NextResponse.json(
+      { error: 'Не удалось сгенерировать корректные вопросы. Попробуйте еще раз.' },
+      { status: 500 }
+    )
+  }
+
+  return NextResponse.json({ questions: validQuestions })
 }
+
+// Обёртка с rate limiting для AI генерации (10 запросов/мин)
+export const POST = protectedApi(handler, {
+  rateLimit: RATE_LIMITS.aiGeneration
+})
