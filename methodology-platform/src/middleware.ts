@@ -77,6 +77,7 @@ export function middleware(request: NextRequest) {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src 'self' https://fonts.gstatic.com; " +
     "img-src 'self' data: blob: https://*.googleusercontent.com https://*.firebasestorage.app https://firebasestorage.googleapis.com; " +
+    "media-src 'self' blob: https://*.firebasestorage.app https://firebasestorage.googleapis.com; " +
     "connect-src 'self' https://*.firebase.com https://*.firebaseio.com https://*.googleapis.com https://*.cloudfunctions.net wss://*.firebaseio.com; " +
     "frame-src 'self' https://*.firebaseapp.com;"
   )
