@@ -1272,15 +1272,17 @@ export async function cancelFriendRequest(requestId: string): Promise<void> {
 }
 
 export async function getFriendship(userId1: string, userId2: string): Promise<Friendship | null> {
+  // Query by userId2 (usually the current user accepting the request)
+  // This works with security rules that check request.auth.uid in users
   const q = query(
     collection(requireDb(), 'friendships'),
-    where('users', 'array-contains', userId1)
+    where('users', 'array-contains', userId2)
   )
   const snapshot = await getDocs(q)
 
   for (const doc of snapshot.docs) {
     const friendship = { id: doc.id, ...doc.data() } as Friendship
-    if (friendship.users.includes(userId2)) {
+    if (friendship.users.includes(userId1)) {
       return friendship
     }
   }
