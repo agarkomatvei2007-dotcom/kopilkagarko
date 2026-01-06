@@ -253,30 +253,44 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-muted/50 to-background">
-      <div className="container mx-auto py-8 px-4 lg:px-6">
+    <div className="min-h-screen relative">
+      {/* Background decoration */}
+      <div className="absolute inset-0 gradient-mesh opacity-50 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-primary/10 via-accent/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-accent/10 via-primary/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+      <div className="container mx-auto py-8 px-4 lg:px-6 relative">
         {/* Header */}
         <motion.div
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6"
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
-              <Home className="h-5 w-5 text-white" />
+          <div className="flex items-center gap-4">
+            <div className="relative p-3 rounded-2xl bg-gradient-to-br from-primary via-primary to-accent shadow-xl shadow-primary/25">
+              <Home className="h-6 w-6 text-white" />
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/20 to-transparent" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{t.pages.feed.title}</h1>
-              <p className="text-muted-foreground text-sm">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">{t.pages.feed.title}</h1>
+              <p className="text-muted-foreground">
                 {language === 'ru' ? 'Материалы от педагогов колледжа' : 'Колледж педагогтарынан материалдар'}
               </p>
+            </div>
+          </div>
+
+          {/* Quick stats */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 text-primary">
+              <Sparkles className="h-4 w-4" />
+              <span className="text-sm font-semibold">{materials.length} {language === 'ru' ? 'материалов' : 'материал'}</span>
             </div>
           </div>
         </motion.div>
 
         {/* Search and filters bar */}
         <motion.div
-          className="bg-card rounded-2xl border border-border shadow-sm p-4 mb-6"
+          className="glass-card rounded-2xl p-4 mb-6 shadow-lg"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -428,30 +442,30 @@ export default function FeedPage() {
           transition={{ delay: 0.2 }}
         >
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-card border border-border p-1 rounded-2xl mb-6 shadow-sm">
+            <TabsList className="glass-card p-1.5 rounded-2xl mb-6 shadow-lg h-auto">
               <TabsTrigger
                 value="all"
-                className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4 sm:px-6 py-2.5 transition-all"
+                className="rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/25 px-4 sm:px-6 py-2.5 transition-all duration-300"
               >
                 <Home className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">{t.pages.feed.allMaterials}</span>
-                <span className="sm:hidden">{language === 'ru' ? 'Все' : 'Барлық'}</span>
+                <span className="hidden sm:inline font-medium">{t.pages.feed.allMaterials}</span>
+                <span className="sm:hidden font-medium">{language === 'ru' ? 'Все' : 'Барлық'}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="following"
-                className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4 sm:px-6 py-2.5 transition-all"
+                className="rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/25 px-4 sm:px-6 py-2.5 transition-all duration-300"
               >
                 <Users className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">{t.pages.feed.following}</span>
-                <span className="sm:hidden">{language === 'ru' ? 'Подписки' : 'Жазылым'}</span>
+                <span className="hidden sm:inline font-medium">{t.pages.feed.following}</span>
+                <span className="sm:hidden font-medium">{language === 'ru' ? 'Подписки' : 'Жазылым'}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="popular"
-                className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4 sm:px-6 py-2.5 transition-all"
+                className="rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-accent data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/25 px-4 sm:px-6 py-2.5 transition-all duration-300"
               >
                 <TrendingUp className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">{t.pages.feed.popular}</span>
-                <span className="sm:hidden">{language === 'ru' ? 'Топ' : 'Үздік'}</span>
+                <span className="hidden sm:inline font-medium">{t.pages.feed.popular}</span>
+                <span className="sm:hidden font-medium">{language === 'ru' ? 'Топ' : 'Үздік'}</span>
               </TabsTrigger>
             </TabsList>
 

@@ -187,115 +187,135 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
 
   return (
     <Link href={`/materials/${material.id}`}>
-      <Card className="h-full hover:shadow-md transition-shadow overflow-hidden group">
+      <Card className="h-full overflow-hidden group modern-card border-0 bg-card/80 backdrop-blur-sm">
         {/* Thumbnail */}
-        <div className="relative aspect-video bg-muted">
+        <div className="relative aspect-video bg-muted overflow-hidden img-zoom">
           {material.thumbnail && material.thumbnail.length > 0 && !imageError ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={material.thumbnail}
               alt={material.title}
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500"
               onError={() => setImageError(true)}
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
-              {typeIcons[material.type]}
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/30 via-accent/20 to-primary/10">
+              <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-primary">
+                {typeIcons[material.type]}
+              </div>
             </div>
           )}
-          <div className="absolute top-2 left-2 flex gap-2">
-            <Badge variant="secondary" className="gap-1">
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+          <div className="absolute top-3 left-3 flex gap-2">
+            <Badge variant="secondary" className="gap-1.5 bg-white/90 dark:bg-black/70 backdrop-blur-md border-0 shadow-lg px-2.5 py-1">
               {typeIcons[material.type]}
-              {MATERIAL_TYPE_LABELS[material.type]}
+              <span className="font-medium">{MATERIAL_TYPE_LABELS[material.type]}</span>
             </Badge>
           </div>
           {material.isPremium && (
-            <Badge className="absolute top-2 right-2" variant="default">
-              PRO
+            <Badge className="absolute top-3 right-3 bg-gradient-to-r from-amber-500 to-orange-500 border-0 shadow-lg px-3 py-1">
+              <span className="font-semibold">PRO</span>
             </Badge>
           )}
+
+          {/* Difficulty indicator */}
+          <div className="absolute bottom-3 left-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+            <Badge
+              variant="secondary"
+              className={`backdrop-blur-md border-0 shadow-lg px-2.5 py-1 ${
+                material.difficulty === 'easy' ? 'bg-green-500/90 text-white' :
+                material.difficulty === 'medium' ? 'bg-amber-500/90 text-white' :
+                'bg-red-500/90 text-white'
+              }`}
+            >
+              {DIFFICULTY_LABELS[material.difficulty]}
+            </Badge>
+          </div>
         </div>
 
-        <CardContent className="p-4">
+        <CardContent className="p-4 space-y-3">
           {/* Title and description */}
-          <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors mb-1">
-            {material.title}
-          </h3>
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-            {truncate(material.description, 100)}
-          </p>
+          <div>
+            <h3 className="font-semibold text-base line-clamp-2 group-hover:text-primary transition-colors duration-200">
+              {material.title}
+            </h3>
+            <p className="text-sm text-muted-foreground line-clamp-2 mt-1.5 leading-relaxed">
+              {truncate(material.description, 100)}
+            </p>
+          </div>
 
           {/* Tags */}
-          <div className="flex flex-wrap gap-1 mb-3">
-            <Badge variant="outline" className="text-xs">
+          <div className="flex flex-wrap gap-1.5">
+            <Badge variant="outline" className="text-xs bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 transition-colors">
               {material.subject}
             </Badge>
             {material.grades.length > 0 && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs bg-accent/5 border-accent/20 text-accent hover:bg-accent/10 transition-colors">
                 {material.grades.length === 1
                   ? `${material.grades[0]} курс`
                   : `${material.grades[0]}-${material.grades[material.grades.length - 1]} курс`}
               </Badge>
             )}
-            <Badge variant="outline" className="text-xs">
-              {DIFFICULTY_LABELS[material.difficulty]}
-            </Badge>
           </div>
 
           {/* Author */}
           {showAuthor && (
             <div
-              className="flex items-center gap-2 hover:opacity-80 cursor-pointer"
+              className="flex items-center gap-2.5 p-2 -mx-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors duration-200"
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
                 router.push(`/profile/${material.authorUsername || material.authorId}`)
               }}
             >
-              <Avatar className="h-6 w-6">
+              <Avatar className="h-7 w-7 ring-2 ring-primary/10">
                 <AvatarImage src={material.authorAvatar || undefined} />
-                <AvatarFallback className="text-xs">
+                <AvatarFallback className="text-xs bg-gradient-to-br from-primary to-accent text-white font-medium">
                   {getInitials(material.authorName)}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-sm text-muted-foreground">
-                {material.authorName}
-              </span>
-              <span className="text-xs text-muted-foreground">
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-medium text-foreground truncate block">
+                  {material.authorName}
+                </span>
+              </div>
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
                 {formatRelativeTime(material.createdAt.toDate())}
               </span>
             </div>
           )}
         </CardContent>
 
-        <CardFooter className="p-4 pt-0 flex items-center justify-between">
+        <CardFooter className="px-4 pb-4 pt-0 flex items-center justify-between border-t border-border/50 pt-3 mt-auto">
           {/* Stats */}
           <div className="flex items-center gap-4 text-muted-foreground">
             <button
               onClick={handleLike}
-              className={`flex items-center gap-1 text-sm hover:text-primary transition-colors ${
-                liked ? 'text-red-500' : ''
+              className={`flex items-center gap-1.5 text-sm transition-all duration-200 hover:scale-105 ${
+                liked ? 'text-red-500' : 'hover:text-red-500'
               }`}
             >
-              <Heart className={`h-4 w-4 ${liked ? 'fill-current' : ''}`} />
-              {formatNumber(likesCount)}
+              <Heart className={`h-4 w-4 transition-transform ${liked ? 'fill-current scale-110' : ''} ${isLikeLoading ? 'animate-pulse' : ''}`} />
+              <span className="font-medium">{formatNumber(likesCount)}</span>
             </button>
-            <span className="flex items-center gap-1 text-sm">
+            <span className="flex items-center gap-1.5 text-sm hover:text-primary transition-colors">
               <MessageCircle className="h-4 w-4" />
-              {formatNumber(material.stats.comments)}
+              <span className="font-medium">{formatNumber(material.stats.comments)}</span>
             </span>
-            <span className="flex items-center gap-1 text-sm">
+            <span className="flex items-center gap-1.5 text-sm">
               <Eye className="h-4 w-4" />
-              {formatNumber(material.stats.views)}
+              <span className="font-medium">{formatNumber(material.stats.views)}</span>
             </span>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
               onClick={handleShare}
             >
               <Share2 className="h-4 w-4" />
@@ -305,19 +325,19 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8"
+                  className="h-8 w-8 rounded-lg hover:bg-muted transition-colors"
                   onClick={(e) => e.preventDefault()}
                 >
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={openCollectionDialog}>
-                  <FolderPlus className="h-4 w-4 mr-2" />
+              <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl border-border/50">
+                <DropdownMenuItem onClick={openCollectionDialog} className="rounded-lg cursor-pointer">
+                  <FolderPlus className="h-4 w-4 mr-2 text-primary" />
                   {text.addToCollection}
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Download className="h-4 w-4 mr-2" />
+                <DropdownMenuItem className="rounded-lg cursor-pointer">
+                  <Download className="h-4 w-4 mr-2 text-muted-foreground" />
                   {text.download}
                 </DropdownMenuItem>
               </DropdownMenuContent>
