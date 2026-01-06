@@ -237,18 +237,22 @@ export async function deleteMaterial(materialId: string): Promise<void> {
 }
 
 export async function incrementMaterialViews(materialId: string): Promise<void> {
-  const materialRef = doc(requireDb(), 'materials', materialId)
-  await updateDoc(materialRef, {
-    'stats.views': increment(1),
-  })
-
-  // Also update author's total views
-  const material = await getMaterial(materialId)
-  if (material) {
-    const userRef = doc(requireDb(), 'users', material.authorId)
-    await updateDoc(userRef, {
-      'stats.totalViews': increment(1),
+  try {
+    const materialRef = doc(requireDb(), 'materials', materialId)
+    await updateDoc(materialRef, {
+      'stats.views': increment(1),
     })
+
+    // Also update author's total views
+    const material = await getMaterial(materialId)
+    if (material) {
+      const userRef = doc(requireDb(), 'users', material.authorId)
+      await updateDoc(userRef, {
+        'stats.totalViews': increment(1),
+      })
+    }
+  } catch (e) {
+    console.warn('Failed to increment views:', e)
   }
 }
 
@@ -391,12 +395,18 @@ export async function toggleLike(materialId: string, userId: string): Promise<bo
   if (likeSnap.exists()) {
     // Unlike
     await deleteDoc(likeRef)
-    await updateDoc(materialRef, {
-      'stats.likes': increment(-1),
-    })
-    await updateDoc(doc(requireDb(), 'users', material.authorId), {
-      'stats.totalLikes': increment(-1),
-    })
+
+    // Update stats (don't fail if this errors)
+    try {
+      await updateDoc(materialRef, {
+        'stats.likes': increment(-1),
+      })
+      await updateDoc(doc(requireDb(), 'users', material.authorId), {
+        'stats.totalLikes': increment(-1),
+      })
+    } catch (e) {
+      console.warn('Failed to update like stats:', e)
+    }
     return false
   } else {
     // Like
@@ -404,31 +414,45 @@ export async function toggleLike(materialId: string, userId: string): Promise<bo
       userId,
       createdAt: serverTimestamp(),
     })
-    await updateDoc(materialRef, {
-      'stats.likes': increment(1),
-    })
-    await updateDoc(doc(requireDb(), 'users', material.authorId), {
-      'stats.totalLikes': increment(1),
-    })
 
-    // Add points to author
-    await addPointsToUser(material.authorId, 5)
+    // Update stats (don't fail if this errors)
+    try {
+      await updateDoc(materialRef, {
+        'stats.likes': increment(1),
+      })
+      await updateDoc(doc(requireDb(), 'users', material.authorId), {
+        'stats.totalLikes': increment(1),
+      })
+    } catch (e) {
+      console.warn('Failed to update like stats:', e)
+    }
 
-    // Create notification
-    if (material.authorId !== userId) {
-      const liker = await getUser(userId)
-      if (liker) {
-        await createNotification(material.authorId, {
-          type: 'like',
-          title: 'Новый лайк',
-          message: `${liker.displayName} оценил(а) ваш материал "${material.title}"`,
-          actorId: userId,
-          actorName: liker.displayName,
-          actorAvatar: liker.avatar,
-          materialId,
-          link: `/materials/${materialId}`,
-        })
+    // Add points to author (don't fail if this errors)
+    try {
+      await addPointsToUser(material.authorId, 5)
+    } catch (e) {
+      console.warn('Failed to add points:', e)
+    }
+
+    // Create notification (don't fail if this errors)
+    try {
+      if (material.authorId !== userId) {
+        const liker = await getUser(userId)
+        if (liker) {
+          await createNotification(material.authorId, {
+            type: 'like',
+            title: 'Новый лайк',
+            message: `${liker.displayName} оценил(а) ваш материал "${material.title}"`,
+            actorId: userId,
+            actorName: liker.displayName,
+            actorAvatar: liker.avatar,
+            materialId,
+            link: `/materials/${materialId}`,
+          })
+        }
       }
+    } catch (e) {
+      console.warn('Failed to create notification:', e)
     }
 
     return true
@@ -463,27 +487,39 @@ export async function addComment(
     updatedAt: serverTimestamp(),
   })
 
-  // Update comments count
-  await updateDoc(doc(requireDb(), 'materials', materialId), {
-    'stats.comments': increment(1),
-  })
-
-  // Add points
-  await addPointsToUser(data.authorId, 3)
-
-  // Create notification
-  const material = await getMaterial(materialId)
-  if (material && material.authorId !== data.authorId) {
-    await createNotification(material.authorId, {
-      type: data.parentId ? 'reply' : 'comment',
-      title: data.parentId ? 'Ответ на комментарий' : 'Новый комментарий',
-      message: `${data.authorName} ${data.parentId ? 'ответил(а) на комментарий' : 'прокомментировал(а)'}: "${data.content.slice(0, 50)}..."`,
-      actorId: data.authorId,
-      actorName: data.authorName,
-      actorAvatar: data.authorAvatar,
-      materialId,
-      link: `/materials/${materialId}`,
+  // Update comments count (don't fail if this errors)
+  try {
+    await updateDoc(doc(requireDb(), 'materials', materialId), {
+      'stats.comments': increment(1),
     })
+  } catch (e) {
+    console.warn('Failed to update comments count:', e)
+  }
+
+  // Add points (don't fail if this errors)
+  try {
+    await addPointsToUser(data.authorId, 3)
+  } catch (e) {
+    console.warn('Failed to add points:', e)
+  }
+
+  // Create notification (don't fail if this errors)
+  try {
+    const material = await getMaterial(materialId)
+    if (material && material.authorId !== data.authorId) {
+      await createNotification(material.authorId, {
+        type: data.parentId ? 'reply' : 'comment',
+        title: data.parentId ? 'Ответ на комментарий' : 'Новый комментарий',
+        message: `${data.authorName} ${data.parentId ? 'ответил(а) на комментарий' : 'прокомментировал(а)'}: "${data.content.slice(0, 50)}..."`,
+        actorId: data.authorId,
+        actorName: data.authorName,
+        actorAvatar: data.authorAvatar,
+        materialId,
+        link: `/materials/${materialId}`,
+      })
+    }
+  } catch (e) {
+    console.warn('Failed to create notification:', e)
   }
 
   return commentRef.id
