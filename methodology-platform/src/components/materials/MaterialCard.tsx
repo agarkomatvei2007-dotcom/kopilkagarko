@@ -187,72 +187,84 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
 
   return (
     <Link href={`/materials/${material.id}`}>
-      <Card className="h-full overflow-hidden group modern-card border-0 bg-card/80 backdrop-blur-sm">
+      <Card className="h-full overflow-hidden group card-lift border-0 glass-strong rounded-2xl">
         {/* Thumbnail */}
-        <div className="relative aspect-video bg-muted overflow-hidden img-zoom">
+        <div className="relative aspect-video bg-muted overflow-hidden">
           {material.thumbnail && material.thumbnail.length > 0 && !imageError ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={material.thumbnail}
               alt={material.title}
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               onError={() => setImageError(true)}
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/30 via-accent/20 to-primary/10">
-              <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-primary">
-                {typeIcons[material.type]}
+            <div className="absolute inset-0 flex items-center justify-center gradient-mesh">
+              <div className="w-20 h-20 rounded-2xl glass flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
+                <div className="text-primary scale-150">{typeIcons[material.type]}</div>
               </div>
             </div>
           )}
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          {/* Overlay gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
+          {/* Type badge */}
           <div className="absolute top-3 left-3 flex gap-2">
-            <Badge variant="secondary" className="gap-1.5 bg-white/90 dark:bg-black/70 backdrop-blur-md border-0 shadow-lg px-2.5 py-1">
+            <Badge variant="secondary" className="gap-1.5 glass-strong border-0 shadow-lg backdrop-blur-xl px-3 py-1.5 text-xs font-medium">
               {typeIcons[material.type]}
-              <span className="font-medium">{MATERIAL_TYPE_LABELS[material.type]}</span>
+              {MATERIAL_TYPE_LABELS[material.type]}
             </Badge>
           </div>
+
+          {/* Premium badge */}
           {material.isPremium && (
-            <Badge className="absolute top-3 right-3 bg-gradient-to-r from-amber-500 to-orange-500 border-0 shadow-lg px-3 py-1">
-              <span className="font-semibold">PRO</span>
+            <Badge className="absolute top-3 right-3 gradient-primary border-0 shadow-lg px-3 py-1.5 text-xs font-bold">
+              PRO
             </Badge>
           )}
 
-          {/* Difficulty indicator */}
+          {/* Difficulty badge - appears on hover */}
           <div className="absolute bottom-3 left-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
             <Badge
-              variant="secondary"
-              className={`backdrop-blur-md border-0 shadow-lg px-2.5 py-1 ${
-                material.difficulty === 'easy' ? 'bg-green-500/90 text-white' :
-                material.difficulty === 'medium' ? 'bg-amber-500/90 text-white' :
-                'bg-red-500/90 text-white'
-              }`}
+              className={`shadow-lg backdrop-blur-xl border-0 px-3 py-1.5 text-xs font-medium ${
+                material.difficulty === 'easy'
+                  ? 'bg-emerald-500/90'
+                  : material.difficulty === 'medium'
+                  ? 'bg-amber-500/90'
+                  : 'bg-rose-500/90'
+              } text-white`}
             >
               {DIFFICULTY_LABELS[material.difficulty]}
             </Badge>
           </div>
+
+          {/* Quick stats on hover */}
+          <div className="absolute bottom-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+            <div className="flex items-center gap-1.5 glass-strong backdrop-blur-xl rounded-full px-3 py-1.5 text-white text-xs font-medium">
+              <Eye className="h-3.5 w-3.5" />
+              {formatNumber(material.stats.views)}
+            </div>
+          </div>
         </div>
 
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-5 space-y-4">
           {/* Title and description */}
           <div>
-            <h3 className="font-semibold text-base line-clamp-2 group-hover:text-primary transition-colors duration-200">
+            <h3 className="font-bold text-base line-clamp-2 group-hover:text-primary transition-colors duration-300 leading-snug">
               {material.title}
             </h3>
-            <p className="text-sm text-muted-foreground line-clamp-2 mt-1.5 leading-relaxed">
+            <p className="text-sm text-muted-foreground line-clamp-2 mt-2 leading-relaxed">
               {truncate(material.description, 100)}
             </p>
           </div>
 
           {/* Tags */}
-          <div className="flex flex-wrap gap-1.5">
-            <Badge variant="outline" className="text-xs bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 transition-colors">
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline" className="text-xs border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 transition-colors">
               {material.subject}
             </Badge>
             {material.grades.length > 0 && (
-              <Badge variant="outline" className="text-xs bg-accent/5 border-accent/20 text-accent hover:bg-accent/10 transition-colors">
+              <Badge variant="outline" className="text-xs border-accent/30 text-accent bg-accent/5 hover:bg-accent/10 transition-colors">
                 {material.grades.length === 1
                   ? `${material.grades[0]} курс`
                   : `${material.grades[0]}-${material.grades[material.grades.length - 1]} курс`}
@@ -263,59 +275,55 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
           {/* Author */}
           {showAuthor && (
             <div
-              className="flex items-center gap-2.5 p-2 -mx-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors duration-200"
+              className="flex items-center gap-3 p-2.5 -mx-2.5 rounded-xl hover:bg-muted/50 cursor-pointer transition-all duration-200 group/author"
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
                 router.push(`/profile/${material.authorUsername || material.authorId}`)
               }}
             >
-              <Avatar className="h-7 w-7 ring-2 ring-primary/10">
+              <Avatar className="h-8 w-8 ring-2 ring-primary/20 group-hover/author:ring-primary/40 transition-all">
                 <AvatarImage src={material.authorAvatar || undefined} />
-                <AvatarFallback className="text-xs bg-gradient-to-br from-primary to-accent text-white font-medium">
+                <AvatarFallback className="text-xs gradient-primary text-white font-semibold">
                   {getInitials(material.authorName)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium text-foreground truncate block">
+                <span className="text-sm font-medium text-foreground block truncate group-hover/author:text-primary transition-colors">
                   {material.authorName}
                 </span>
+                <span className="text-xs text-muted-foreground">
+                  {formatRelativeTime(material.createdAt.toDate())}
+                </span>
               </div>
-              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                {formatRelativeTime(material.createdAt.toDate())}
-              </span>
             </div>
           )}
         </CardContent>
 
-        <CardFooter className="px-4 pb-4 pt-0 flex items-center justify-between border-t border-border/50 pt-3 mt-auto">
+        <CardFooter className="px-5 pb-5 pt-0 flex items-center justify-between border-t border-border/30 pt-4">
           {/* Stats */}
-          <div className="flex items-center gap-4 text-muted-foreground">
+          <div className="flex items-center gap-5 text-muted-foreground">
             <button
               onClick={handleLike}
-              className={`flex items-center gap-1.5 text-sm transition-all duration-200 hover:scale-105 ${
-                liked ? 'text-red-500' : 'hover:text-red-500'
+              className={`flex items-center gap-1.5 text-sm font-medium transition-all duration-200 hover:scale-110 ${
+                liked ? 'text-rose-500' : 'hover:text-rose-500'
               }`}
             >
               <Heart className={`h-4 w-4 transition-transform ${liked ? 'fill-current scale-110' : ''} ${isLikeLoading ? 'animate-pulse' : ''}`} />
-              <span className="font-medium">{formatNumber(likesCount)}</span>
+              {formatNumber(likesCount)}
             </button>
-            <span className="flex items-center gap-1.5 text-sm hover:text-primary transition-colors">
+            <span className="flex items-center gap-1.5 text-sm font-medium hover:text-primary transition-colors cursor-pointer">
               <MessageCircle className="h-4 w-4" />
-              <span className="font-medium">{formatNumber(material.stats.comments)}</span>
-            </span>
-            <span className="flex items-center gap-1.5 text-sm">
-              <Eye className="h-4 w-4" />
-              <span className="font-medium">{formatNumber(material.stats.views)}</span>
+              {formatNumber(material.stats.comments)}
             </span>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
+              className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all"
               onClick={handleShare}
             >
               <Share2 className="h-4 w-4" />
@@ -325,19 +333,19 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 rounded-lg hover:bg-muted transition-colors"
+                  className="h-9 w-9 rounded-xl hover:bg-muted transition-all"
                   onClick={(e) => e.preventDefault()}
                 >
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl border-border/50">
+              <DropdownMenuContent align="end" className="rounded-xl shadow-xl border-border/50 glass-strong">
                 <DropdownMenuItem onClick={openCollectionDialog} className="rounded-lg cursor-pointer">
                   <FolderPlus className="h-4 w-4 mr-2 text-primary" />
                   {text.addToCollection}
                 </DropdownMenuItem>
                 <DropdownMenuItem className="rounded-lg cursor-pointer">
-                  <Download className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <Download className="h-4 w-4 mr-2" />
                   {text.download}
                 </DropdownMenuItem>
               </DropdownMenuContent>

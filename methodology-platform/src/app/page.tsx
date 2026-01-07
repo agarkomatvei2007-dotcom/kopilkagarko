@@ -64,39 +64,52 @@ function AnimatedCounter({ value, suffix = '' }: { value: number; suffix?: strin
   )
 }
 
-// Floating orbs background
+// Floating orbs background - enhanced with new design
 function FloatingOrbs() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* Primary orb - cyan/teal */}
       <motion.div
-        className="absolute w-[600px] h-[600px] rounded-full bg-gradient-to-r from-emerald-400/20 to-teal-400/20 blur-3xl"
-        style={{ top: '-10%', left: '-10%' }}
+        className="absolute w-[700px] h-[700px] rounded-full bg-gradient-to-r from-primary/30 to-accent/30 blur-[100px]"
+        style={{ top: '-15%', left: '-10%' }}
         animate={{
-          x: [0, 50, 0],
-          y: [0, 30, 0],
-          scale: [1, 1.1, 1],
-        }}
-        transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.div
-        className="absolute w-[500px] h-[500px] rounded-full bg-gradient-to-r from-orange-400/15 to-amber-400/15 blur-3xl"
-        style={{ top: '20%', right: '-5%' }}
-        animate={{
-          x: [0, -40, 0],
+          x: [0, 80, 0],
           y: [0, 50, 0],
-          scale: [1, 0.9, 1],
-        }}
-        transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-      />
-      <motion.div
-        className="absolute w-[400px] h-[400px] rounded-full bg-gradient-to-r from-purple-400/10 to-pink-400/10 blur-3xl"
-        style={{ bottom: '10%', left: '20%' }}
-        animate={{
-          x: [0, 60, 0],
-          y: [0, -40, 0],
           scale: [1, 1.2, 1],
         }}
-        transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
+        transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      {/* Secondary orb - accent */}
+      <motion.div
+        className="absolute w-[600px] h-[600px] rounded-full bg-gradient-to-r from-accent/25 to-primary/25 blur-[80px]"
+        style={{ top: '30%', right: '-10%' }}
+        animate={{
+          x: [0, -60, 0],
+          y: [0, 70, 0],
+          scale: [1, 0.8, 1],
+        }}
+        transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+      />
+      {/* Tertiary orb - purple/pink neon */}
+      <motion.div
+        className="absolute w-[500px] h-[500px] rounded-full bg-gradient-to-r from-[hsl(280,100%,65%)]/20 to-[hsl(320,100%,65%)]/20 blur-[80px]"
+        style={{ bottom: '5%', left: '15%' }}
+        animate={{
+          x: [0, 100, 0],
+          y: [0, -60, 0],
+          scale: [1, 1.3, 1],
+        }}
+        transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut', delay: 5 }}
+      />
+      {/* Extra small orbs for depth */}
+      <motion.div
+        className="absolute w-[200px] h-[200px] rounded-full bg-primary/40 blur-[60px]"
+        style={{ top: '60%', right: '20%' }}
+        animate={{
+          x: [0, 40, 0],
+          y: [0, -30, 0],
+        }}
+        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
       />
     </div>
   )
@@ -259,7 +272,7 @@ export default function LandingPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header */}
       <motion.header
         className="fixed top-0 left-0 right-0 z-50"
@@ -268,30 +281,30 @@ export default function LandingPage() {
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="mx-4 mt-4">
-          <div className="max-w-6xl mx-auto bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 shadow-lg shadow-gray-200/20">
+          <div className="max-w-6xl mx-auto glass-strong rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl">
             <div className="px-6 h-16 flex items-center justify-between">
               <Link href="/" className="flex items-center gap-3 group">
                 <motion.div
-                  className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30"
-                  whileHover={{ scale: 1.05, rotate: 5 }}
+                  className="w-11 h-11 rounded-2xl gradient-primary flex items-center justify-center shadow-xl glow animate-pulse-glow"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   <BookOpen className="h-5 w-5 text-white" />
                 </motion.div>
-                <span className="font-bold text-xl text-gray-900 group-hover:text-emerald-600 transition-colors">
+                <span className="font-bold text-xl gradient-text">
                   {t.landing.title}
                 </span>
               </Link>
               <div className="flex items-center gap-3">
                 <LanguageSwitcher />
                 <Link href="/login">
-                  <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
+                  <Button variant="ghost" size="sm" className="rounded-xl glass-subtle hover:glass hover:glow-accent transition-all font-medium">
                     {t.nav.login}
                   </Button>
                 </Link>
                 <Link href="/register">
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Button size="sm" className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/25">
+                    <Button size="sm" className="btn-cyber rounded-2xl font-semibold">
                       {t.nav.register}
                     </Button>
                   </motion.div>
@@ -320,35 +333,36 @@ export default function LandingPage() {
             {/* Badge */}
             <motion.div variants={fadeInUp}>
               <motion.div
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/50 text-emerald-700 rounded-full text-sm font-medium mb-8 shadow-sm"
-                whileHover={{ scale: 1.02 }}
+                className="inline-flex items-center gap-2 px-6 py-3 glass-strong border border-primary/30 rounded-full text-sm font-semibold mb-8 shadow-xl glow-accent"
+                whileHover={{ scale: 1.05 }}
               >
                 <motion.div
-                  animate={{ rotate: [0, 15, -15, 0] }}
+                  animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
+                  className="text-primary"
                 >
-                  <Sparkles className="h-4 w-4" />
+                  <Sparkles className="h-5 w-5" />
                 </motion.div>
-                {language === 'ru' ? '10 000+ учителей уже с нами' : '10 000+ мұғалім бізбен бірге'}
+                <span className="gradient-text">{language === 'ru' ? '10 000+ учителей уже с нами' : '10 000+ мұғалім бізбен бірге'}</span>
               </motion.div>
             </motion.div>
 
             {/* Headline */}
             <motion.h1
               variants={fadeInUp}
-              className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 leading-[1.1] mb-8 tracking-tight"
+              className="text-5xl sm:text-6xl lg:text-7xl font-bold text-foreground leading-[1.1] mb-8 tracking-tight"
             >
               {language === 'ru' ? (
                 <>
                   Платформа, где учителя
                   <br />
-                  <span className="gradient-text">вдохновляют друг друга</span>
+                  <span className="gradient-text text-glow">вдохновляют друг друга</span>
                 </>
               ) : (
                 <>
                   Мұғалімдер бір-бірін
                   <br />
-                  <span className="gradient-text">шабыттандыратын платформа</span>
+                  <span className="gradient-text text-glow">шабыттандыратын платформа</span>
                 </>
               )}
             </motion.h1>
@@ -356,7 +370,7 @@ export default function LandingPage() {
             {/* Subheadline */}
             <motion.p
               variants={fadeInUp}
-              className="text-xl sm:text-2xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed"
+              className="text-xl sm:text-2xl text-muted-foreground mb-12 max-w-2xl mx-auto leading-relaxed"
             >
               {language === 'ru'
                 ? 'Делитесь материалами, находите готовые уроки, экономьте время. Всё бесплатно.'
@@ -370,13 +384,13 @@ export default function LandingPage() {
             >
               <Link href="/register">
                 <motion.div
-                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileHover={{ scale: 1.05, y: -4 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Button size="lg" className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white h-14 px-8 text-lg shadow-xl shadow-emerald-500/25 rounded-xl">
+                  <Button size="lg" className="btn-cyber h-16 px-10 text-lg rounded-2xl font-bold">
                     {language === 'ru' ? 'Начать бесплатно' : 'Тегін бастау'}
                     <motion.div
-                      animate={{ x: [0, 4, 0] }}
+                      animate={{ x: [0, 6, 0] }}
                       transition={{ duration: 1.5, repeat: Infinity }}
                     >
                       <ArrowRight className="h-5 w-5 ml-2" />
@@ -386,10 +400,10 @@ export default function LandingPage() {
               </Link>
               <Link href="/feed">
                 <motion.div
-                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileHover={{ scale: 1.05, y: -4 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Button size="lg" variant="outline" className="h-14 px-8 text-lg border-2 border-gray-200 hover:border-gray-300 bg-white/50 backdrop-blur-sm rounded-xl">
+                  <Button size="lg" variant="outline" className="h-16 px-10 text-lg glass-strong border-white/30 hover:border-primary/50 hover:glow rounded-2xl font-medium">
                     <Play className="h-5 w-5 mr-2" />
                     {language === 'ru' ? 'Смотреть материалы' : 'Материалдарды қарау'}
                   </Button>
@@ -400,7 +414,7 @@ export default function LandingPage() {
             {/* Stats */}
             <motion.div
               variants={fadeInUp}
-              className="grid grid-cols-3 gap-8 max-w-xl mx-auto"
+              className="grid grid-cols-3 gap-6 max-w-2xl mx-auto"
             >
               {[
                 { value: 10000, suffix: '+', label: language === 'ru' ? 'Учителей' : 'Мұғалім' },
@@ -409,13 +423,13 @@ export default function LandingPage() {
               ].map((stat, i) => (
                 <motion.div
                   key={i}
-                  className="text-center"
-                  whileHover={{ scale: 1.05 }}
+                  className="text-center glass rounded-2xl p-4 border border-white/20 card-lift"
+                  whileHover={{ scale: 1.08 }}
                 >
-                  <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1">
+                  <div className="text-3xl sm:text-4xl font-bold gradient-text mb-1">
                     <AnimatedCounter value={stat.value} suffix={stat.suffix} />
                   </div>
-                  <div className="text-gray-500 text-sm sm:text-base">{stat.label}</div>
+                  <div className="text-muted-foreground text-sm sm:text-base font-medium">{stat.label}</div>
                 </motion.div>
               ))}
             </motion.div>
@@ -436,8 +450,10 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-32 px-6 bg-gradient-to-b from-gray-50 to-white relative">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-50/50 via-transparent to-transparent" />
+      <section className="py-32 px-6 relative overflow-hidden">
+        <div className="absolute inset-0 gradient-mesh opacity-20" />
+        <div className="absolute top-20 -right-32 w-96 h-96 rounded-full bg-primary/20 blur-3xl animate-float" />
+        <div className="absolute bottom-20 -left-32 w-96 h-96 rounded-full bg-accent/20 blur-3xl animate-float" style={{ animationDelay: '-5s' }} />
 
         <div className="max-w-6xl mx-auto relative z-10">
           <motion.div
@@ -451,14 +467,14 @@ export default function LandingPage() {
               initial={{ scale: 0 }}
               whileInView={{ scale: 1 }}
               viewport={{ once: true }}
-              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 mb-6 shadow-xl shadow-emerald-500/25"
+              className="inline-flex items-center justify-center w-20 h-20 rounded-3xl gradient-primary mb-8 shadow-2xl glow animate-pulse-glow"
             >
-              <Zap className="h-8 w-8 text-white" />
+              <Zap className="h-10 w-10 text-white" />
             </motion.div>
-            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-6">
               {language === 'ru' ? 'Почему выбирают нас' : 'Неге бізді таңдайды'}
             </h2>
-            <p className="text-gray-600 text-xl max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
               {language === 'ru'
                 ? 'Платформа, созданная учителями для учителей'
                 : 'Мұғалімдер мұғалімдер үшін жасаған платформа'}
@@ -475,22 +491,19 @@ export default function LandingPage() {
                 transition={{ delay: i * 0.1, duration: 0.5 }}
               >
                 <motion.div
-                  className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm h-full group cursor-pointer"
-                  whileHover={{
-                    y: -8,
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.12)',
-                    borderColor: 'rgba(16, 185, 129, 0.3)'
-                  }}
+                  className="glass-strong rounded-3xl p-8 border border-white/20 dark:border-white/10 h-full group cursor-pointer card-lift relative overflow-hidden"
+                  whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.3 }}
                 >
+                  <div className="absolute inset-0 gradient-primary opacity-0 group-hover:opacity-10 transition-opacity duration-500" />
                   <motion.div
-                    className={`w-14 h-14 rounded-2xl bg-${feature.color}-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}
+                    className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mb-6 shadow-xl glow group-hover:scale-110 transition-transform relative z-10"
                     whileHover={{ rotate: [0, -10, 10, 0] }}
                   >
-                    <feature.icon className={`h-7 w-7 text-${feature.color}-600`} />
+                    <feature.icon className="h-8 w-8 text-white" />
                   </motion.div>
-                  <h3 className="font-bold text-xl text-gray-900 mb-3">{feature.title}</h3>
-                  <p className="text-gray-600 leading-relaxed">{feature.desc}</p>
+                  <h3 className="font-bold text-xl text-foreground mb-3 relative z-10">{feature.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed relative z-10">{feature.desc}</p>
                 </motion.div>
               </motion.div>
             ))}
@@ -500,7 +513,8 @@ export default function LandingPage() {
 
       {/* Materials Section */}
       <section className="py-32 px-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-orange-50/50 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 gradient-mesh opacity-10" />
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-accent/10 to-transparent pointer-events-none" />
 
         <div className="max-w-6xl mx-auto relative z-10">
           <motion.div
@@ -511,26 +525,26 @@ export default function LandingPage() {
           >
             <div>
               <motion.span
-                className="inline-block text-emerald-600 font-semibold mb-4"
+                className="inline-block gradient-text font-bold text-sm tracking-wider mb-4"
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
               >
                 {language === 'ru' ? 'ПОПУЛЯРНОЕ' : 'ТАНЫМАЛ'}
               </motion.span>
-              <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
+              <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
                 {language === 'ru' ? 'Топ материалов' : 'Үздік материалдар'}
               </h2>
-              <p className="text-gray-600 text-lg max-w-xl">
+              <p className="text-muted-foreground text-lg max-w-xl">
                 {language === 'ru' ? 'Самые популярные материалы этой недели' : 'Осы аптаның ең танымал материалдары'}
               </p>
             </div>
             <Link href="/feed">
               <motion.div
-                whileHover={{ scale: 1.02, x: 5 }}
+                whileHover={{ scale: 1.05, x: 5 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <Button variant="outline" className="border-2 rounded-xl h-12 px-6">
+                <Button variant="outline" className="glass border-white/30 hover:border-primary/50 hover:glow rounded-2xl h-12 px-6 font-medium">
                   {language === 'ru' ? 'Все материалы' : 'Барлық материалдар'}
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
@@ -550,48 +564,45 @@ export default function LandingPage() {
                   transition={{ delay: i * 0.15, duration: 0.5 }}
                 >
                   <motion.div
-                    className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm cursor-pointer group"
-                    whileHover={{
-                      y: -10,
-                      boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.15)',
-                    }}
+                    className="glass-strong rounded-3xl overflow-hidden border border-white/20 dark:border-white/10 cursor-pointer group card-lift"
+                    whileHover={{ scale: 1.02 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <div className={`h-48 bg-gradient-to-br ${material.gradient} flex items-center justify-center relative overflow-hidden`}>
+                    <div className="h-48 gradient-mesh flex items-center justify-center relative overflow-hidden">
                       <motion.div
                         className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"
                       />
                       <motion.div
-                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        className="relative z-10"
+                        whileHover={{ scale: 1.2, rotate: 10 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <Icon className="h-20 w-20 text-white/90" />
+                        <div className="p-5 rounded-3xl glass-strong shadow-2xl glow">
+                          <Icon className="h-16 w-16 text-primary" />
+                        </div>
                       </motion.div>
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
-                      />
                     </div>
                     <div className="p-6">
                       <div className="flex items-center gap-2 mb-3">
-                        <span className={`text-xs font-semibold px-3 py-1 rounded-full bg-gradient-to-r ${material.gradient} text-white`}>
+                        <span className="text-xs font-bold px-3 py-1.5 rounded-full gradient-primary text-white shadow-lg">
                           {material.type}
                         </span>
                       </div>
-                      <h3 className="font-bold text-xl text-gray-900 mb-4 group-hover:text-emerald-600 transition-colors">
+                      <h3 className="font-bold text-xl text-foreground mb-4 group-hover:gradient-text transition-colors">
                         {material.title}
                       </h3>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-gray-100 text-gray-600 text-xs">
+                          <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+                            <AvatarFallback className="gradient-primary text-white text-xs font-bold">
                               {material.author[0]}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="text-gray-600 text-sm">{material.author}</span>
+                          <span className="text-muted-foreground text-sm font-medium">{material.author}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-gray-500 text-sm">
+                        <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
                           <Download className="h-4 w-4" />
-                          <span>{material.downloads.toLocaleString()}</span>
+                          <span className="font-medium">{material.downloads.toLocaleString()}</span>
                         </div>
                       </div>
                     </div>
@@ -604,11 +615,10 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-32 px-6 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-emerald-100/50 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-orange-100/50 rounded-full blur-3xl" />
-        </div>
+      <section className="py-32 px-6 relative overflow-hidden">
+        <div className="absolute inset-0 gradient-mesh opacity-20" />
+        <div className="absolute top-20 left-10 w-80 h-80 bg-primary/20 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '-8s' }} />
 
         <div className="max-w-6xl mx-auto relative z-10">
           <motion.div
@@ -621,14 +631,14 @@ export default function LandingPage() {
               initial={{ scale: 0 }}
               whileInView={{ scale: 1 }}
               viewport={{ once: true }}
-              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 mb-6 shadow-xl shadow-orange-500/25"
+              className="inline-flex items-center justify-center w-20 h-20 rounded-3xl gradient-cyber mb-8 shadow-2xl glow animate-pulse-glow"
             >
-              <Quote className="h-8 w-8 text-white" />
+              <Quote className="h-10 w-10 text-white" />
             </motion.div>
-            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-6">
               {language === 'ru' ? 'Что говорят учителя' : 'Мұғалімдер не айтады'}
             </h2>
-            <p className="text-gray-600 text-xl max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
               {language === 'ru' ? 'Истории успеха наших пользователей' : 'Біздің пайдаланушылардың табыс тарихтары'}
             </p>
           </motion.div>
@@ -643,11 +653,8 @@ export default function LandingPage() {
                 transition={{ delay: i * 0.15, duration: 0.5 }}
               >
                 <motion.div
-                  className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm h-full relative"
-                  whileHover={{
-                    y: -8,
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.12)',
-                  }}
+                  className="glass-strong rounded-3xl p-8 border border-white/20 dark:border-white/10 h-full relative card-lift"
+                  whileHover={{ scale: 1.02 }}
                 >
                   <div className="flex items-center gap-1 mb-6">
                     {[...Array(item.rating)].map((_, j) => (
@@ -658,20 +665,20 @@ export default function LandingPage() {
                         viewport={{ once: true }}
                         transition={{ delay: 0.3 + j * 0.1 }}
                       >
-                        <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
+                        <Star className="h-5 w-5 fill-amber-400 text-amber-400 drop-shadow-lg" />
                       </motion.div>
                     ))}
                   </div>
-                  <p className="text-gray-700 text-lg mb-8 leading-relaxed">"{item.text}"</p>
+                  <p className="text-foreground text-lg mb-8 leading-relaxed">"{item.text}"</p>
                   <div className="flex items-center gap-4">
-                    <Avatar className="h-12 w-12 ring-2 ring-emerald-100">
-                      <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-medium">
+                    <Avatar className="h-12 w-12 ring-2 ring-primary/30 shadow-lg glow-accent">
+                      <AvatarFallback className="gradient-primary text-white font-bold">
                         {item.avatar}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="font-semibold text-gray-900">{item.name}</div>
-                      <div className="text-sm text-gray-500">{item.role}</div>
+                      <div className="font-bold text-foreground">{item.name}</div>
+                      <div className="text-sm gradient-text font-medium">{item.role}</div>
                     </div>
                   </div>
                 </motion.div>
@@ -855,24 +862,30 @@ export default function LandingPage() {
 
       {/* CTA Section */}
       <section className="py-32 px-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent" />
+        <div className="absolute inset-0 gradient-primary" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/20 via-transparent to-transparent" />
+        <div className="absolute inset-0 gradient-mesh opacity-30" />
 
         {/* Animated shapes */}
         <motion.div
-          className="absolute top-10 left-10 w-20 h-20 border-2 border-white/20 rounded-2xl"
+          className="absolute top-10 left-10 w-24 h-24 border-2 border-white/30 rounded-3xl glow"
           animate={{ rotate: 360 }}
           transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
         />
         <motion.div
-          className="absolute bottom-10 right-10 w-32 h-32 border-2 border-white/10 rounded-full"
-          animate={{ scale: [1, 1.2, 1] }}
+          className="absolute bottom-10 right-10 w-40 h-40 border-2 border-white/20 rounded-full glow"
+          animate={{ scale: [1, 1.3, 1] }}
           transition={{ duration: 8, repeat: Infinity }}
         />
         <motion.div
-          className="absolute top-1/2 right-1/4 w-16 h-16 bg-white/10 rounded-xl"
-          animate={{ y: [0, -20, 0] }}
+          className="absolute top-1/2 right-1/4 w-20 h-20 glass rounded-2xl"
+          animate={{ y: [0, -30, 0], rotate: [0, 10, 0] }}
           transition={{ duration: 5, repeat: Infinity }}
+        />
+        <motion.div
+          className="absolute top-1/3 left-1/4 w-16 h-16 glass rounded-xl"
+          animate={{ y: [0, 20, 0], x: [0, 10, 0] }}
+          transition={{ duration: 7, repeat: Infinity }}
         />
 
         <div className="max-w-4xl mx-auto text-center relative z-10">
@@ -885,18 +898,18 @@ export default function LandingPage() {
               initial={{ scale: 0 }}
               whileInView={{ scale: 1 }}
               viewport={{ once: true }}
-              className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white/20 backdrop-blur-sm mb-8"
+              className="inline-flex items-center justify-center w-24 h-24 rounded-3xl glass-strong mb-10 shadow-2xl animate-pulse-glow"
             >
-              <Heart className="h-10 w-10 text-white" />
+              <Heart className="h-12 w-12 text-white" />
             </motion.div>
 
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-8 leading-tight">
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-8 leading-tight text-glow">
               {language === 'ru' ? 'Присоединяйтесь к' : 'Жаңа буындағы'}
               <br />
               {language === 'ru' ? 'сообществу педагогов' : 'педагогтарға қосылыңыз'}
             </h2>
 
-            <p className="text-emerald-100 text-xl mb-12 max-w-2xl mx-auto">
+            <p className="text-white/80 text-xl mb-12 max-w-2xl mx-auto">
               {language === 'ru'
                 ? 'Регистрация бесплатна и займёт всего 30 секунд. Начните экономить время уже сегодня!'
                 : 'Тіркелу тегін және тек 30 секунд алады. Бүгіннен бастап уақытты үнемдеңіз!'}
@@ -905,10 +918,10 @@ export default function LandingPage() {
             <motion.div className="flex flex-wrap justify-center gap-4">
               <Link href="/register">
                 <motion.div
-                  whileHover={{ scale: 1.02, y: -3 }}
+                  whileHover={{ scale: 1.05, y: -5 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Button size="lg" className="bg-white text-emerald-600 hover:bg-emerald-50 h-16 px-12 text-lg font-semibold shadow-2xl shadow-black/20 rounded-2xl">
+                  <Button size="lg" className="bg-white text-primary hover:bg-white/90 h-16 px-12 text-lg font-bold shadow-2xl rounded-2xl glow">
                     {language === 'ru' ? 'Создать аккаунт бесплатно' : 'Тегін аккаунт жасау'}
                     <ArrowRight className="h-5 w-5 ml-2" />
                   </Button>
@@ -917,7 +930,7 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.div
-              className="mt-10 flex items-center justify-center gap-8 text-white/80 text-sm"
+              className="mt-12 flex items-center justify-center gap-8 text-white/90 text-sm"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
@@ -928,9 +941,9 @@ export default function LandingPage() {
                 { icon: Zap, text: language === 'ru' ? 'Быстро' : 'Жылдам' },
                 { icon: Heart, text: language === 'ru' ? 'Бесплатно' : 'Тегін' },
               ].map((item, i) => (
-                <div key={i} className="flex items-center gap-2">
+                <div key={i} className="flex items-center gap-2 glass-subtle px-4 py-2 rounded-full">
                   <item.icon className="h-4 w-4" />
-                  {item.text}
+                  <span className="font-medium">{item.text}</span>
                 </div>
               ))}
             </motion.div>
@@ -939,22 +952,23 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-16 px-6 bg-gray-900 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-800 via-gray-900 to-gray-900" />
+      <footer className="py-16 px-6 bg-[hsl(220,30%,8%)] relative overflow-hidden">
+        <div className="absolute inset-0 gradient-mesh opacity-10" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
 
         <div className="max-w-6xl mx-auto relative z-10">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-8 pb-10 border-b border-gray-800">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-8 pb-10 border-b border-white/10">
             <motion.div
               className="flex items-center gap-3"
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: 1.05 }}
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+              <div className="w-11 h-11 rounded-2xl gradient-primary flex items-center justify-center shadow-xl glow">
                 <BookOpen className="h-5 w-5 text-white" />
               </div>
               <span className="font-bold text-xl text-white">{t.landing.title}</span>
             </motion.div>
 
-            <div className="flex gap-8 text-gray-400">
+            <div className="flex gap-6">
               {[
                 { href: '/explore', label: t.nav.explore },
                 { href: '/communities', label: t.nav.communities },
@@ -962,7 +976,7 @@ export default function LandingPage() {
               ].map((link, i) => (
                 <Link key={i} href={link.href}>
                   <motion.span
-                    className="hover:text-white transition-colors cursor-pointer"
+                    className="text-gray-400 hover:text-white hover:glow-accent transition-all cursor-pointer px-3 py-1.5 rounded-lg hover:bg-white/5"
                     whileHover={{ y: -2 }}
                   >
                     {link.label}
