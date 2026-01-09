@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { collection, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '@/lib/firebase/config'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Filter, X, Home, TrendingUp, Users, Sparkles } from 'lucide-react'
+import { Filter, X, Home, TrendingUp, Users, Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -188,16 +188,13 @@ export default function FeedPage() {
           animate={{ opacity: 1, scale: 1 }}
           className="relative"
         >
-          <div className="w-16 h-16 rounded-full border-4 border-emerald-100 animate-spin border-t-emerald-500" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Sparkles className="h-6 w-6 text-emerald-500" />
-          </div>
+          <Loader2 className="h-10 w-10 text-neutral-400 animate-spin" />
         </motion.div>
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="mt-4 text-gray-500"
+          className="mt-4 text-neutral-500"
         >
           {language === 'ru' ? 'Загрузка ленты...' : 'Лента жүктелуде...'}
         </motion.p>
@@ -206,7 +203,7 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-white">
       <div className="container mx-auto py-8 px-4 lg:px-6">
         {/* Header */}
         <motion.div
@@ -215,12 +212,12 @@ export default function FeedPage() {
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
+            <div className="p-2.5 rounded-xl bg-neutral-900">
               <Home className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{t.pages.feed.title}</h1>
-              <p className="text-gray-500 text-sm">
+              <h1 className="text-2xl font-semibold text-neutral-900 tracking-tight">{t.pages.feed.title}</h1>
+              <p className="text-neutral-500 text-sm">
                 {language === 'ru' ? 'Свежие материалы от педагогов' : 'Педагогтардан жаңа материалдар'}
               </p>
             </div>
@@ -236,7 +233,7 @@ export default function FeedPage() {
                   variant="ghost"
                   size="sm"
                   onClick={clearFilters}
-                  className="text-gray-500 hover:text-gray-700 rounded-xl"
+                  className="text-neutral-500 hover:text-neutral-900 rounded-xl"
                 >
                   <X className="h-4 w-4 mr-1" />
                   {language === 'ru' ? 'Сбросить' : 'Тастау'}
@@ -247,20 +244,20 @@ export default function FeedPage() {
             <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
               <SheetTrigger asChild>
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Button variant="outline" size="sm" className="gap-2 rounded-xl border-gray-200 hover:border-emerald-300 hover:bg-emerald-50">
+                  <Button variant="outline" size="sm" className="gap-2 rounded-xl border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50">
                     <Filter className="h-4 w-4" />
                     {t.pages.feed.filters}
                     {hasActiveFilters && (
-                      <span className="ml-1 bg-emerald-500 text-white rounded-full px-2 py-0.5 text-xs font-medium">
+                      <span className="ml-1 bg-neutral-900 text-white rounded-full px-2 py-0.5 text-xs font-medium">
                         {(selectedSubject ? 1 : 0) + selectedGrades.length + selectedTypes.length}
                       </span>
                     )}
                   </Button>
                 </motion.div>
               </SheetTrigger>
-              <SheetContent className="rounded-l-3xl">
+              <SheetContent className="rounded-l-3xl border-neutral-200">
                 <SheetHeader>
-                  <SheetTitle className="text-xl">{language === 'ru' ? 'Фильтры' : 'Сүзгілер'}</SheetTitle>
+                  <SheetTitle className="text-xl font-semibold">{language === 'ru' ? 'Фильтры' : 'Сүзгілер'}</SheetTitle>
                   <SheetDescription>
                     {language === 'ru' ? 'Настройте фильтры для поиска материалов' : 'Материалдарды іздеу үшін сүзгілерді баптаңыз'}
                   </SheetDescription>
@@ -269,9 +266,9 @@ export default function FeedPage() {
                 <div className="space-y-6 py-6">
                   {/* Subject filter */}
                   <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-gray-700">{language === 'ru' ? 'Предмет' : 'Пән'}</Label>
+                    <Label className="text-sm font-medium text-neutral-700">{language === 'ru' ? 'Предмет' : 'Пән'}</Label>
                     <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                      <SelectTrigger className="rounded-xl border-gray-200">
+                      <SelectTrigger className="rounded-xl border-neutral-200">
                         <SelectValue placeholder={language === 'ru' ? 'Все предметы' : 'Барлық пәндер'} />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
@@ -285,7 +282,7 @@ export default function FeedPage() {
 
                   {/* Grade filter */}
                   <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-gray-700">{language === 'ru' ? 'Классы' : 'Сыныптар'}</Label>
+                    <Label className="text-sm font-medium text-neutral-700">{language === 'ru' ? 'Классы' : 'Сыныптар'}</Label>
                     <div className="flex flex-wrap gap-2">
                       {GRADES.map(grade => (
                         <motion.div key={grade} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -293,7 +290,7 @@ export default function FeedPage() {
                             variant={selectedGrades.includes(grade) ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => toggleGrade(grade)}
-                            className={`w-10 h-10 rounded-xl ${selectedGrades.includes(grade) ? 'bg-emerald-500 hover:bg-emerald-600' : 'border-gray-200'}`}
+                            className={`w-10 h-10 rounded-xl ${selectedGrades.includes(grade) ? 'bg-neutral-900 hover:bg-neutral-800' : 'border-neutral-200 hover:border-neutral-300'}`}
                           >
                             {grade}
                           </Button>
@@ -304,17 +301,17 @@ export default function FeedPage() {
 
                   {/* Type filter */}
                   <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-gray-700">{language === 'ru' ? 'Тип материала' : 'Материал түрі'}</Label>
+                    <Label className="text-sm font-medium text-neutral-700">{language === 'ru' ? 'Тип материала' : 'Материал түрі'}</Label>
                     <div className="space-y-2">
                       {MATERIAL_TYPES.map(type => (
-                        <div key={type.value} className="flex items-center space-x-3 p-2 rounded-xl hover:bg-gray-50 transition-colors">
+                        <div key={type.value} className="flex items-center space-x-3 p-2 rounded-xl hover:bg-neutral-50 transition-colors">
                           <Checkbox
                             id={type.value}
                             checked={selectedTypes.includes(type.value)}
                             onCheckedChange={() => toggleType(type.value)}
-                            className="border-gray-300 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                            className="border-neutral-300 data-[state=checked]:bg-neutral-900 data-[state=checked]:border-neutral-900"
                           />
-                          <label htmlFor={type.value} className="text-sm cursor-pointer font-medium text-gray-700">
+                          <label htmlFor={type.value} className="text-sm cursor-pointer font-medium text-neutral-700">
                             {language === 'ru' ? type.labelRu : type.labelKk}
                           </label>
                         </div>
@@ -324,11 +321,11 @@ export default function FeedPage() {
                 </div>
 
                 <SheetFooter className="gap-2">
-                  <Button variant="outline" onClick={clearFilters} className="rounded-xl">
+                  <Button variant="outline" onClick={clearFilters} className="rounded-xl border-neutral-200">
                     {language === 'ru' ? 'Сбросить' : 'Тастау'}
                   </Button>
                   <SheetClose asChild>
-                    <Button className="rounded-xl bg-emerald-500 hover:bg-emerald-600">
+                    <Button className="rounded-xl bg-neutral-900 hover:bg-neutral-800">
                       {language === 'ru' ? 'Применить' : 'Қолдану'}
                     </Button>
                   </SheetClose>
@@ -345,24 +342,24 @@ export default function FeedPage() {
           transition={{ delay: 0.1 }}
         >
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-white border border-gray-100 p-1 rounded-2xl mb-8 shadow-sm">
+            <TabsList className="bg-neutral-100 p-1 rounded-xl mb-8">
               <TabsTrigger
                 value="all"
-                className="rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-white px-6 py-2.5 transition-all"
+                className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-neutral-900 data-[state=active]:shadow-sm px-5 py-2 transition-all"
               >
                 <Home className="h-4 w-4 mr-2" />
                 {t.pages.feed.allMaterials}
               </TabsTrigger>
               <TabsTrigger
                 value="following"
-                className="rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-white px-6 py-2.5 transition-all"
+                className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-neutral-900 data-[state=active]:shadow-sm px-5 py-2 transition-all"
               >
                 <Users className="h-4 w-4 mr-2" />
                 {t.pages.feed.following}
               </TabsTrigger>
               <TabsTrigger
                 value="popular"
-                className="rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-white px-6 py-2.5 transition-all"
+                className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-neutral-900 data-[state=active]:shadow-sm px-5 py-2 transition-all"
               >
                 <TrendingUp className="h-4 w-4 mr-2" />
                 {t.pages.feed.popular}
@@ -377,15 +374,15 @@ export default function FeedPage() {
                     animate={{ opacity: 1, scale: 1 }}
                     className="text-center py-20"
                   >
-                    <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-6">
-                      <Home className="h-10 w-10 text-gray-400" />
+                    <div className="w-20 h-20 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-6">
+                      <Home className="h-10 w-10 text-neutral-400" />
                     </div>
-                    <p className="text-xl font-semibold text-gray-900 mb-2">
+                    <p className="text-xl font-semibold text-neutral-900 mb-2">
                       {hasActiveFilters
                         ? (language === 'ru' ? 'Материалы не найдены' : 'Материалдар табылмады')
                         : t.pages.feed.noMaterials}
                     </p>
-                    <p className="text-gray-500">
+                    <p className="text-neutral-500">
                       {hasActiveFilters
                         ? (language === 'ru' ? 'Попробуйте изменить фильтры' : 'Сүзгілерді өзгертіп көріңіз')
                         : ''}
@@ -418,22 +415,22 @@ export default function FeedPage() {
                     animate={{ opacity: 1, scale: 1 }}
                     className="text-center py-20"
                   >
-                    <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-6">
-                      <Users className="h-10 w-10 text-gray-400" />
+                    <div className="w-20 h-20 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-6">
+                      <Users className="h-10 w-10 text-neutral-400" />
                     </div>
                     {hasActiveFilters ? (
                       <>
-                        <p className="text-xl font-semibold text-gray-900 mb-2">
+                        <p className="text-xl font-semibold text-neutral-900 mb-2">
                           {language === 'ru' ? 'Материалы не найдены' : 'Материалдар табылмады'}
                         </p>
-                        <p className="text-gray-500">
+                        <p className="text-neutral-500">
                           {language === 'ru' ? 'Попробуйте изменить фильтры' : 'Сүзгілерді өзгертіп көріңіз'}
                         </p>
                       </>
                     ) : (
                       <>
-                        <p className="text-xl font-semibold text-gray-900 mb-2">{t.pages.feed.noFollowing}</p>
-                        <p className="text-gray-500">{t.pages.feed.noFollowingHint}</p>
+                        <p className="text-xl font-semibold text-neutral-900 mb-2">{t.pages.feed.noFollowing}</p>
+                        <p className="text-neutral-500">{t.pages.feed.noFollowingHint}</p>
                       </>
                     )}
                   </motion.div>
@@ -464,13 +461,13 @@ export default function FeedPage() {
                     animate={{ opacity: 1, scale: 1 }}
                     className="text-center py-20"
                   >
-                    <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-6">
-                      <TrendingUp className="h-10 w-10 text-gray-400" />
+                    <div className="w-20 h-20 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-6">
+                      <TrendingUp className="h-10 w-10 text-neutral-400" />
                     </div>
-                    <p className="text-xl font-semibold text-gray-900 mb-2">
+                    <p className="text-xl font-semibold text-neutral-900 mb-2">
                       {language === 'ru' ? 'Материалы не найдены' : 'Материалдар табылмады'}
                     </p>
-                    <p className="text-gray-500">
+                    <p className="text-neutral-500">
                       {language === 'ru' ? 'Попробуйте изменить фильтры' : 'Сүзгілерді өзгертіп көріңіз'}
                     </p>
                   </motion.div>

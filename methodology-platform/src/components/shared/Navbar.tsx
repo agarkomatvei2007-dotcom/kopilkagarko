@@ -40,13 +40,13 @@ export default function Navbar() {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="bg-white/80 backdrop-blur-xl border-b border-gray-100">
+      <div className="bg-white/90 backdrop-blur-xl border-b border-neutral-100">
         <div className="flex h-16 items-center gap-4 px-4 lg:px-6 max-w-screen-2xl mx-auto">
           {/* Mobile menu button */}
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden rounded-xl hover:bg-gray-100"
+            className="lg:hidden rounded-xl hover:bg-neutral-100"
             onClick={toggleMobileMenu}
           >
             <Menu className="h-5 w-5" />
@@ -55,13 +55,13 @@ export default function Navbar() {
           {/* Logo */}
           <Link href={isAuthenticated ? '/feed' : '/'} className="flex items-center gap-2.5 group">
             <motion.div
-              className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20"
-              whileHover={{ scale: 1.05, rotate: 5 }}
+              className="w-9 h-9 rounded-xl bg-neutral-900 flex items-center justify-center"
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               <BookOpen className="h-5 w-5 text-white" />
             </motion.div>
-            <span className="hidden sm:inline-block font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">
+            <span className="hidden sm:inline-block font-semibold text-neutral-900 group-hover:text-neutral-600 transition-colors">
               {t.landing.title}
             </span>
           </Link>
@@ -70,10 +70,10 @@ export default function Navbar() {
           {isAuthenticated && (
             <div className="flex-1 max-w-lg ml-4">
               <div className="relative group">
-                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
+                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 group-focus-within:text-neutral-900 transition-colors" />
                 <Input
                   placeholder={t.common.search}
-                  className="pl-10 h-10 bg-gray-50 border-0 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  className="pl-10 h-10 bg-neutral-50 border-0 rounded-xl focus:bg-white focus:ring-2 focus:ring-neutral-200 transition-all"
                 />
               </div>
             </div>
@@ -91,13 +91,13 @@ export default function Navbar() {
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                     <Button
                       size="sm"
-                      className="hidden sm:flex gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl shadow-lg shadow-emerald-500/20"
+                      className="hidden sm:flex gap-1.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-full px-4"
                     >
                       <Plus className="h-4 w-4" />
                       {t.common.create}
                     </Button>
                   </motion.div>
-                  <Button size="icon" variant="ghost" className="sm:hidden rounded-xl">
+                  <Button size="icon" variant="ghost" className="sm:hidden rounded-xl hover:bg-neutral-100">
                     <Plus className="h-5 w-5" />
                   </Button>
                 </Link>
@@ -105,8 +105,8 @@ export default function Navbar() {
                 {/* Messages */}
                 <Link href="/messages">
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button variant="ghost" size="icon" className="rounded-xl hover:bg-gray-100">
-                      <MessageSquare className="h-5 w-5 text-gray-600" />
+                    <Button variant="ghost" size="icon" className="rounded-xl hover:bg-neutral-100">
+                      <MessageSquare className="h-5 w-5 text-neutral-600" />
                     </Button>
                   </motion.div>
                 </Link>
@@ -122,23 +122,23 @@ export default function Navbar() {
                   <DropdownMenuTrigger asChild>
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <Button variant="ghost" size="icon" className="ml-1 rounded-xl">
-                        <Avatar className="h-8 w-8 ring-2 ring-gray-100">
+                        <Avatar className="h-8 w-8 ring-2 ring-neutral-100">
                           <AvatarImage src={user?.avatar || undefined} />
-                          <AvatarFallback className="text-xs bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-medium">
+                          <AvatarFallback className="text-xs bg-neutral-900 text-white font-medium">
                             {user?.displayName ? getInitials(user.displayName) : 'U'}
                           </AvatarFallback>
                         </Avatar>
                       </Button>
                     </motion.div>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 rounded-xl border-gray-100 shadow-xl">
+                  <DropdownMenuContent align="end" className="w-56 rounded-xl border-neutral-200 shadow-xl">
                     <DropdownMenuLabel className="font-normal py-3">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-semibold text-gray-900">{user?.displayName}</p>
-                        <p className="text-xs text-gray-500">@{user?.username}</p>
+                        <p className="text-sm font-semibold text-neutral-900">{user?.displayName}</p>
+                        <p className="text-xs text-neutral-500">@{user?.username}</p>
                       </div>
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="bg-neutral-100" />
                     <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
                       <Link href={`/profile/${user?.username}`} className="py-2">
                         {t.nav.myProfile}
@@ -159,13 +159,13 @@ export default function Navbar() {
                         {t.nav.achievements}
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="bg-neutral-100" />
                     <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
                       <Link href="/settings" className="py-2">
                         {t.nav.settings}
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="bg-neutral-100" />
                     <DropdownMenuItem
                       className="text-red-600 focus:text-red-600 focus:bg-red-50 rounded-lg cursor-pointer py-2"
                       onClick={signOut}
@@ -179,13 +179,13 @@ export default function Navbar() {
               <>
                 <LanguageSwitcher />
                 <Link href="/login">
-                  <Button variant="ghost" size="sm" className="rounded-xl">{t.nav.login}</Button>
+                  <Button variant="ghost" size="sm" className="rounded-full text-neutral-600 hover:text-neutral-900">{t.nav.login}</Button>
                 </Link>
                 <Link href="/register">
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                     <Button
                       size="sm"
-                      className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl shadow-lg shadow-emerald-500/20"
+                      className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-full px-5"
                     >
                       {t.nav.register}
                     </Button>

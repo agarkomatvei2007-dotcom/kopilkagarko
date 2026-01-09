@@ -35,8 +35,8 @@ export default function RegisterPage() {
       password: 'Пароль',
       confirmPassword: 'Подтверждение пароля',
       register: 'Создать аккаунт',
-      or: 'или продолжить с',
-      signInGoogle: 'Google',
+      or: 'или',
+      signInGoogle: 'Продолжить с Google',
       haveAccount: 'Уже есть аккаунт?',
       signIn: 'Войти',
       accountCreated: 'Аккаунт создан!',
@@ -66,8 +66,8 @@ export default function RegisterPage() {
       password: 'Құпия сөз',
       confirmPassword: 'Құпия сөзді растау',
       register: 'Аккаунт жасау',
-      or: 'немесе жалғастыру',
-      signInGoogle: 'Google',
+      or: 'немесе',
+      signInGoogle: 'Google арқылы жалғастыру',
       haveAccount: 'Аккаунтыңыз бар ма?',
       signIn: 'Кіру',
       accountCreated: 'Аккаунт жасалды!',
@@ -152,17 +152,17 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 p-8">
+    <div>
       <div className="text-center mb-8">
         <motion.h1
-          className="text-3xl font-bold text-gray-900 mb-2"
+          className="text-3xl font-semibold text-neutral-900 mb-2 tracking-tight"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
         >
           {text.title}
         </motion.h1>
         <motion.p
-          className="text-gray-500"
+          className="text-neutral-500"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
@@ -180,13 +180,13 @@ export default function RegisterPage() {
       >
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="displayName" className="text-gray-700 font-medium">{text.displayName}</Label>
+            <Label htmlFor="displayName" className="text-neutral-700 font-medium">{text.displayName}</Label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
               <Input
                 id="displayName"
                 placeholder={text.displayNamePlaceholder}
-                className="pl-10 h-12 rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                className="pl-11 h-12 rounded-xl border-neutral-200 focus:border-neutral-900 focus:ring-neutral-900/10"
                 {...register('displayName')}
                 disabled={isSubmitting || isLoading}
               />
@@ -197,13 +197,13 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="username" className="text-gray-700 font-medium">{text.username}</Label>
+            <Label htmlFor="username" className="text-neutral-700 font-medium">{text.username}</Label>
             <div className="relative">
-              <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
               <Input
                 id="username"
                 placeholder={text.usernamePlaceholder}
-                className="pl-10 h-12 rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                className="pl-11 h-12 rounded-xl border-neutral-200 focus:border-neutral-900 focus:ring-neutral-900/10"
                 {...register('username')}
                 disabled={isSubmitting || isLoading}
               />
@@ -215,14 +215,14 @@ export default function RegisterPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-gray-700 font-medium">{text.email}</Label>
+          <Label htmlFor="email" className="text-neutral-700 font-medium">{text.email}</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
             <Input
               id="email"
               type="email"
               placeholder={text.emailPlaceholder}
-              className="pl-10 h-12 rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+              className="pl-11 h-12 rounded-xl border-neutral-200 focus:border-neutral-900 focus:ring-neutral-900/10"
               {...register('email')}
               disabled={isSubmitting || isLoading}
             />
@@ -234,14 +234,14 @@ export default function RegisterPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-gray-700 font-medium">{text.password}</Label>
+            <Label htmlFor="password" className="text-neutral-700 font-medium">{text.password}</Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
               <Input
                 id="password"
                 type="password"
                 placeholder="••••••••"
-                className="pl-10 h-12 rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                className="pl-11 h-12 rounded-xl border-neutral-200 focus:border-neutral-900 focus:ring-neutral-900/10"
                 {...register('password')}
                 disabled={isSubmitting || isLoading}
               />
@@ -252,14 +252,14 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword" className="text-gray-700 font-medium">{text.confirmPassword}</Label>
+            <Label htmlFor="confirmPassword" className="text-neutral-700 font-medium">{text.confirmPassword}</Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
               <Input
                 id="confirmPassword"
                 type="password"
                 placeholder="••••••••"
-                className="pl-10 h-12 rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+                className="pl-11 h-12 rounded-xl border-neutral-200 focus:border-neutral-900 focus:ring-neutral-900/10"
                 {...register('confirmPassword')}
                 disabled={isSubmitting || isLoading}
               />
@@ -273,7 +273,7 @@ export default function RegisterPage() {
         <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} className="pt-2">
           <Button
             type="submit"
-            className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-medium shadow-lg shadow-emerald-500/25"
+            className="w-full h-12 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-medium"
             disabled={isSubmitting || isLoading}
           >
             {(isSubmitting || isLoading) ? (
@@ -296,10 +296,10 @@ export default function RegisterPage() {
       >
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-gray-200" />
+            <span className="w-full border-t border-neutral-200" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-4 text-gray-400 font-medium">
+            <span className="bg-white px-4 text-neutral-400 font-medium">
               {text.or}
             </span>
           </div>
@@ -308,7 +308,7 @@ export default function RegisterPage() {
         <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} className="mt-6">
           <Button
             variant="outline"
-            className="w-full h-12 rounded-xl border-gray-200 hover:bg-gray-50 font-medium"
+            className="w-full h-12 rounded-xl border-neutral-200 hover:bg-neutral-50 hover:border-neutral-300 font-medium transition-all"
             onClick={handleGoogleSignIn}
             disabled={isGoogleLoading || isLoading}
           >
@@ -316,7 +316,7 @@ export default function RegisterPage() {
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
               <>
-                <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 mr-3" viewBox="0 0 24 24">
                   <path
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                     fill="#4285F4"
@@ -342,13 +342,13 @@ export default function RegisterPage() {
       </motion.div>
 
       <motion.p
-        className="text-center text-gray-500 mt-8"
+        className="text-center text-neutral-500 mt-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
       >
         {text.haveAccount}{' '}
-        <Link href="/login" className="text-emerald-600 hover:text-emerald-700 font-semibold">
+        <Link href="/login" className="text-neutral-900 hover:underline font-medium">
           {text.signIn}
         </Link>
       </motion.p>
