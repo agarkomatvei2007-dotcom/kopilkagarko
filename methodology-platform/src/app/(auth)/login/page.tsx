@@ -122,17 +122,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 p-8">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
       <div className="text-center mb-8">
         <motion.h1
-          className="text-3xl font-bold text-gray-900 mb-2"
+          className="text-2xl font-bold text-gray-900 mb-2"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
         >
           {text.title}
         </motion.h1>
         <motion.p
-          className="text-gray-500"
+          className="text-gray-500 text-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
@@ -149,14 +149,14 @@ export default function LoginPage() {
         transition={{ delay: 0.2 }}
       >
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-gray-700 font-medium">{text.email}</Label>
+          <Label htmlFor="email" className="text-gray-700 font-medium text-sm">{text.email}</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               id="email"
               type="email"
               placeholder={text.emailPlaceholder}
-              className="pl-10 h-12 rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+              className="pl-10 h-11 rounded-lg border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
               {...register('email')}
               disabled={isSubmitting || isLoading}
             />
@@ -168,7 +168,7 @@ export default function LoginPage() {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password" className="text-gray-700 font-medium">{text.password}</Label>
+            <Label htmlFor="password" className="text-gray-700 font-medium text-sm">{text.password}</Label>
             <Link
               href="/reset-password"
               className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
@@ -177,12 +177,12 @@ export default function LoginPage() {
             </Link>
           </div>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               id="password"
               type="password"
               placeholder="••••••••"
-              className="pl-10 h-12 rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
+              className="pl-10 h-11 rounded-lg border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
               {...register('password')}
               disabled={isSubmitting || isLoading}
             />
@@ -192,22 +192,20 @@ export default function LoginPage() {
           )}
         </div>
 
-        <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-          <Button
-            type="submit"
-            className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-medium shadow-lg shadow-emerald-500/25"
-            disabled={isSubmitting || isLoading}
-          >
-            {(isSubmitting || isLoading) ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <>
-                {text.signIn}
-                <ArrowRight className="h-5 w-5 ml-2" />
-              </>
-            )}
-          </Button>
-        </motion.div>
+        <Button
+          type="submit"
+          className="w-full h-11 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm"
+          disabled={isSubmitting || isLoading}
+        >
+          {(isSubmitting || isLoading) ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <>
+              {text.signIn}
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </>
+          )}
+        </Button>
       </motion.form>
 
       <motion.div
@@ -227,10 +225,10 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} className="mt-6">
+        <div className="mt-6">
           <Button
             variant="outline"
-            className="w-full h-12 rounded-xl border-gray-200 hover:bg-gray-50 font-medium"
+            className="w-full h-11 rounded-lg border-gray-200 hover:bg-gray-50 font-medium"
             onClick={handleGoogleSignIn}
             disabled={isGoogleLoading || isLoading}
           >
@@ -260,11 +258,11 @@ export default function LoginPage() {
               </>
             )}
           </Button>
-        </motion.div>
+        </div>
       </motion.div>
 
       <motion.p
-        className="text-center text-gray-500 mt-8"
+        className="text-center text-gray-500 mt-8 text-sm"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}

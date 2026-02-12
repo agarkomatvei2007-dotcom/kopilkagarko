@@ -61,15 +61,15 @@ export default function MobileMenu() {
       <Button
         variant="ghost"
         className={cn(
-          'w-full justify-start gap-3 h-12 font-medium rounded-xl transition-all',
+          'w-full justify-start gap-3 h-11 font-medium rounded-lg transition-colors',
           isActive
-            ? 'bg-primary/10 text-primary hover:bg-primary/15'
-            : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+            ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400'
+            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
         )}
       >
         <div className={cn(
           'p-1.5 rounded-lg',
-          isActive ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm' : 'bg-primary/10 text-primary'
+          isActive ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground'
         )}>
           <Icon className="h-4 w-4" strokeWidth={2} />
         </div>
@@ -95,7 +95,7 @@ export default function MobileMenu() {
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage src={user?.avatar || undefined} />
-              <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
+              <AvatarFallback className="bg-emerald-600 text-white font-semibold">
                 {user?.displayName ? getInitials(user.displayName) : 'U'}
               </AvatarFallback>
             </Avatar>
@@ -126,7 +126,7 @@ export default function MobileMenu() {
           <div className="my-4 mx-4 h-px bg-border" />
 
           <nav className="space-y-1 px-3">
-            <p className="px-3 text-[11px] font-semibold text-primary uppercase tracking-wider mb-2">
+            <p className="px-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
               {language === 'ru' ? 'Сообщество' : 'Қауымдастық'}
             </p>
             {socialNavItems.map((item) => (
@@ -172,7 +172,7 @@ export default function MobileMenu() {
         {/* Profile link */}
         <div className="border-t border-border p-4">
           <Link href={`/profile/${user?.username}`} onClick={handleLinkClick}>
-            <Button variant="outline" className="w-full rounded-xl">
+            <Button variant="outline" className="w-full rounded-lg">
               {language === 'ru' ? 'Мой профиль' : 'Менің профилім'}
             </Button>
           </Link>

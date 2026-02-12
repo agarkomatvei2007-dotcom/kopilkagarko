@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { collection, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '@/lib/firebase/config'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Filter, X, Home, TrendingUp, Users, Sparkles, Search, Grid, List } from 'lucide-react'
+import { Filter, X, Home, TrendingUp, Users, Search, Grid, List } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -189,11 +189,11 @@ export default function FeedPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-muted/50 to-background">
+      <div className="min-h-screen bg-background">
         <div className="container mx-auto py-8 px-4 lg:px-6">
           {/* Header skeleton */}
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600">
+            <div className="p-2.5 rounded-xl bg-emerald-600">
               <Home className="h-5 w-5 text-white" />
             </div>
             <div>
@@ -253,13 +253,8 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Background decorations */}
-      <div className="absolute inset-0 gradient-mesh opacity-30 dark:opacity-20 pointer-events-none" />
-      <div className="absolute top-20 -left-32 w-96 h-96 rounded-full bg-primary/20 blur-3xl animate-float pointer-events-none" />
-      <div className="absolute bottom-20 -right-32 w-96 h-96 rounded-full bg-accent/20 blur-3xl animate-float pointer-events-none" style={{ animationDelay: '-3s' }} />
-
-      <div className="container mx-auto py-8 px-4 lg:px-6 relative z-10">
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto py-8 px-4 lg:px-6">
         {/* Header */}
         <motion.div
           className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8"
@@ -267,11 +262,11 @@ export default function FeedPage() {
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl gradient-primary shadow-xl glow animate-pulse-glow">
+            <div className="p-3 rounded-2xl bg-emerald-600 shadow-sm">
               <Home className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold gradient-text">{t.pages.feed.title}</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{t.pages.feed.title}</h1>
               <p className="text-muted-foreground text-sm">
                 {language === 'ru' ? 'Материалы от педагогов колледжа' : 'Колледж педагогтарынан материалдар'}
               </p>
@@ -281,7 +276,7 @@ export default function FeedPage() {
 
         {/* Search and filters bar */}
         <motion.div
-          className="glass-strong rounded-3xl border border-white/20 dark:border-white/10 shadow-xl p-5 mb-8"
+          className="bg-card rounded-2xl border border-border shadow-sm p-5 mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -290,12 +285,12 @@ export default function FeedPage() {
             {/* Search */}
             <div className="flex-1 flex gap-2">
               <div className="relative flex-1 group">
-                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />
+                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-emerald-600 transition-colors z-10" />
                 <Input
                   placeholder={language === 'ru' ? 'Поиск материалов...' : 'Материалдарды іздеу...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-11 h-12 rounded-2xl glass border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 focus:glow transition-all"
+                  className="pl-11 h-12 rounded-xl border-border focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
                 />
               </div>
             </div>
@@ -303,10 +298,10 @@ export default function FeedPage() {
             {/* Quick filters */}
             <div className="flex gap-2 flex-wrap items-center">
               <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                <SelectTrigger className="w-[160px] h-12 rounded-2xl glass border-white/30 dark:border-white/10 hover:border-primary/50 transition-all">
+                <SelectTrigger className="w-[160px] h-12 rounded-xl border-border hover:border-emerald-500/50 transition-all">
                   <SelectValue placeholder={language === 'ru' ? 'Предмет' : 'Пән'} />
                 </SelectTrigger>
-                <SelectContent className="rounded-2xl glass-strong border-white/20 dark:border-white/10 max-h-[300px]">
+                <SelectContent className="rounded-xl border-border max-h-[300px]">
                   <SelectItem value="all">{language === 'ru' ? 'Все предметы' : 'Барлық пәндер'}</SelectItem>
                   {SUBJECTS.map((subject) => (
                     <SelectItem key={subject} value={subject}>
@@ -319,17 +314,17 @@ export default function FeedPage() {
               {/* More filters button */}
               <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-12 gap-2 rounded-2xl glass border-white/30 dark:border-white/10 hover:border-primary/50 hover:glow-accent transition-all">
+                  <Button variant="outline" size="sm" className="h-12 gap-2 rounded-xl border-border hover:border-emerald-500/50 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-all">
                     <Filter className="h-4 w-4" />
                     {language === 'ru' ? 'Ещё' : 'Тағы'}
                     {(selectedGrades.length + selectedTypes.length) > 0 && (
-                      <span className="gradient-primary text-white rounded-full px-2 py-0.5 text-xs font-bold shadow-lg">
+                      <span className="bg-emerald-600 text-white rounded-full px-2 py-0.5 text-xs font-bold">
                         {selectedGrades.length + selectedTypes.length}
                       </span>
                     )}
                   </Button>
                 </SheetTrigger>
-                <SheetContent className="rounded-l-3xl">
+                <SheetContent className="rounded-l-2xl">
                   <SheetHeader>
                     <SheetTitle className="text-xl">{language === 'ru' ? 'Фильтры' : 'Сүзгілер'}</SheetTitle>
                     <SheetDescription>
@@ -348,7 +343,7 @@ export default function FeedPage() {
                             variant={selectedGrades.includes(grade) ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => toggleGrade(grade)}
-                            className={`rounded-xl ${selectedGrades.includes(grade) ? 'bg-primary hover:bg-primary/90' : 'border-input'}`}
+                            className={`rounded-xl ${selectedGrades.includes(grade) ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-border'}`}
                           >
                             {GRADE_LABELS[grade]}
                           </Button>
@@ -366,7 +361,7 @@ export default function FeedPage() {
                               id={type.value}
                               checked={selectedTypes.includes(type.value)}
                               onCheckedChange={() => toggleType(type.value)}
-                              className="border-input data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                              className="border-border data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
                             />
                             <label htmlFor={type.value} className="text-sm cursor-pointer font-medium text-foreground">
                               {language === 'ru' ? type.labelRu : type.labelKk}
@@ -382,7 +377,7 @@ export default function FeedPage() {
                       {language === 'ru' ? 'Сбросить' : 'Тастау'}
                     </Button>
                     <SheetClose asChild>
-                      <Button className="rounded-xl bg-primary hover:bg-primary/90">
+                      <Button className="rounded-xl bg-emerald-600 hover:bg-emerald-700">
                         {language === 'ru' ? 'Применить' : 'Қолдану'}
                       </Button>
                     </SheetClose>
@@ -391,12 +386,12 @@ export default function FeedPage() {
               </Sheet>
 
               {/* View toggle */}
-              <div className="flex glass rounded-2xl overflow-hidden border border-white/30 dark:border-white/10">
+              <div className="flex border border-border rounded-xl overflow-hidden">
                 <Button
                   variant={viewMode === 'grid' ? 'default' : 'ghost'}
                   size="icon"
                   onClick={() => setViewMode('grid')}
-                  className={`h-12 w-12 rounded-none transition-all ${viewMode === 'grid' ? 'gradient-primary glow' : 'hover:bg-white/20'}`}
+                  className={`h-12 w-12 rounded-none transition-all ${viewMode === 'grid' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'hover:bg-muted'}`}
                 >
                   <Grid className="h-4 w-4" />
                 </Button>
@@ -404,7 +399,7 @@ export default function FeedPage() {
                   variant={viewMode === 'list' ? 'default' : 'ghost'}
                   size="icon"
                   onClick={() => setViewMode('list')}
-                  className={`h-12 w-12 rounded-none transition-all ${viewMode === 'list' ? 'gradient-primary glow' : 'hover:bg-white/20'}`}
+                  className={`h-12 w-12 rounded-none transition-all ${viewMode === 'list' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'hover:bg-muted'}`}
                 >
                   <List className="h-4 w-4" />
                 </Button>
@@ -416,7 +411,7 @@ export default function FeedPage() {
                   variant="ghost"
                   size="sm"
                   onClick={clearFilters}
-                  className="text-muted-foreground hover:text-foreground rounded-2xl glass-subtle hover:glass transition-all"
+                  className="text-muted-foreground hover:text-foreground rounded-xl hover:bg-muted transition-all"
                 >
                   <X className="h-4 w-4 mr-1" />
                   {language === 'ru' ? 'Сбросить' : 'Тастау'}
@@ -433,10 +428,10 @@ export default function FeedPage() {
           transition={{ delay: 0.2 }}
         >
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="glass-strong border border-white/20 dark:border-white/10 p-1.5 rounded-2xl mb-8 shadow-xl">
+            <TabsList className="bg-card border border-border p-1.5 rounded-xl mb-8 shadow-sm">
               <TabsTrigger
                 value="all"
-                className="rounded-xl data-[state=active]:gradient-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:glow px-5 sm:px-6 py-3 transition-all font-medium"
+                className="rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm px-5 sm:px-6 py-3 transition-all font-medium"
               >
                 <Home className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">{t.pages.feed.allMaterials}</span>
@@ -444,7 +439,7 @@ export default function FeedPage() {
               </TabsTrigger>
               <TabsTrigger
                 value="following"
-                className="rounded-xl data-[state=active]:gradient-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:glow px-5 sm:px-6 py-3 transition-all font-medium"
+                className="rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm px-5 sm:px-6 py-3 transition-all font-medium"
               >
                 <Users className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">{t.pages.feed.following}</span>
@@ -452,7 +447,7 @@ export default function FeedPage() {
               </TabsTrigger>
               <TabsTrigger
                 value="popular"
-                className="rounded-xl data-[state=active]:gradient-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:glow px-5 sm:px-6 py-3 transition-all font-medium"
+                className="rounded-lg data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-sm px-5 sm:px-6 py-3 transition-all font-medium"
               >
                 <TrendingUp className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">{t.pages.feed.popular}</span>

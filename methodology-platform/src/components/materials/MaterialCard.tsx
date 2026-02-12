@@ -137,7 +137,6 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
         toast({ title: language === 'ru' ? 'Ссылка скопирована' : 'Сілтеме көшірілді' })
       }
     } catch (error) {
-      // User cancelled share or error occurred
       console.log('Share cancelled or failed')
     }
   }
@@ -187,7 +186,7 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
 
   return (
     <Link href={`/materials/${material.id}`}>
-      <Card className="h-full overflow-hidden group card-lift border-0 glass-strong rounded-2xl">
+      <Card className="h-full overflow-hidden group card-lift border border-border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
         {/* Thumbnail */}
         <div className="relative aspect-video bg-muted overflow-hidden">
           {material.thumbnail && material.thumbnail.length > 0 && !imageError ? (
@@ -195,22 +194,22 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
             <img
               src={material.thumbnail}
               alt={material.title}
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               onError={() => setImageError(true)}
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center gradient-mesh">
-              <div className="w-20 h-20 rounded-2xl glass flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
-                <div className="text-primary scale-150">{typeIcons[material.type]}</div>
+            <div className="absolute inset-0 flex items-center justify-center bg-muted">
+              <div className="w-16 h-16 rounded-xl bg-card border border-border flex items-center justify-center shadow-sm transform group-hover:scale-105 transition-transform duration-300">
+                <div className="text-emerald-600 dark:text-emerald-400 scale-150">{typeIcons[material.type]}</div>
               </div>
             </div>
           )}
-          {/* Overlay gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          {/* Overlay on hover */}
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
 
           {/* Type badge */}
           <div className="absolute top-3 left-3 flex gap-2">
-            <Badge variant="secondary" className="gap-1.5 glass-strong border-0 shadow-lg backdrop-blur-xl px-3 py-1.5 text-xs font-medium">
+            <Badge variant="secondary" className="gap-1.5 bg-card/90 backdrop-blur-sm border border-border shadow-sm px-2.5 py-1 text-xs font-medium">
               {typeIcons[material.type]}
               {MATERIAL_TYPE_LABELS[material.type]}
             </Badge>
@@ -218,20 +217,20 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
 
           {/* Premium badge */}
           {material.isPremium && (
-            <Badge className="absolute top-3 right-3 gradient-primary border-0 shadow-lg px-3 py-1.5 text-xs font-bold">
+            <Badge className="absolute top-3 right-3 bg-emerald-600 border-0 shadow-sm px-2.5 py-1 text-xs font-bold text-white">
               PRO
             </Badge>
           )}
 
           {/* Difficulty badge - appears on hover */}
-          <div className="absolute bottom-3 left-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+          <div className="absolute bottom-3 left-3 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-1 group-hover:translate-y-0">
             <Badge
-              className={`shadow-lg backdrop-blur-xl border-0 px-3 py-1.5 text-xs font-medium ${
+              className={`shadow-sm border-0 px-2.5 py-1 text-xs font-medium ${
                 material.difficulty === 'easy'
-                  ? 'bg-emerald-500/90'
+                  ? 'bg-emerald-600'
                   : material.difficulty === 'medium'
-                  ? 'bg-amber-500/90'
-                  : 'bg-rose-500/90'
+                  ? 'bg-amber-500'
+                  : 'bg-rose-500'
               } text-white`}
             >
               {DIFFICULTY_LABELS[material.difficulty]}
@@ -239,8 +238,8 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
           </div>
 
           {/* Quick stats on hover */}
-          <div className="absolute bottom-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-            <div className="flex items-center gap-1.5 glass-strong backdrop-blur-xl rounded-full px-3 py-1.5 text-white text-xs font-medium">
+          <div className="absolute bottom-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-1 group-hover:translate-y-0">
+            <div className="flex items-center gap-1.5 bg-card/90 backdrop-blur-sm rounded-full px-2.5 py-1 text-foreground text-xs font-medium border border-border">
               <Eye className="h-3.5 w-3.5" />
               {formatNumber(material.stats.views)}
             </div>
@@ -250,7 +249,7 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
         <CardContent className="p-5 space-y-4">
           {/* Title and description */}
           <div>
-            <h3 className="font-bold text-base line-clamp-2 group-hover:text-primary transition-colors duration-300 leading-snug">
+            <h3 className="font-semibold text-base line-clamp-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-200 leading-snug">
               {material.title}
             </h3>
             <p className="text-sm text-muted-foreground line-clamp-2 mt-2 leading-relaxed">
@@ -260,11 +259,11 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
 
           {/* Tags */}
           <div className="flex flex-wrap gap-2">
-            <Badge variant="outline" className="text-xs border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 transition-colors">
+            <Badge variant="outline" className="text-xs border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20">
               {material.subject}
             </Badge>
             {material.grades.length > 0 && (
-              <Badge variant="outline" className="text-xs border-accent/30 text-accent bg-accent/5 hover:bg-accent/10 transition-colors">
+              <Badge variant="outline" className="text-xs border-border text-muted-foreground">
                 {material.grades.length === 1
                   ? `${material.grades[0]} курс`
                   : `${material.grades[0]}-${material.grades[material.grades.length - 1]} курс`}
@@ -275,21 +274,21 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
           {/* Author */}
           {showAuthor && (
             <div
-              className="flex items-center gap-3 p-2.5 -mx-2.5 rounded-xl hover:bg-muted/50 cursor-pointer transition-all duration-200 group/author"
+              className="flex items-center gap-3 p-2.5 -mx-2.5 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors duration-200 group/author"
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
                 router.push(`/profile/${material.authorUsername || material.authorId}`)
               }}
             >
-              <Avatar className="h-8 w-8 ring-2 ring-primary/20 group-hover/author:ring-primary/40 transition-all">
+              <Avatar className="h-8 w-8 ring-1 ring-border">
                 <AvatarImage src={material.authorAvatar || undefined} />
-                <AvatarFallback className="text-xs gradient-primary text-white font-semibold">
+                <AvatarFallback className="text-xs bg-emerald-600 text-white font-semibold">
                   {getInitials(material.authorName)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium text-foreground block truncate group-hover/author:text-primary transition-colors">
+                <span className="text-sm font-medium text-foreground block truncate group-hover/author:text-emerald-600 dark:group-hover/author:text-emerald-400 transition-colors">
                   {material.authorName}
                 </span>
                 <span className="text-xs text-muted-foreground">
@@ -300,12 +299,12 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
           )}
         </CardContent>
 
-        <CardFooter className="px-5 pb-5 pt-0 flex items-center justify-between border-t border-border/30 pt-4">
+        <CardFooter className="px-5 pb-5 pt-0 flex items-center justify-between border-t border-border pt-4">
           {/* Stats */}
           <div className="flex items-center gap-5 text-muted-foreground">
             <button
               onClick={handleLike}
-              className={`flex items-center gap-1.5 text-sm font-medium transition-all duration-200 hover:scale-110 ${
+              className={`flex items-center gap-1.5 text-sm font-medium transition-colors duration-200 hover:scale-105 ${
                 liked ? 'text-rose-500' : 'hover:text-rose-500'
               }`}
             >
@@ -323,7 +322,7 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all"
+              className="h-8 w-8 rounded-lg hover:bg-muted transition-colors"
               onClick={handleShare}
             >
               <Share2 className="h-4 w-4" />
@@ -333,15 +332,15 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-xl hover:bg-muted transition-all"
+                  className="h-8 w-8 rounded-lg hover:bg-muted transition-colors"
                   onClick={(e) => e.preventDefault()}
                 >
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="rounded-xl shadow-xl border-border/50 glass-strong">
+              <DropdownMenuContent align="end" className="rounded-xl shadow-lg border-border">
                 <DropdownMenuItem onClick={openCollectionDialog} className="rounded-lg cursor-pointer">
-                  <FolderPlus className="h-4 w-4 mr-2 text-primary" />
+                  <FolderPlus className="h-4 w-4 mr-2 text-emerald-600" />
                   {text.addToCollection}
                 </DropdownMenuItem>
                 <DropdownMenuItem className="rounded-lg cursor-pointer">
@@ -381,10 +380,10 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
                       key={collection.id}
                       onClick={() => handleAddToCollection(collection.id)}
                       disabled={isAdding || isInCollection}
-                      className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors disabled:opacity-50"
+                      className="w-full flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50"
                     >
                       <div className="flex items-center gap-3">
-                        <FolderPlus className="h-5 w-5 text-primary" />
+                        <FolderPlus className="h-5 w-5 text-emerald-600" />
                         <div className="text-left">
                           <p className="font-medium">{collection.name}</p>
                           <p className="text-sm text-muted-foreground">
@@ -395,7 +394,7 @@ export default function MaterialCard({ material, showAuthor = true }: MaterialCa
                       {isAdding ? (
                         <Loader2 className="h-5 w-5 animate-spin" />
                       ) : isInCollection ? (
-                        <Check className="h-5 w-5 text-green-500" />
+                        <Check className="h-5 w-5 text-emerald-600" />
                       ) : (
                         <Plus className="h-5 w-5" />
                       )}
